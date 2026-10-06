@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
     <title>Noem.ocean</title>
-    <!-- Noem.ocean v1.8 -->
+    <!-- Noem.ocean v2.0 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -129,11 +129,22 @@
         .topbar-center { flex: 1; display: flex; align-items: center; justify-content: center; }
         .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .logo {
-            font-family: 'Times New Roman', serif; font-weight: 700; color: var(--accent);
-            letter-spacing: 3px; font-size: 15px; background: transparent; border: none;
-            outline: none; cursor: text; padding: 2px 6px; border-radius: 4px; white-space: nowrap;
-        }
+    font-family: 'Times New Roman', serif; font-weight: 700; color: #e8ddc4;
+    letter-spacing: 3px; font-size: 15px; background: transparent; border: none;
+    outline: none; cursor: text; padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+}
         .logo:focus { background: rgba(200, 162, 74, .2); border: 1px solid var(--accent); }
+.app-name {
+    font-family: 'Times New Roman', serif;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 3px;
+    font-size: 15px;
+    white-space: nowrap;
+    padding: 2px 6px 2px 0;
+    user-select: none;
+    flex-shrink: 0;
+}
         .mode-toggle {
             display: flex; align-items: center; background: var(--panel-bg3);
             border: 1px solid var(--border); border-radius: 20px; padding: 3px 5px; gap: 4px;
@@ -1376,8 +1387,9 @@
 
     <div class="topbar">
         <div class="topbar-left">
-            <div contenteditable="true" spellcheck="false" id="projectTitle" class="logo" title="Название проекта">NOEM.OCEAN</div>
-        </div>
+    <span class="app-name">NOEM.OCEAN</span>
+    <div contenteditable="true" spellcheck="false" id="projectTitle" class="logo" title="Название проекта">МОЙ ПРОЕКТ</div>
+</div>
         <div class="topbar-center">
             <div class="mode-toggle">
                 <button id="modeEditor" class="active" onclick="setMode('editor')">РЕДАКТОР</button>
@@ -3116,6 +3128,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             pushHistory('Начальное состояние');
             applyTheme(APP.theme);
             syncRenumberCheckbox();
+
+            // Инициализируем режим редактирования сразу при загрузке,
+            // чтобы панель истории/отмены была видна без клика по кнопке
+            setMode('editor');
         });
 
         let confirmCallback = null;
@@ -6813,7 +6829,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const d = APP.noeticElements.find(e => e.id === id); if (d && (d.type === 'text' || d.type === 'note') && el._body)
                     d.text = el._body.innerHTML; });
             return {
-                version: '1.9',
+                version: '2.0',
                 title: document.getElementById('projectTitle').textContent,
                 password: APP.projectPassword || '',
                 mode: APP.mode,
@@ -6880,7 +6896,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 APP.timeMode = 'switch';
                 APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
                 APP.intExtMode = 'switch';
-                document.getElementById('projectTitle').textContent = 'NOEM.OCEAN';
+                document.getElementById('projectTitle').textContent = 'МОЙ ПРОЕКТ';
                 document.getElementById('scriptCanvas').innerHTML = '';
                 document.getElementById('scriptCanvas').style.display = 'none';
                 document.getElementById('uploadScriptArea').style.display = 'flex';
@@ -6958,7 +6974,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             document.getElementById('collapseP3').textContent = p3Collapsed ? '◀' : '▶';
             applyLayout();
 
-            document.getElementById('projectTitle').textContent = data.title || 'NOEM.OCEAN';
+            document.getElementById('projectTitle').textContent = data.title || 'МОЙ ПРОЕКТ';
             document.getElementById('effectsToggle').checked = APP.effectsOn;
             toggleEffects(APP.effectsOn);
             syncRenumberCheckbox();
