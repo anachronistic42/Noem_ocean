@@ -2,9 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#14110c" />
     <title>Noem.ocean</title>
-    <!-- Noem.ocean v2.1 — Android / touch support -->
+    <!-- Noem.ocean v2.1 (Android fixes) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -73,6 +75,8 @@
             color: var(--text);
             overflow: hidden;
             height: 100vh;
+            height: 100dvh;
+            overscroll-behavior: none;
             transition: background .3s, color .3s;
         }
         body.drag-mode .script-block,
@@ -129,22 +133,22 @@
         .topbar-center { flex: 1; display: flex; align-items: center; justify-content: center; }
         .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .logo {
-            font-family: 'Times New Roman', serif; font-weight: 700; color: #e8ddc4;
-            letter-spacing: 3px; font-size: 15px; background: transparent; border: none;
-            outline: none; cursor: text; padding: 2px 6px; border-radius: 4px; white-space: nowrap;
-        }
+    font-family: 'Times New Roman', serif; font-weight: 700; color: #e8ddc4;
+    letter-spacing: 3px; font-size: 15px; background: transparent; border: none;
+    outline: none; cursor: text; padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+}
         .logo:focus { background: rgba(200, 162, 74, .2); border: 1px solid var(--accent); }
-        .app-name {
-            font-family: 'Times New Roman', serif;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: 3px;
-            font-size: 15px;
-            white-space: nowrap;
-            padding: 2px 6px 2px 0;
-            user-select: none;
-            flex-shrink: 0;
-        }
+.app-name {
+    font-family: 'Times New Roman', serif;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 3px;
+    font-size: 15px;
+    white-space: nowrap;
+    padding: 2px 6px 2px 0;
+    user-select: none;
+    flex-shrink: 0;
+}
         .mode-toggle {
             display: flex; align-items: center; background: var(--panel-bg3);
             border: 1px solid var(--border); border-radius: 20px; padding: 3px 5px; gap: 4px;
@@ -1327,6 +1331,7 @@
         :root { --ui-scale: 1; }
 
         .topbar, .panel-header, .size-bar { zoom: var(--ui-scale); }
+        .main-layout { top: var(--topbar-h, calc(52px * var(--ui-scale))); }
 
         .topbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
         .topbar-left { justify-self: start; min-width: 0; }
@@ -1349,7 +1354,8 @@
 
         .main-layout.no-anim .panel { transition: none !important; }
 
-        #settingsPopup { min-width: 260px; max-width: 340px; max-height: calc(100vh - 80px); overflow-y: auto; }
+        #settingsPopup { min-width: 260px; max-width: min(340px, calc(100vw - 16px)); top: calc(var(--topbar-h, 52px) + 8px);
+            max-height: calc(var(--app-h, 100vh) - var(--topbar-h, 52px) - 16px); overflow-y: auto; }
         #settingsPopup .sp-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         #settingsPopup .sp-close {
             background: transparent; border: 1px solid transparent; color: var(--muted);
@@ -1373,71 +1379,18 @@
         /* ================================================================
            ANDROID / TOUCH SUPPORT
            ================================================================ */
-
-        /* --- Базовая адаптация для всех тач-устройств --- */
         body.touch-device {
             -webkit-tap-highlight-color: transparent;
             -webkit-text-size-adjust: 100%;
-            /* Главное исправление: flex-колонка на всю высоту viewport.
-               Топбар — flex-shrink:0, main-layout растягивается на остаток.
-               Никаких хардкод-высот. */
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            height: 100dvh;
-            width: 100vw;
-            overflow: hidden;
-            padding: 0;
-            margin: 0;
         }
         body.touch-device * { -webkit-touch-callout: none; }
         body.touch-device input,
         body.touch-device textarea,
         body.touch-device [contenteditable="true"] { -webkit-touch-callout: default; }
 
-        /* Топбар — теперь не fixed, а обычный flex-item сверху */
-        body.touch-device .topbar {
-            position: relative !important;
-            top: auto !important;
-            left: auto !important;
-            right: auto !important;
-            height: auto !important;
-            min-height: 52px;
-            flex-shrink: 0;
-            padding: 6px 10px;
-            box-sizing: border-box;
-        }
-
-        /* Основная раскладка растягивается на всю оставшуюся высоту */
-        body.touch-device .main-layout {
-            position: relative !important;
-            top: auto !important;
-            left: auto !important;
-            right: auto !important;
-            bottom: auto !important;
-            flex: 1 1 auto;
-            min-height: 0;
-            height: auto !important;
-            margin-top: 0 !important;
-            display: flex;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        /* Панели внутри main-layout тянутся до bottom */
-        body.touch-device .panel {
-            height: 100%;
-            min-height: 0;
-        }
-        body.touch-device .script-container,
-        body.touch-device .dir-script-container,
-        body.touch-device .noetic-viewport {
-            flex: 1 1 auto;
-            min-height: 0;
-        }
-
         /* Крупные touch-цели */
-        body.touch-device .tbtn {
+        body.touch-device .tbtn,
+        body.touch-device .panel-header button {
             min-height: 34px;
             padding: 8px 12px;
             font-size: 12px;
@@ -1445,40 +1398,6 @@
         body.touch-device .history-btn { width: 34px; height: 34px; font-size: 14px; }
         body.touch-device .history-input { width: 52px; padding: 6px 4px; }
         body.touch-device .mode-toggle button { padding: 8px 10px !important; }
-
-        /* --- Компактные panel-header: всё умещается и скроллится --- */
-        body.touch-device .panel-header {
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding: 0 6px;
-            gap: 5px;
-            height: 38px;
-            min-height: 38px;
-        }
-        body.touch-device .panel-header button {
-            font-size: 10px;
-            padding: 4px 7px;
-            min-height: 28px;
-            letter-spacing: 0;
-            flex-shrink: 0;
-        }
-        body.touch-device .panel-title-text {
-            font-size: 10px;
-            letter-spacing: 1px;
-            flex: 0 1 auto;
-            min-width: 30px;
-            max-width: 110px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        body.touch-device .panel-header .collapse-btn {
-            width: 26px;
-            min-width: 26px;
-        }
-
-        /* Строки таблицы — крупнее пальцевые цели */
         body.touch-device .row-btn { padding: 7px 9px; font-size: 17px; min-width: 32px; }
         body.touch-device .row-drag-handle { font-size: 22px; padding: 6px 10px; cursor: grab; }
         body.touch-device .ne-row-cb { width: 20px; height: 20px; }
@@ -1524,7 +1443,7 @@
         body.touch-device .montage-ref-close,
         body.touch-device .lb-close { width: 44px; height: 44px; font-size: 26px; padding: 8px; }
 
-        /* Жесты для рабочих областей */
+        /* Возвращаемые жесты для viewports */
         body.touch-device .script-container,
         body.touch-device .noetic-viewport {
             touch-action: none;
@@ -1536,7 +1455,7 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Текстовые поля — снова разрешаем выделение */
+        /* Правила для редактируемых полей (текст всё же выделяется) */
         body.touch-device .cell-textarea,
         body.touch-device .note-textarea,
         body.touch-device input,
@@ -1553,7 +1472,7 @@
             touch-action: auto;
         }
 
-        /* Ручки выделения — крупнее */
+        /* Большие ручки выделения */
         body.touch-device .ne-scale-handle { width: 20px; height: 20px; border-width: 3px; }
         body.touch-device .ne-rotate-handle { width: 24px; height: 24px; }
         body.touch-device .ne-text-resize-handle { width: 20px; height: 20px; }
@@ -1570,10 +1489,10 @@
             ) scale(var(--ne-inv, 1));
         }
 
-        /* Ресайзеры шире для пальца */
+        /* Ресайзеры панелей — шире на тач-устройствах */
         body.touch-device .resizer { width: 12px; }
 
-        /* Отключаем hover-эффекты на устройствах без hover */
+        /* Отключаем hover-эффекты там, где они мешают */
         @media (hover: none) {
             body.touch-device .tbtn:hover { background: var(--panel-bg3); color: var(--text); }
             body.touch-device .tbtn.active:hover { background: var(--accent); color: #14110c; }
@@ -1587,56 +1506,78 @@
             body.touch-device .noetic-el:hover > .ne-grip { opacity: 0; }
         }
 
-        /* --- Телефоны/узкие экраны --- */
+        /* ---- v2.1: шапка приложения на тач-устройствах — переносится, а не обрезается ---- */
+        body.touch-device .topbar {
+            display: flex; flex-wrap: wrap; align-items: center;
+            height: auto; min-height: 52px; padding: 4px 10px; gap: 4px 10px;
+        }
+        body.touch-device .topbar-left { flex: 1 1 auto; min-width: 0; }
+        body.touch-device .topbar-left .logo { max-width: 38vw; overflow: hidden; text-overflow: ellipsis; }
+        body.touch-device .topbar-center { flex: 0 0 auto; justify-content: center; }
+        body.touch-device .topbar-right {
+            flex: 1 1 auto; justify-content: flex-end; flex-wrap: wrap; gap: 4px 6px; min-width: 0;
+        }
+        body.touch-device .history-controls { order: -1; }
+
+        /* ---- v2.1: шапки панелей — кнопки переносятся на новые строки (раньше обрезались) ---- */
+        body.touch-device .panel-header {
+            height: auto; min-height: 36px; flex-wrap: wrap; overflow: visible;
+            padding: 4px 8px; gap: 6px; align-content: flex-start;
+        }
+        body.touch-device .panel-header .panel-title-text { order: 0; flex: 1 1 calc(100% - 50px); min-width: 0; }
+        body.touch-device .panel-header .collapse-btn {
+            order: 1; position: static; margin-left: 0; width: 38px; height: 34px;
+            border: 1px solid var(--border); border-radius: 3px;
+        }
+        body.touch-device .panel-header button:not(.collapse-btn) { order: 2; }
+        body.touch-device #panel1.collapsed .panel-header,
+        body.touch-device #panel2.collapsed .panel-header,
+        body.touch-device #panel3.collapsed .panel-header { padding: 0; justify-content: center; }
+        body.touch-device .panel.collapsed { cursor: pointer; }
+
+        body.touch-device .resizer.rz-off { width: 3px; pointer-events: none; }
+
+        /* ---- v2.1: всплывающие окна не выходят за экран ---- */
+        .history-dropdown { max-width: calc(100vw - 16px); max-height: min(360px, calc(var(--app-h, 100vh) - 80px)); }
+        .col-manage-popup { max-width: calc(100vw - 16px); max-height: calc(var(--app-h, 100vh) - 80px); overflow-y: auto; }
+        .noetic-add-menu { max-height: calc(var(--app-h, 100vh) - 16px); overflow-y: auto; }
+        .export-menu { max-width: calc(100vw - 16px); overflow-y: auto; }
+        .ne-toolbar { max-width: calc(100vw - 16px); max-height: calc(var(--app-h, 100vh) - 16px); overflow-y: auto; }
+
         @media (max-width: 980px) {
-            body.touch-device .topbar {
-                flex-wrap: wrap;
-                padding: 6px 8px;
-                gap: 6px;
-                min-height: 56px;
-            }
-            body.touch-device .topbar-left { flex: 1 1 auto; min-width: 0; order: 1; }
             body.touch-device .topbar-left .app-name { font-size: 13px; letter-spacing: 2px; }
-            body.touch-device .topbar-left .logo {
-                font-size: 13px; max-width: 40vw;
-                overflow: hidden; text-overflow: ellipsis;
-            }
-            body.touch-device .topbar-center {
-                order: 2; flex: 1 1 100%;
-                justify-content: center; padding: 2px 0;
-            }
-            body.touch-device .topbar-right {
-                order: 3; flex: 1 1 100%;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 4px;
-            }
+            body.touch-device .topbar-left .logo { font-size: 13px; }
             body.touch-device .mode-toggle button { width: 90px; min-width: 90px; font-size: 11px; }
-            body.touch-device .history-controls { order: -1; }
         }
 
+        /* Для очень узких телефонов */
         @media (max-width: 560px) {
             body.touch-device .resizer { width: 16px; }
-            body.touch-device .panel-title-text { font-size: 9px; letter-spacing: 0; max-width: 80px; }
-            body.touch-device .panel-header button { font-size: 9px; padding: 4px 6px; }
+            body.touch-device .panel-title-text { font-size: 10px; letter-spacing: 1px; }
+            body.touch-device .topbar-center { flex: 1 1 100%; }
+            body.touch-device .mode-toggle { margin: 0 auto; }
+        }
+        @media (max-width: 700px) {
+            #confirmModal .modal-box { padding: 24px 20px; max-height: calc(var(--app-h, 100vh) - 24px); overflow-y: auto; }
+            #confirmModal h3 { font-size: 16px; margin-bottom: 20px; }
+            #confirmModal .pm-btns button { padding: 12px 10px; font-size: 14px; }
+            #passwordModal .modal-box { padding: 20px 18px; }
+        }
+        @media (max-height: 520px) {
+            #confirmModal .modal-box { padding: 18px 24px; max-height: calc(var(--app-h, 100vh) - 16px); overflow-y: auto; }
+            #confirmModal h3 { font-size: 15px; margin-bottom: 14px; }
         }
 
-        /* Индикация long-press */
+        /* Индикация long-press: короткий «пульс» */
         @keyframes touchPulse {
             0% { box-shadow: 0 0 0 0 var(--accent); }
             100% { box-shadow: 0 0 0 14px rgba(200,162,74,0); }
         }
         body.touch-device .touch-pulse { animation: touchPulse 0.42s ease-out; }
 
-        /* Безопасные зоны для Android с вырезом */
-        @supports (padding: env(safe-area-inset-bottom)) {
-            body.touch-device .main-layout {
-                padding-bottom: env(safe-area-inset-bottom);
-            }
-            body.touch-device .topbar {
-                padding-top: max(6px, env(safe-area-inset-top));
-            }
-        }
+        /* Плавное скрытие системного контекстного меню на тач */
+        body.touch-device .noetic-viewport,
+        body.touch-device .script-container { -webkit-touch-callout: none; }
     </style>
 </head>
 <body>
@@ -1654,9 +1595,9 @@
 
     <div class="topbar">
         <div class="topbar-left">
-            <span class="app-name">NOEM.OCEAN</span>
-            <div contenteditable="true" spellcheck="false" id="projectTitle" class="logo" title="Название проекта">МОЙ ПРОЕКТ</div>
-        </div>
+    <span class="app-name">NOEM.OCEAN</span>
+    <div contenteditable="true" spellcheck="false" id="projectTitle" class="logo" title="Название проекта">МОЙ ПРОЕКТ</div>
+</div>
         <div class="topbar-center">
             <div class="mode-toggle">
                 <button id="modeEditor" class="active" onclick="setMode('editor')">РЕДАКТОР</button>
@@ -1945,8 +1886,8 @@
                 <button onclick="addNoteRow()" title="Добавить пометку">+ Пометка</button>
                 <button onclick="toggleIntExtModal()" title="ИНТ/ЭКСТ">ИНТ/ЭКСТ</button>
                 <button onclick="toggleLocModal()" title="Локации">Локации</button>
-                <button onclick="toggleTimeModal()" title="Время суток">Время</button>
-                <button onclick="toggleColManager()" title="Управление колонками">⚙ Кол.</button>
+                <button onclick="toggleTimeModal()" title="Время суток">Время суток</button>
+                <button onclick="toggleColManager()" title="Управление колонками">⚙ Колонки</button>
                 <button id="collapseP2" class="collapse-btn" onclick="collapsePanel(2)" title="Свернуть">◀</button>
             </div>
             <div class="dir-script-container">
@@ -2009,15 +1950,27 @@
             '</svg>';
 
         // =====================================================================
-        // v2.0 — МЕДИА-РЕЕСТР И КОМПРЕССИЯ ИЗОБРАЖЕНИЙ
+        // v1.9 — МЕДИА-РЕЕСТР И КОМПРЕССИЯ ИЗОБРАЖЕНИЙ
         // =====================================================================
+        // Проблема: история хранила полный снимок APP, включая base64 картинок,
+        // видео, аудио, 3D-моделей. При 50 шагах истории это легко давало
+        // гигабайты памяти и крашило браузер (OOM).
+        //
+        // Решение: base64 не попадает в снимки истории. Каждое уникальное медиа
+        // регистрируется в MEDIA под коротким ID, а в снимке остаётся только
+        // ссылка вида "__M__:m123". Один и тот же base64 → одна запись в MEDIA
+        // (дедупликация по хэшу), поэтому даже 500 шагов истории с медиа
+        // занимают считанные мегабайты.
+        // =====================================================================
+
         const MEDIA_PREFIX = '__M__:';
 
         const MEDIA = {
-            byId: new Map(),
-            byHash: new Map(),
+            byId: new Map(),      // id -> dataURL
+            byHash: new Map(),    // hash -> id (дедупликация)
             counter: 1,
             hashStr(s) {
+                // FNV-1a 32-bit
                 let h = 2166136261 >>> 0;
                 for (let i = 0; i < s.length; i++) {
                     h ^= s.charCodeAt(i);
@@ -2028,6 +1981,7 @@
             register(dataURL) {
                 if (typeof dataURL !== 'string') return dataURL;
                 if (!dataURL.startsWith('data:')) return dataURL;
+                // Короткие dataURL (иконки, шум) не индексируем — экономим реестр
                 if (dataURL.length < 2048) return dataURL;
                 const h = this.hashStr(dataURL);
                 if (this.byHash.has(h)) {
@@ -2054,6 +2008,7 @@
             }
         };
 
+        // Replacer для JSON.stringify: заменяет длинные dataURL на ссылки MEDIA
         function mediaReplacer(key, value) {
             if (typeof value === 'string' && value.length > 2048 && value.startsWith('data:')) {
                 return MEDIA.register(value);
@@ -2061,6 +2016,7 @@
             return value;
         }
 
+        // Reviver для JSON.parse: восстанавливает dataURL из ссылок MEDIA
         function mediaReviver(key, value) {
             if (typeof value === 'string' && value.startsWith(MEDIA_PREFIX)) {
                 return MEDIA.resolve(value);
@@ -2068,6 +2024,7 @@
             return value;
         }
 
+        // --- Утилита: File -> dataURL ---
         function fileToDataURL(file) {
             return new Promise((resolve, reject) => {
                 const rd = new FileReader();
@@ -2077,10 +2034,14 @@
             });
         }
 
+        // --- Сжатие изображения до maxDim по длинной стороне ---
+        // Возвращает dataURL (JPEG или PNG, что меньше). Если исходник уже
+        // маленький — возвращает как есть.
         function compressImage(dataURL, maxDim = 2000, quality = 0.85) {
             return new Promise(resolve => {
                 if (!dataURL || typeof dataURL !== 'string') return resolve(dataURL);
                 if (!dataURL.startsWith('data:image/')) return resolve(dataURL);
+                // GIF (может быть анимированным) и SVG не трогаем
                 if (dataURL.startsWith('data:image/gif') || dataURL.startsWith('data:image/svg')) {
                     return resolve(dataURL);
                 }
@@ -2095,6 +2056,7 @@
                         const longest = Math.max(w, h);
                         const isPng = dataURL.startsWith('data:image/png');
 
+                        // Если картинка и так небольшая — не трогаем
                         if (longest <= maxDim && dataURL.length < 400 * 1024) {
                             return resolve(dataURL);
                         }
@@ -2110,6 +2072,7 @@
                         c.width = nw;
                         c.height = nh;
                         const ctx = c.getContext('2d');
+                        // Белая подложка — чтобы прозрачность не стала чёрной в JPEG
                         if (!isPng) {
                             ctx.fillStyle = '#ffffff';
                             ctx.fillRect(0, 0, nw, nh);
@@ -2122,6 +2085,7 @@
                             if (pngOut.length < out.length) out = pngOut;
                         }
 
+                        // Если не стало меньше — оставляем оригинал
                         if (out.length >= dataURL.length) return resolve(dataURL);
                         resolve(out);
                     } catch (e) {
@@ -2157,32 +2121,8 @@
             times: ['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ', 'ГЛУБОКАЯ НОЧЬ'],
             timeMode: 'switch',
             intExts: ['ИНТ.', 'ЭКСТ.', 'НАТ.'],
-            intExtMode: 'switch',
-            uiScale: 0
+            intExtMode: 'switch'
         };
-
-        // =====================================================================
-        // v2.0 — РАННЕЕ ОПРЕДЕЛЕНИЕ TOUCH, чтобы initUiPrefs мог его использовать
-        // =====================================================================
-        const TOUCH = {
-            enabled: false,
-            isAndroid: false,
-            longPressDelay: 500,
-            doubleTapDelay: 320
-        };
-        (function detectTouch() {
-            try {
-                const ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
-                TOUCH.isAndroid = /android/.test(ua);
-                TOUCH.enabled = ('ontouchstart' in window)
-                    || (navigator.maxTouchPoints > 0)
-                    || (navigator.msMaxTouchPoints > 0);
-                if (TOUCH.enabled) {
-                    document.body.classList.add('touch-device');
-                    if (TOUCH.isAndroid) document.body.classList.add('android-device');
-                }
-            } catch (e) {}
-        })();
 
         // ============================================================
         // ИСТОРИЯ (Undo / Redo)
@@ -2193,9 +2133,14 @@
         let historySuspended = false;
         let historyDebounceTimer = null;
 
-        const HISTORY_TOTAL_LIMIT = 20 * 1024 * 1024;
+        // Максимальный суммарный размер сериализованных снимков истории.
+        // Медиа вынесено в MEDIA, поэтому в снимке остаются только ссылки,
+        // и этот лимит покрывает десятки тысяч обычных изменений.
+        const HISTORY_TOTAL_LIMIT = 20 * 1024 * 1024; // 20 МБ символов ≈ 40 МБ UTF-16
 
         function captureState() {
+            // Снимок делаем через JSON с replacer'ом — так длинные dataURL
+            // превращаются в ссылки MEDIA и не занимают историю.
             const raw = JSON.stringify({
                 dirRows: APP.dirRows,
                 noeticElements: APP.noeticElements,
@@ -2216,6 +2161,7 @@
         }
 
         function restoreState(state) {
+            // Возвращаем dataURL из MEDIA по ссылкам
             const resolved = JSON.parse(JSON.stringify(state), mediaReviver);
             APP.dirRows = resolved.dirRows || [];
             APP.noeticElements = resolved.noeticElements || [];
@@ -2276,8 +2222,11 @@
             }
             historyStack.push({ state, str, label: label || 'Изменение', time: Date.now() });
 
+            // Жёсткий потолок по количеству шагов
             while (historyStack.length > maxHistorySteps) historyStack.shift();
 
+            // Дополнительный потолок по суммарному размеру сериализованных снимков.
+            // Медиа уже вырезано, так что это защита от гигантских текстовых проектов.
             let totalSize = 0;
             for (const h of historyStack) totalSize += h.str.length;
             while (totalSize > HISTORY_TOTAL_LIMIT && historyStack.length > 5) {
@@ -2560,6 +2509,7 @@
                 .trim().replace(/\s+/g, '_');
         }
 
+        // === Word (.docx) ===
         async function exportWord() {
             closeExportMenu();
             const { cols, items } = collectExportData();
@@ -2727,6 +2677,7 @@
             notify('Word-документ экспортирован');
         }
 
+        // === Excel (.xlsx) — картинки внутри ячеек ===
         async function exportExcel() {
             closeExportMenu();
             const { cols, items } = collectExportData();
@@ -3002,6 +2953,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             notify('Excel-документ экспортирован');
         }
 
+        // === PDF (чистый и оформленный) — скачивается сразу, без открытия вкладок ===
         async function exportPdf(styled) {
             closeExportMenu();
             const { cols, items } = collectExportData();
@@ -3348,10 +3300,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             applyLayout();
             initDirPanZoom();
             initUiPrefs();
-            window.addEventListener('resize', () => {
-                updateSizeBars();
-                document.querySelectorAll('.cell-textarea').forEach(autoResizeTA);
-            });
+            window.addEventListener('resize', () => { updateSizeBars();
+                document.querySelectorAll('.cell-textarea').forEach(autoResizeTA); });
             if (!APP.locations.length) APP.locations = ['СТАНЦИЯ', 'КУХНЯ', 'КОМНАТА', 'КРЫША', 'ПРИРОДА'];
             if (!APP.times || !APP.times.length) APP.times = ['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ',
                 'ГЛУБОКАЯ НОЧЬ'
@@ -3360,6 +3310,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (!APP.intExts || !APP.intExts.length) APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
             if (!APP.intExtMode) APP.intExtMode = 'switch';
 
+            // ---- v1.9: раскадровка — с сжатием ----
             document.getElementById('storyboardImgInput').addEventListener('change', async e => {
                 const files = Array.from(e.target.files);
                 e.target.value = '';
@@ -3386,9 +3337,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             applyTheme(APP.theme);
             syncRenumberCheckbox();
 
+            // Инициализируем режим редактирования сразу при загрузке,
+            // чтобы панель истории/отмены была видна без клика по кнопке
             setMode('editor');
 
-            // v2.0: включаем поддержку сенсорных экранов
+            // v2.0: включаем поддержку сенсорных экранов / Android
             initTouchSupport();
         });
 
@@ -3508,10 +3461,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
             const nePersist = document.getElementById('neDragPersistBtn');
             if (nePersist) nePersist.style.display = (m === 'viewer') ? '' : 'none';
-            if (m === 'viewer') {
-                neDragPersist = false;
-                nePersist && nePersist.classList.remove('active');
-            }
+            if (m === 'viewer') { neDragPersist = false;
+                nePersist && nePersist.classList.remove('active'); }
             deselectNoeticEl();
             clearNeMultiSelect();
             document.querySelectorAll('.noetic-el').forEach(el => {
@@ -3537,12 +3488,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     if (!inInput) { e.preventDefault(); redo(); }
                 }
 
-                if (e.key === 'Escape') {
-                    closeNoeticMenu(); closeMontageRef(); closeScaleRef(); closeLightbox();
-                    deselectNoeticEl(); clearNeMultiSelect(); clearSelection();
-                    closeLocModal(); closeTimeModal();
-                    document.getElementById('historyDropdown').classList.remove('show');
-                }
+                if (e.key === 'Escape') { closeNoeticMenu(); closeMontageRef(); closeScaleRef(); closeLightbox();
+                    deselectNoeticEl(); clearNeMultiSelect(); clearSelection(); closeLocModal(); closeTimeModal();
+                    document.getElementById('historyDropdown').classList.remove('show'); }
 
                 if (e.key === 'Delete' || e.key === 'Del') {
                     if (inInput) return;
@@ -3587,11 +3535,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (e.key === 'Alt') { altHeld = false;
                     document.body.classList.remove('drag-mode', 'alt-held'); }
             });
-            window.addEventListener('blur', () => {
-                altHeld = false;
+            window.addEventListener('blur', () => { altHeld = false;
                 ctrlHeld = false;
-                document.body.classList.remove('drag-mode', 'alt-held');
-            });
+                document.body.classList.remove('drag-mode', 'alt-held'); });
         }
 
         const LAYOUT = {
@@ -3601,11 +3547,62 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             eff1: 320, eff3: 380
         };
 
+        // Сколько панелей одновременно помещается на экране:
+        // телефон (< 520px) — 1, узкий экран / планшет в портрете (< 960px на тач-устройстве) — 2, иначе 3.
+        function maxOpenPanels() {
+            const ml = document.getElementById('mainLayout');
+            const w = ml ? ml.clientWidth : 0;
+            if (!w) return 3;
+            if (w < 520) return 1;
+            if (w < LAYOUT.MIN1 + LAYOUT.MIN2 + LAYOUT.MIN3 + LAYOUT.RESIZERS) return 2;
+            if (typeof TOUCH !== 'undefined' && TOUCH.enabled && w < 960) return 2;
+            return 3;
+        }
+        function isNarrowLayout() { return maxOpenPanels() < 3; }
+
+        function syncPanelCollapsedDom() {
+            document.getElementById('panel1').classList.toggle('collapsed', p1Collapsed);
+            document.getElementById('panel2').classList.toggle('collapsed', p2Collapsed);
+            document.getElementById('panel3').classList.toggle('collapsed', p3Collapsed);
+            document.getElementById('collapseP1').textContent = p1Collapsed ? '▶' : '◀';
+            document.getElementById('collapseP2').textContent = p2Collapsed ? '▶' : '◀';
+            document.getElementById('collapseP3').textContent = p3Collapsed ? '◀' : '▶';
+        }
+
+        function openPanelCount() { return (p1Collapsed ? 0 : 1) + (p2Collapsed ? 0 : 1) + (p3Collapsed ? 0 : 1); }
+        function setPanelCollapsed(n, v) { if (n === 1) p1Collapsed = v; else if (n === 2) p2Collapsed = v; else p3Collapsed = v; }
+        function isPanelCollapsed(n) { return n === 1 ? p1Collapsed : (n === 2 ? p2Collapsed : p3Collapsed); }
+
+        // Сворачиваем лишние панели; порядок «жертв»: Ноэтический блок → Литературный → Режиссёрский
+        function limitOpenPanels(max, exceptPanel) {
+            const order = [3, 1, 2].filter(n => n !== exceptPanel);
+            for (const n of order) {
+                if (openPanelCount() <= max) break;
+                if (!isPanelCollapsed(n)) setPanelCollapsed(n, true);
+            }
+        }
+
+        // Разделитель неактивен, если соседняя панель свёрнута — делаем его тонким, чтобы не занимал место
+        function syncResizerState() {
+            const r1 = document.getElementById('resizer1'), r2 = document.getElementById('resizer2');
+            if (r1) r1.classList.toggle('rz-off', p1Collapsed || (p2Collapsed && p3Collapsed));
+            if (r2) r2.classList.toggle('rz-off', p3Collapsed || (p2Collapsed && p1Collapsed));
+        }
+
+        function enforceNarrowPanels() {
+            const max = maxOpenPanels();
+            if (openPanelCount() <= max) return;
+            limitOpenPanels(max, 0);
+            syncPanelCollapsedDom();
+        }
+
         function applyLayout() {
             const ml = document.getElementById('mainLayout');
             const p1 = document.getElementById('panel1');
             const p3 = document.getElementById('panel3');
             if (!ml || !p1 || !p3) return;
+            enforceNarrowPanels();
+            syncResizerState();
             const avail = Math.max(0, ml.clientWidth - LAYOUT.RESIZERS);
             const C = LAYOUT.COLLAPSED;
             let w1 = null, w3 = null;
@@ -3615,14 +3612,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 let b = p3Collapsed ? C : LAYOUT.W3;
                 const maxSum = Math.max(0, avail - LAYOUT.MIN2);
                 let excess = a + b - maxSum;
-                if (excess > 0 && !p3Collapsed) {
-                    const d = Math.min(excess, b - LAYOUT.MIN3);
-                    if (d > 0) { b -= d; excess -= d; }
-                }
-                if (excess > 0 && !p1Collapsed) {
-                    const d = Math.min(excess, a - LAYOUT.MIN1);
-                    if (d > 0) { a -= d; excess -= d; }
-                }
+                if (excess > 0 && !p3Collapsed) { const d = Math.min(excess, b - LAYOUT.MIN3); if (d > 0) { b -= d; excess -= d; } }
+                if (excess > 0 && !p1Collapsed) { const d = Math.min(excess, a - LAYOUT.MIN1); if (d > 0) { a -= d; excess -= d; } }
                 w1 = a; w3 = b;
             } else {
                 const space = Math.max(0, avail - C);
@@ -3637,23 +3628,24 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
             p1.style.flex = w1 === null ? '1 1 0' : '0 0 ' + w1 + 'px';
             p3.style.flex = w3 === null ? '1 1 0' : '0 0 ' + w3 + 'px';
-            p1.style.minWidth = '';
-            p3.style.minWidth = '';
+            p1.style.minWidth = ''; p3.style.minWidth = '';
             LAYOUT.eff1 = p1Collapsed ? C : (w1 === null ? Math.max(LAYOUT.MIN1, avail - C - LAYOUT.MIN3) : w1);
             LAYOUT.eff3 = p3Collapsed ? C : (w3 === null ? Math.max(LAYOUT.MIN3, avail - C - LAYOUT.eff1) : w3);
             if (p2Collapsed && !p1Collapsed && !p3Collapsed) LAYOUT.eff3 = Math.max(0, avail - C - w1);
         }
 
         function collapsePanel(n) {
-            if (n === 1) p1Collapsed = !p1Collapsed;
-            else if (n === 2) p2Collapsed = !p2Collapsed;
-            else if (n === 3) p3Collapsed = !p3Collapsed;
-            document.getElementById('panel1').classList.toggle('collapsed', p1Collapsed);
-            document.getElementById('panel2').classList.toggle('collapsed', p2Collapsed);
-            document.getElementById('panel3').classList.toggle('collapsed', p3Collapsed);
-            document.getElementById('collapseP1').textContent = p1Collapsed ? '▶' : '◀';
-            document.getElementById('collapseP2').textContent = p2Collapsed ? '▶' : '◀';
-            document.getElementById('collapseP3').textContent = p3Collapsed ? '◀' : '▶';
+            const wasCollapsed = isPanelCollapsed(n);
+            setPanelCollapsed(n, !wasCollapsed);
+            const max = maxOpenPanels();
+            if (wasCollapsed) {
+                // раскрыли панель — если не хватает места, сворачиваем остальные
+                limitOpenPanels(max, n);
+            } else if (openPanelCount() === 0 && max < 3) {
+                // на узком экране нельзя свернуть всё — открываем соседнюю панель
+                setPanelCollapsed(n === 2 ? 1 : 2, false);
+            }
+            syncPanelCollapsedDom();
             applyLayout();
         }
 
@@ -3662,10 +3654,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             document.addEventListener('mouseup', onResizerUp);
             document.querySelectorAll('.panel-header').forEach(h => {
                 h.addEventListener('wheel', e => {
-                    if (h.scrollWidth > h.clientWidth) {
-                        h.scrollLeft += (e.deltaY || e.deltaX);
-                        e.preventDefault();
-                    }
+                    if (h.scrollWidth > h.clientWidth) { h.scrollLeft += (e.deltaY || e.deltaX); e.preventDefault(); }
                 }, { passive: false });
             });
             window.addEventListener('resize', () => {
@@ -3726,12 +3715,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             container.addEventListener('wheel', e => {
                 if (e.target.closest('#panel2') || e.target.closest('#panel3')) return;
                 e.preventDefault();
-                if (e.ctrlKey) {
-                    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                    APP.scriptZoom = Math.max(0.3, Math.min(3, APP.scriptZoom + delta));
-                } else {
-                    APP.scriptOffsetY -= e.deltaY;
-                }
+                if (e.ctrlKey) { const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                    APP.scriptZoom = Math.max(0.3, Math.min(3, APP.scriptZoom + delta)); } else { APP.scriptOffsetY -= e
+                        .deltaY; }
                 applyScriptTransform();
             }, { passive: false });
 
@@ -3752,37 +3738,27 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 applyScriptTransform();
             });
 
-            document.addEventListener('mouseup', () => {
-                if (scriptPanning) {
-                    scriptPanning = false;
-                    document.getElementById('scriptContainer').classList.remove('panning');
-                }
-            });
+            document.addEventListener('mouseup', () => { if (scriptPanning) { scriptPanning = false;
+                    document.getElementById('scriptContainer').classList.remove('panning'); } });
 
-            document.getElementById('scriptFileInput').addEventListener('change', e => {
-                const f = e.target.files[0];
-                if (f) loadScriptFile(f);
-                e.target.value = '';
-            });
+            document.getElementById('scriptFileInput').addEventListener('change', e => { const f = e.target.files[0]; if (f)
+                    loadScriptFile(f);
+                e.target.value = ''; });
             container.addEventListener('dragover', e => e.preventDefault());
-            container.addEventListener('drop', e => {
-                e.preventDefault();
-                const f = e.dataTransfer.files[0];
-                if (f && (f.name.endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.doc'))) loadScriptFile(f);
-            });
+            container.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f && (f.name
+                    .endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.doc'))) loadScriptFile(f); });
         }
 
-        function applyScriptTransform() {
-            document.getElementById('scriptCanvas').style.transform = 'translate(' + APP.scriptOffsetX + 'px,' + APP.scriptOffsetY + 'px) scale(' + APP.scriptZoom + ')';
-            syncZoomUI();
-        }
+        function applyScriptTransform() { document.getElementById('scriptCanvas').style.transform = 'translate(' + APP
+                .scriptOffsetX + 'px,' + APP.scriptOffsetY + 'px) scale(' + APP.scriptZoom + ')';
+            syncZoomUI(); }
 
         async function loadScriptFile(file) {
             notify('Загрузка сценария...');
             APP.scriptBlocks = [];
             try {
-                if (file.name.endsWith('.pdf')) { await loadPDF(file); }
-                else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) { await loadDOCX(file); }
+                if (file.name.endsWith('.pdf')) { await loadPDF(file); } else if (file.name.endsWith('.docx') || file.name
+                    .endsWith('.doc')) { await loadDOCX(file); }
                 renderScriptBlocks();
                 document.getElementById('uploadScriptArea').style.display = 'none';
                 document.getElementById('scriptCanvas').style.display = 'block';
@@ -3795,11 +3771,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             let fullText = '';
-            for (let p = 1; p <= pdf.numPages; p++) {
-                const page = await pdf.getPage(p);
-                const content = await page.getTextContent();
-                fullText += content.items.map(item => item.str).join(' ') + '\n\n';
-            }
+            for (let p = 1; p <= pdf.numPages; p++) { const page = await pdf.getPage(p); const content = await page
+                    .getTextContent();
+                fullText += content.items.map(item => item.str).join(' ') + '\n\n'; }
             const paragraphs = fullText.split(/\n\s*\n/).map(s => s.trim()).filter(s => s.length > 0);
             APP.scriptBlocks = [{ page: 1, blocks: paragraphs }];
         }
@@ -3842,24 +3816,22 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const btn = document.getElementById('scriptEditBtn');
             btn.classList.toggle('active', scriptEditMode);
             btn.textContent = scriptEditMode ? 'Готово' : 'Редактировать';
-            document.querySelectorAll('.script-block').forEach(b => { b.contentEditable = scriptEditMode ? 'true' : 'false'; });
+            document.querySelectorAll('.script-block').forEach(b => { b.contentEditable = scriptEditMode ? 'true' :
+                    'false'; });
             notify(scriptEditMode ? 'Редактирование сценария включено' : 'Редактирование сценария выключено');
         }
 
-        function setupScriptBlockDrag() {
-            document.querySelectorAll('.script-block').forEach(block => {
-                block.addEventListener('mousedown', onScriptBlockMouseDown);
-                block.addEventListener('blur', () => {
-                    const page = parseInt(block.getAttribute('data-page'));
-                    const idx = parseInt(block.getAttribute('data-block'));
-                    const pd = APP.scriptBlocks.find(p => p.page === page);
-                    if (pd && pd.blocks[idx] !== block.textContent) {
-                        pd.blocks[idx] = block.textContent;
-                        pushHistory('Правка сценария');
-                    }
-                });
-            });
-        }
+        function setupScriptBlockDrag() { document.querySelectorAll('.script-block').forEach(block => { block
+                .addEventListener('mousedown', onScriptBlockMouseDown);
+            block.addEventListener('blur', () => {
+                const page = parseInt(block.getAttribute('data-page'));
+                const idx = parseInt(block.getAttribute('data-block'));
+                const pd = APP.scriptBlocks.find(p => p.page === page);
+                if (pd && pd.blocks[idx] !== block.textContent) {
+                    pd.blocks[idx] = block.textContent;
+                    pushHistory('Правка сценария');
+                }
+            }); }); }
 
         function onScriptBlockMouseDown(e) {
             if (APP.mode !== 'editor') return;
@@ -3880,16 +3852,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         document.addEventListener('mousemove', e => {
             if (!draggingScriptBlock) return;
-            if (dragGhostEl) {
-                dragGhostEl.style.left = e.clientX + 12 + 'px';
-                dragGhostEl.style.top = e.clientY + 12 + 'px';
-            }
+            if (dragGhostEl) { dragGhostEl.style.left = e.clientX + 12 + 'px';
+                dragGhostEl.style.top = e.clientY + 12 + 'px'; }
             document.querySelectorAll('.drop-target-cell').forEach(c => c.classList.remove('drop-target-cell'));
             const el = document.elementFromPoint(e.clientX, e.clientY);
-            if (el) {
-                const td = el.closest('td[data-drop]');
-                if (td) td.classList.add('drop-target-cell');
-            }
+            if (el) { const td = el.closest('td[data-drop]'); if (td) td.classList.add('drop-target-cell'); }
         });
 
         document.addEventListener('mouseup', e => {
@@ -3974,21 +3941,16 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         });
 
         document.addEventListener('mousedown', e => {
-            if (e.target.closest('.dir-table') || e.target.closest('.add-row-btn') || e.target.closest('.col-manage-popup') ||
-                e.target.closest('#confirmModal') || e.target.closest('#locModal') || e.target.closest('#timeModal') ||
-                e.target.closest('#intExtModal') || e.target.closest('.history-controls') || e.target.closest('.history-dropdown') ||
-                e.target.closest('.export-wrap')) {
-            } else {
-                if (APP.dirRows.some(r => r.multiSelected)) clearSelection();
-            }
+            if (e.target.closest('.dir-table') || e.target.closest('.add-row-btn') || e.target.closest(
+                    '.col-manage-popup') || e.target.closest('#confirmModal') || e.target.closest('#locModal') || e
+                .target.closest('#timeModal') || e.target.closest('#intExtModal') || e.target.closest('.history-controls') || e.target.closest('.history-dropdown') || e.target.closest('.export-wrap')) {} else { if (APP.dirRows.some(r => r
+                    .multiSelected)) clearSelection(); }
         });
 
-        function clearSelection() {
-            APP.dirRows.forEach(r => r.multiSelected = false);
+        function clearSelection() { APP.dirRows.forEach(r => r.multiSelected = false);
             buildTableHead();
             document.querySelectorAll('#dirTableBody tr').forEach(tr => tr.classList.remove('selected-row'));
-            updateTableBody();
-        }
+            updateTableBody(); }
 
         function buildTableHead() {
             const tr = document.getElementById('dirTableHead');
@@ -4010,7 +3972,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (!col.visible) return;
                 const th = document.createElement('th');
                 th.style.width = col.width + 'px';
-                th.innerHTML = col.label + '<span class="col-hide" title="Скрыть" onclick="hideColumn(\'' + col.id + '\')">✕</span>';
+                th.innerHTML = col.label + '<span class="col-hide" title="Скрыть" onclick="hideColumn(\'' + col.id +
+                    '\')">✕</span>';
                 th.setAttribute('data-col', col.id);
                 tr.appendChild(th);
             });
@@ -4154,7 +4117,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
                 // ---- СЦЕНА ----
                 if (row.type === 'scene') {
-                    tr.className = 'scene-row' + (row.active ? ' active-row' : '') + (row.multiSelected ? ' selected-row' : '');
+                    tr.className = 'scene-row' + (row.active ? ' active-row' : '') + (row.multiSelected ?
+                        ' selected-row' : '');
 
                     const tdAct = document.createElement('td');
                     tdAct.style.width = '36px';
@@ -4181,9 +4145,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     dragHandle.innerHTML = '⠿';
                     dragHandle.className = 'row-drag-handle';
                     dragHandle.title = 'Перетащить сцену';
-                    dragHandle.onmousedown = () => { tr.draggable = true; tr.classList.add('is-dragging-handle'); };
-                    dragHandle.onmouseup = () => { tr.draggable = false; tr.classList.remove('is-dragging-handle'); };
-                    dragHandle.onmouseleave = () => { tr.draggable = false; tr.classList.remove('is-dragging-handle'); };
+                    dragHandle.onmousedown = () => { tr.draggable = true;
+                        tr.classList.add('is-dragging-handle'); };
+                    dragHandle.onmouseup = () => { tr.draggable = false;
+                        tr.classList.remove('is-dragging-handle'); };
+                    dragHandle.onmouseleave = () => { tr.draggable = false;
+                        tr.classList.remove('is-dragging-handle'); };
 
                     const upBtn = document.createElement('button');
                     upBtn.className = 'row-btn';
@@ -4212,40 +4179,41 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
                     tr.addEventListener('dragstart', e => {
                         if (!tr.classList.contains('is-dragging-handle')) { e.stopPropagation(); return; }
-                        if (row.multiSelected) { dirDragRowIds = APP.dirRows.filter(r => r.multiSelected).map(r => r.id); }
-                        else { dirDragRowIds = [row.id]; }
+                        if (row.multiSelected) { dirDragRowIds = APP.dirRows.filter(r => r.multiSelected).map(
+                            r => r.id); } else { dirDragRowIds = [row.id]; }
                         e.dataTransfer.effectAllowed = 'move';
                         tr.style.opacity = '0.4';
                     });
-                    tr.addEventListener('dragover', e => { e.preventDefault(); if (dirDragRowIds.length && !dirDragRowIds.includes(row.id)) tr.classList.add('drag-over-row'); });
+                    tr.addEventListener('dragover', e => { e.preventDefault(); if (dirDragRowIds.length && !dirDragRowIds
+                            .includes(row.id)) tr.classList.add('drag-over-row'); });
                     tr.addEventListener('dragleave', e => { tr.classList.remove('drag-over-row'); });
-                    tr.addEventListener('drop', e => {
-                        e.preventDefault();
-                        tr.classList.remove('drag-over-row');
-                        if (dirDragRowIds.length && !dirDragRowIds.includes(row.id)) moveRowTo(dirDragRowIds, row.id);
-                        dirDragRowIds = [];
-                    });
-                    tr.addEventListener('dragend', () => {
-                        tr.style.opacity = '1';
+                    tr.addEventListener('drop', e => { e.preventDefault();
+                        tr.classList.remove('drag-over-row'); if (dirDragRowIds.length && !dirDragRowIds.includes(row
+                            .id)) moveRowTo(dirDragRowIds, row.id);
+                        dirDragRowIds = []; });
+                    tr.addEventListener('dragend', () => { tr.style.opacity = '1';
                         tr.draggable = false;
-                        document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove('drag-over-row'));
-                    });
+                        document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove(
+                        'drag-over-row')); });
 
                     const visibleCols = COLUMNS.filter(c => c.visible).length;
                     const tdContent = document.createElement('td');
                     tdContent.setAttribute('colspan', visibleCols);
                     tdContent.style.padding = '4px 6px !important';
 
-                    tdContent.addEventListener('dragover', e => { e.preventDefault(); tdContent.style.background = 'rgba(200, 162, 74, .15)'; });
+                    tdContent.addEventListener('dragover', e => { e.preventDefault();
+                        tdContent.style.background = 'rgba(200, 162, 74, .15)'; });
                     tdContent.addEventListener('dragleave', () => tdContent.style.background = '');
                     tdContent.addEventListener('drop', async e => {
                         e.preventDefault();
                         tdContent.style.background = '';
                         let text = e.dataTransfer.getData('text/plain');
+
                         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                             const file = e.dataTransfer.files[0];
                             if (file.name.endsWith('.txt')) text = await file.text();
                         }
+
                         if (text) {
                             parseSceneDrop(text, row);
                             updateTableBody();
@@ -4275,7 +4243,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         inp.type = 'text';
                         inp.className = 'scene-full-edit';
                         inp.value = currentText;
-                        inp.style.cssText = "width:100%; min-width:300px; background:transparent; border:1px dashed var(--accent); color:var(--text); font-family:inherit; font-size:inherit; outline:none; padding:2px 4px;";
+                        inp.style.cssText =
+                            "width:100%; min-width:300px; background:transparent; border:1px dashed var(--accent); color:var(--text); font-family:inherit; font-size:inherit; outline:none; padding:2px 4px;";
 
                         inp.onblur = inp.onkeydown = (ev) => {
                             if (ev.type === 'keydown' && ev.key !== 'Enter') return;
@@ -4289,8 +4258,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                                 row.sceneLoc = parsed.loc || row.sceneLoc;
                                 row.sceneTime = parsed.time || 'ДЕНЬ';
                                 row.sceneInfo = parsed.info || '';
-                                if (row.sceneLoc && !APP.locations.includes(row.sceneLoc)) APP.locations.push(row.sceneLoc);
-                                if (row.sceneTime && !APP.times.includes(row.sceneTime)) APP.times.push(row.sceneTime);
+                                if (row.sceneLoc && !APP.locations.includes(row.sceneLoc)) APP.locations.push(row
+                                    .sceneLoc);
+                                if (row.sceneTime && !APP.times.includes(row.sceneTime)) APP.times.push(row
+                                    .sceneTime);
                             } else {
                                 row.isCustomText = true;
                                 row.customText = newVal;
@@ -4306,7 +4277,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         textWrap.textContent = row.customText || 'Сцена (пусто)';
                     } else {
                         const pNum = document.createElement('span');
-                        const displayNum = (row.customSceneNum !== undefined && row.customSceneNum !== false) ? row.customSceneNum : row.sceneNum;
+                        const displayNum = (row.customSceneNum !== undefined && row.customSceneNum !== false) ? row
+                            .customSceneNum : row.sceneNum;
                         pNum.textContent = `Сцена ${displayNum} - `;
                         if (APP.mode === 'editor') {
                             pNum.className = 's-clickable';
@@ -4318,7 +4290,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                                 const inp = document.createElement('input');
                                 inp.type = 'text';
                                 inp.value = cur;
-                                inp.style.cssText = "width:25px; background:transparent; border:1px solid var(--border); color:var(--accent); font-family:inherit; font-size:inherit; outline:none; text-align:center; padding:0;";
+                                inp.style.cssText =
+                                    "width:25px; background:transparent; border:1px solid var(--border); color:var(--accent); font-family:inherit; font-size:inherit; outline:none; text-align:center; padding:0;";
                                 inp.onblur = inp.onkeydown = (ev) => {
                                     if (ev.type === 'keydown' && ev.key !== 'Enter') return;
                                     const v = inp.value.trim();
@@ -4453,7 +4426,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
                         const pInfo = document.createElement('span');
                         pInfo.className = 's-info' + (APP.mode === 'editor' ? ' s-clickable' : '');
-                        pInfo.textContent = row.sceneInfo ? ` (${row.sceneInfo})` : (APP.mode === 'editor' ? ' (+ доп)' : '');
+                        pInfo.textContent = row.sceneInfo ? ` (${row.sceneInfo})` : (APP.mode === 'editor' ?
+                            ' (+ доп)' : '');
                         if (APP.mode === 'editor') {
                             pInfo.onclick = () => {
                                 if (pInfo.querySelector('input')) return;
@@ -4463,7 +4437,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                                 inp.type = 'text';
                                 inp.value = val;
                                 inp.placeholder = "Доп...";
-                                inp.style.cssText = "width:80px; background:transparent; border:1px dashed var(--border); color:var(--accent); font-family:inherit; font-size:inherit; outline:none; padding:0 2px; margin-left:4px;";
+                                inp.style.cssText =
+                                    "width:80px; background:transparent; border:1px dashed var(--border); color:var(--accent); font-family:inherit; font-size:inherit; outline:none; padding:0 2px; margin-left:4px;";
                                 inp.onblur = inp.onkeydown = (ev) => {
                                     if (ev.type === 'keydown' && ev.key !== 'Enter') return;
                                     row.sceneInfo = inp.value.trim();
@@ -4481,7 +4456,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     const statsWrap = document.createElement('div');
                     statsWrap.className = 'scene-stats';
                     const stats = calcSceneStatsForRow(row.id);
-                    statsWrap.innerHTML = `Кадров: <span class="sc-frames">${stats.frames}</span>. Хронометраж: <span class="sc-time">${stats.duration}</span>`;
+                    statsWrap.innerHTML =
+                        `Кадров: <span class="sc-frames">${stats.frames}</span>. Хронометраж: <span class="sc-time">${stats.duration}</span>`;
 
                     const headRow = document.createElement('div');
                     headRow.className = 'scene-head-row';
@@ -4493,10 +4469,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     tbody.appendChild(tr);
 
                     tr.addEventListener('click', e => {
-                        if (e.target.closest('button') || e.target.closest('.s-clickable') || e.target.closest('input')) return;
+                        if (e.target.closest('button') || e.target.closest('.s-clickable') || e.target
+                            .closest('input')) return;
                         APP.dirRows.forEach(r => r.active = false);
                         row.active = true;
-                        document.querySelectorAll('#dirTableBody tr').forEach(r => r.classList.remove('active-row'));
+                        document.querySelectorAll('#dirTableBody tr').forEach(r => r.classList.remove(
+                            'active-row'));
                         tr.classList.add('active-row');
                     });
 
@@ -4532,9 +4510,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     dragHandleN.innerHTML = '⠿';
                     dragHandleN.className = 'row-drag-handle';
                     dragHandleN.title = 'Перетащить пометку';
-                    dragHandleN.onmousedown = () => { tr.draggable = true; tr.classList.add('is-dragging-handle'); };
-                    dragHandleN.onmouseup = () => { tr.draggable = false; tr.classList.remove('is-dragging-handle'); };
-                    dragHandleN.onmouseleave = () => { tr.draggable = false; tr.classList.remove('is-dragging-handle'); };
+                    dragHandleN.onmousedown = () => { tr.draggable = true;
+                        tr.classList.add('is-dragging-handle'); };
+                    dragHandleN.onmouseup = () => { tr.draggable = false;
+                        tr.classList.remove('is-dragging-handle'); };
+                    dragHandleN.onmouseleave = () => { tr.draggable = false;
+                        tr.classList.remove('is-dragging-handle'); };
 
                     const delBtnN = document.createElement('button');
                     delBtnN.className = 'row-btn';
@@ -4552,19 +4533,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         e.dataTransfer.effectAllowed = 'move';
                         tr.style.opacity = '0.4';
                     });
-                    tr.addEventListener('dragover', e => { e.preventDefault(); if (dirDragRowIds.length && !dirDragRowIds.includes(row.id)) tr.classList.add('drag-over-row'); });
+                    tr.addEventListener('dragover', e => { e.preventDefault(); if (dirDragRowIds.length && !dirDragRowIds
+                            .includes(row.id)) tr.classList.add('drag-over-row'); });
                     tr.addEventListener('dragleave', e => { tr.classList.remove('drag-over-row'); });
-                    tr.addEventListener('drop', e => {
-                        e.preventDefault();
-                        tr.classList.remove('drag-over-row');
-                        if (dirDragRowIds.length && !dirDragRowIds.includes(row.id)) moveRowTo(dirDragRowIds, row.id);
-                        dirDragRowIds = [];
-                    });
-                    tr.addEventListener('dragend', () => {
-                        tr.style.opacity = '1';
+                    tr.addEventListener('drop', e => { e.preventDefault();
+                        tr.classList.remove('drag-over-row'); if (dirDragRowIds.length && !dirDragRowIds.includes(row
+                            .id)) moveRowTo(dirDragRowIds, row.id);
+                        dirDragRowIds = []; });
+                    tr.addEventListener('dragend', () => { tr.style.opacity = '1';
                         tr.draggable = false;
-                        document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove('drag-over-row'));
-                    });
+                        document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove(
+                        'drag-over-row')); });
 
                     const visibleCols = COLUMNS.filter(c => c.visible).length;
                     const tdContent = document.createElement('td');
@@ -4575,6 +4554,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     ta.placeholder = 'Текст пометки...';
                     ta.value = row.customText || '';
                     ta.readOnly = APP.mode !== 'editor';
+                    // v1.9: история только на blur — не копим снимки на каждый символ
                     ta.addEventListener('input', () => { row.customText = ta.value; autoResizeTA(ta); });
                     ta.addEventListener('blur', () => { pushHistory('Правка пометки'); });
                     ta.addEventListener('focus', () => autoResizeTA(ta));
@@ -4600,7 +4580,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         if (e.target.closest('button') || e.target.tagName === 'TEXTAREA') return;
                         APP.dirRows.forEach(r => r.active = false);
                         row.active = true;
-                        document.querySelectorAll('#dirTableBody tr').forEach(r => r.classList.remove('active-row'));
+                        document.querySelectorAll('#dirTableBody tr').forEach(r => r.classList.remove(
+                            'active-row'));
                         tr.classList.add('active-row');
                     });
                     return;
@@ -4653,9 +4634,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 dragHandle2.innerHTML = '⠿';
                 dragHandle2.className = 'row-drag-handle';
                 dragHandle2.title = 'Перетащить строку';
-                dragHandle2.onmousedown = () => { tr.draggable = true; tr.classList.add('is-dragging-handle'); };
-                dragHandle2.onmouseup = () => { tr.draggable = false; tr.classList.remove('is-dragging-handle'); };
-                dragHandle2.onmouseleave = () => { tr.draggable = false; tr.classList.remove('is-dragging-handle'); };
+                dragHandle2.onmousedown = () => { tr.draggable = true;
+                    tr.classList.add('is-dragging-handle'); };
+                dragHandle2.onmouseup = () => { tr.draggable = false;
+                    tr.classList.remove('is-dragging-handle'); };
+                dragHandle2.onmouseleave = () => { tr.draggable = false;
+                    tr.classList.remove('is-dragging-handle'); };
 
                 rowActions.append(cbWrap2, dragHandle2, upBtn2, dnBtn2, dupBtn2, delBtn2);
                 tdAct.appendChild(rowActions);
@@ -4664,55 +4648,43 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 tr.addEventListener('dragstart', e => {
                     if (!tr.classList.contains('is-dragging-handle')) { e.stopPropagation(); return; }
                     if (e.target.tagName === 'IMG' || e.target.classList.contains('storyboard-img')) return;
-                    if (row.multiSelected) { dirDragRowIds = APP.dirRows.filter(r => r.multiSelected).map(r => r.id); }
-                    else { dirDragRowIds = [row.id]; }
+                    if (row.multiSelected) { dirDragRowIds = APP.dirRows.filter(r => r.multiSelected).map(r => r
+                        .id); } else { dirDragRowIds = [row.id]; }
                     e.dataTransfer.effectAllowed = 'move';
                     tr.style.opacity = '0.4';
                 });
-                tr.addEventListener('dragover', e => { e.preventDefault(); if (dirDragRowIds.length && !dirDragRowIds.includes(row.id)) tr.classList.add('drag-over-row'); });
+                tr.addEventListener('dragover', e => { e.preventDefault(); if (dirDragRowIds.length && !dirDragRowIds
+                        .includes(row.id)) tr.classList.add('drag-over-row'); });
                 tr.addEventListener('dragleave', e => { tr.classList.remove('drag-over-row'); });
-                tr.addEventListener('drop', e => {
-                    e.preventDefault();
-                    tr.classList.remove('drag-over-row');
-                    if (dirDragRowIds.length && !dirDragRowIds.includes(row.id)) moveRowTo(dirDragRowIds, row.id);
-                    dirDragRowIds = [];
-                });
-                tr.addEventListener('dragend', () => {
-                    tr.style.opacity = '1';
+                tr.addEventListener('drop', e => { e.preventDefault();
+                    tr.classList.remove('drag-over-row'); if (dirDragRowIds.length && !dirDragRowIds.includes(row.id))
+                        moveRowTo(dirDragRowIds, row.id);
+                    dirDragRowIds = []; });
+                tr.addEventListener('dragend', () => { tr.style.opacity = '1';
                     tr.draggable = false;
-                    document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove('drag-over-row'));
-                });
+                    document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove('drag-over-row')); });
 
                 COLUMNS.forEach(col => {
                     if (!col.visible) return;
                     const td = document.createElement('td');
                     td.setAttribute('data-col', col.id);
                     td.setAttribute('data-rowid', row.id);
-                    if (col.id === 'num') {
-                        td.setAttribute('data-drop', 'numExtra');
-                        td.appendChild(buildNumCell(row));
-                    } else if (col.id === 'time') {
-                        td.setAttribute('data-drop', 'timeExtra');
-                        td.appendChild(buildTimeCell(row));
-                    } else if (col.id === 'board') {
-                        td.appendChild(buildBoardCell(row));
-                        td.style.padding = '4px';
-                    } else if (col.id === 'scale') {
-                        td.setAttribute('data-drop', 'scaleExtra');
-                        td.appendChild(buildScaleCell(row));
-                    } else if (col.id === 'montage') {
-                        td.setAttribute('data-drop', 'montageExtra');
-                        td.appendChild(buildMontageCell(row));
-                    } else if (col.id === 'action') {
-                        td.setAttribute('data-drop', 'action');
-                        td.appendChild(buildTextareaCell(row, 'action', 'Действие...'));
-                    } else if (col.id === 'sound') {
-                        td.setAttribute('data-drop', 'sound');
-                        td.appendChild(buildTextareaCell(row, 'sound', 'Звук / Диалоги...'));
-                    } else if (col.id === 'notes') {
-                        td.setAttribute('data-drop', 'notes');
-                        td.appendChild(buildTextareaCell(row, 'notes', 'Примечания...'));
-                    }
+                    if (col.id === 'num') { td.setAttribute('data-drop', 'numExtra');
+                        td.appendChild(buildNumCell(row)); } else if (col.id === 'time') { td.setAttribute(
+                            'data-drop', 'timeExtra');
+                        td.appendChild(buildTimeCell(row)); } else if (col.id === 'board') { td.appendChild(
+                        buildBoardCell(row));
+                        td.style.padding = '4px'; } else if (col.id === 'scale') { td.setAttribute('data-drop',
+                            'scaleExtra');
+                        td.appendChild(buildScaleCell(row)); } else if (col.id === 'montage') { td.setAttribute(
+                            'data-drop', 'montageExtra');
+                        td.appendChild(buildMontageCell(row)); } else if (col.id === 'action') { td.setAttribute(
+                            'data-drop', 'action');
+                        td.appendChild(buildTextareaCell(row, 'action', 'Действие...')); } else if (col.id ===
+                        'sound') { td.setAttribute('data-drop', 'sound');
+                        td.appendChild(buildTextareaCell(row, 'sound', 'Звук / Диалоги...')); } else if (col.id ===
+                        'notes') { td.setAttribute('data-drop', 'notes');
+                        td.appendChild(buildTextareaCell(row, 'notes', 'Примечания...')); }
 
                     if (td.getAttribute('data-drop')) {
                         td.addEventListener('dragover', e => {
@@ -4752,11 +4724,13 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 });
 
                 tr.addEventListener('click', e => {
-                    if (e.target.closest('button') || e.target.closest('select') || e.target.closest('textarea') || e.target.closest('input')) return;
+                    if (e.target.closest('button') || e.target.closest('select') || e.target.closest(
+                            'textarea') || e.target.closest('input')) return;
                     focusNoeticZone(row.id);
                     APP.dirRows.forEach(r => r.active = false);
                     row.active = true;
-                    document.querySelectorAll('#dirTableBody tr').forEach(r => r.classList.remove('active-row'));
+                    document.querySelectorAll('#dirTableBody tr').forEach(r => r.classList.remove(
+                        'active-row'));
                     tr.classList.add('active-row');
                 });
                 tbody.appendChild(tr);
@@ -4769,7 +4743,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         function tryParseSceneText(text) {
-            const rx = /^(?:СЦЕНА\s*)?(\d+)?\s*(?:СЦЕНА)?\s*[-.]?\s*(ИНТ|ЭКСТ|НАТ)\.?\s+(.*?)\.\s+(РАССВЕТ|УТРО|ПОЛДЕНЬ|ДЕНЬ|ЗАКАТ|ВЕЧЕР|СУМЕРКИ|НОЧЬ|ГЛУБОКАЯ\s+НОЧЬ)\.?\s*(?:\(?(.*?)\)?)?$/i;
+            const rx =
+                /^(?:СЦЕНА\s*)?(\d+)?\s*(?:СЦЕНА)?\s*[-.]?\s*(ИНТ|ЭКСТ|НАТ)\.?\s+(.*?)\.\s+(РАССВЕТ|УТРО|ПОЛДЕНЬ|ДЕНЬ|ЗАКАТ|ВЕЧЕР|СУМЕРКИ|НОЧЬ|ГЛУБОКАЯ\s+НОЧЬ)\.?\s*(?:\(?(.*?)\)?)?$/i;
             const m = text.trim().match(rx);
             if (m) {
                 return {
@@ -4832,7 +4807,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (r.type === 'scene') {
                     if (currScene) {
                         currScene._frames = fCount;
-                        currScene._duration = String(Math.floor(tSec / 60)).padStart(2, '0') + ':' + String(tSec % 60).padStart(2, '0');
+                        currScene._duration = String(Math.floor(tSec / 60)).padStart(2, '0') + ':' + String(tSec % 60)
+                            .padStart(2, '0');
                     }
                     currScene = r;
                     fCount = 0;
@@ -4849,7 +4825,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
             if (currScene) {
                 currScene._frames = fCount;
-                currScene._duration = String(Math.floor(tSec / 60)).padStart(2, '0') + ':' + String(tSec % 60).padStart(2, '0');
+                currScene._duration = String(Math.floor(tSec / 60)).padStart(2, '0') + ':' + String(tSec % 60).padStart(2,
+                    '0');
             }
 
             document.querySelectorAll('.scene-row').forEach(tr => {
@@ -4866,9 +4843,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function moveRowTo(draggedIds, targetId) {
             const draggedRows = [];
-            for (let i = APP.dirRows.length - 1; i >= 0; i--) {
-                if (draggedIds.includes(APP.dirRows[i].id)) draggedRows.unshift(APP.dirRows.splice(i, 1)[0]);
-            }
+            for (let i = APP.dirRows.length - 1; i >= 0; i--) { if (draggedIds.includes(APP.dirRows[i].id)) draggedRows
+                    .unshift(APP.dirRows.splice(i, 1)[0]); }
             let targetIdx = APP.dirRows.findIndex(r => r.id === targetId);
             if (targetIdx < 0) targetIdx = APP.dirRows.length;
             APP.dirRows.splice(targetIdx, 0, ...draggedRows);
@@ -4890,7 +4866,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 let selText = window.getSelection().toString();
                 let txtToDrag = selText || e.target.value;
                 if (!txtToDrag) return;
-                draggingScriptBlock = { type: 'director-text', text: txtToDrag, sourceRow: row, sourceField: field, isPartial: !!selText };
+                draggingScriptBlock = { type: 'director-text', text: txtToDrag, sourceRow: row, sourceField: field,
+                    isPartial: !!selText };
                 showDragGhost(e, txtToDrag);
             }
         }
@@ -4901,6 +4878,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             ta.placeholder = placeholder;
             ta.value = row[field] || '';
             ta.readOnly = APP.mode !== 'editor';
+            // v1.9: история — только при потере фокуса. Раньше был scheduleHistory на
+            // каждый ввод, что при печати за минуту накапливало десятки снимков.
             ta.addEventListener('input', () => { row[field] = ta.value; autoResizeTA(ta); });
             ta.addEventListener('blur', () => { pushHistory('Правка кадра'); });
             ta.addEventListener('focus', () => autoResizeTA(ta));
@@ -4933,23 +4912,18 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             inp.className = 'frame-num-input';
             inp.value = row.numDisplay || String(row.num).padStart(4, '0');
             inp.readOnly = APP.mode !== 'editor';
-            inp.addEventListener('change', () => {
-                const v = inp.value.trim();
-                if (v === '') {
-                    row.customNum = false;
+            inp.addEventListener('change', () => { const v = inp.value.trim(); if (v === '') { row.customNum = false;
                     row.frozen = false;
                     renumberRows();
-                    updateTableBody();
-                } else {
-                    row.customNum = v;
-                    row.numDisplay = v;
-                }
-                pushHistory('Правка нумерации');
-            });
+                    updateTableBody(); } else { row.customNum = v;
+                    row.numDisplay = v; }
+                pushHistory('Правка нумерации'); });
 
             const renumBtn = document.createElement('button');
             renumBtn.className = 'frame-renum-btn' + (row.restartNumbering ? ' active' : '');
-            renumBtn.title = row.restartNumbering ? 'Убрать новую нумерацию с этого кадра' : 'Задать новую автоматическую нумерацию с этого кадра';
+            renumBtn.title = row.restartNumbering
+                ? 'Убрать новую нумерацию с этого кадра'
+                : 'Задать новую автоматическую нумерацию с этого кадра';
             renumBtn.textContent = row.restartNumbering ? '⟲' : '№';
             renumBtn.addEventListener('click', () => toggleRenumberFrom(row));
 
@@ -4957,17 +4931,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             freezeBtn.className = 'frame-freeze-btn' + (row.frozen ? ' active' : '');
             freezeBtn.title = row.frozen ? 'Разморозить' : 'Заморозить нумерацию';
             freezeBtn.textContent = row.frozen ? '❄' : '○';
-            freezeBtn.addEventListener('click', () => {
-                row.frozen = !row.frozen;
-                if (row.frozen) {
-                    row.frozenNum = row.num;
-                    row.numDisplay = String(row.num).padStart(4, '0');
-                } else {
-                    row.frozenNum = null;
-                }
+            freezeBtn.addEventListener('click', () => { row.frozen = !row.frozen; if (row.frozen) { row.frozenNum = row
+                        .num;
+                    row.numDisplay = String(row.num).padStart(4, '0'); } else { row.frozenNum = null; }
                 updateTableBody();
-                pushHistory('Заморозка нумерации');
-            });
+                pushHistory('Заморозка нумерации'); });
 
             if (APP.mode === 'editor') {
                 inner.appendChild(renumBtn);
@@ -4992,12 +4960,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             inp.readOnly = APP.mode !== 'editor';
             inp.addEventListener('change', () => {
                 let val = inp.value.trim();
-                let m = 0, s = 0;
-                if (val.includes(':')) {
-                    let p = val.split(':');
+                let m = 0,
+                    s = 0;
+                if (val.includes(':')) { let p = val.split(':');
                     m = parseInt(p[0]) || 0;
-                    s = parseInt(p[1]) || 0;
-                } else { s = parseInt(val) || 0; }
+                    s = parseInt(p[1]) || 0; } else { s = parseInt(val) || 0; }
                 m += Math.floor(s / 60);
                 s = s % 60;
                 row.timecode = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
@@ -5013,16 +4980,13 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             up.textContent = '▲';
             const dn = document.createElement('button');
             dn.textContent = '▼';
-            const startStep = (delta) => {
-                const step = () => {
-                    row.timecode = incTimecode(row.timecode || '00:00', delta);
+            const startStep = (delta) => { const step = () => { row.timecode = incTimecode(row.timecode || '00:00',
+                        delta);
                     inp.value = row.timecode;
                     updateTotalTimecode();
-                    recalcAllSceneStats();
-                };
+                    recalcAllSceneStats(); };
                 step();
-                timecodeInt = setInterval(step, 150);
-            };
+                timecodeInt = setInterval(step, 150); };
             up.onmousedown = () => startStep(1);
             up.onmouseup = up.onmouseleave = () => { clearInterval(timecodeInt); pushHistory('Правка хронометража'); };
             dn.onmousedown = () => startStep(-1);
@@ -5117,15 +5081,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 delBtn.className = 'storyboard-del-btn';
                 delBtn.textContent = '✕';
                 delBtn.style.display = APP.mode === 'editor' ? 'flex' : 'none';
-                delBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    customConfirm('Удалить изображение?', 'УДАЛИТЬ', () => {
-                        row.storyboard.splice(i, 1);
+                delBtn.onclick = (e) => { e.stopPropagation();
+                    customConfirm('Удалить изображение?', 'УДАЛИТЬ', () => { row.storyboard.splice(i, 1);
                         updateTableBody();
                         syncNoeticZones();
-                        pushHistory('Удаление раскадровки');
-                    });
-                };
+                        pushHistory('Удаление раскадровки'); }); };
                 imgWrap.appendChild(img);
                 imgWrap.appendChild(reorderBadge);
                 imgWrap.appendChild(delBtn);
@@ -5135,10 +5095,14 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             addBtn.className = 'storyboard-add';
             addBtn.textContent = '+';
             addBtn.style.display = APP.mode === 'editor' ? 'flex' : 'none';
-            addBtn.addEventListener('click', () => { pendingStoryboardRow = row.id; document.getElementById('storyboardImgInput').click(); });
-            addBtn.addEventListener('dragenter', e => { e.preventDefault(); addBtn.classList.add('drag-over'); });
-            addBtn.addEventListener('dragleave', e => { e.preventDefault(); addBtn.classList.remove('drag-over'); });
+            addBtn.addEventListener('click', () => { pendingStoryboardRow = row.id;
+                document.getElementById('storyboardImgInput').click(); });
+            addBtn.addEventListener('dragenter', e => { e.preventDefault();
+                addBtn.classList.add('drag-over'); });
+            addBtn.addEventListener('dragleave', e => { e.preventDefault();
+                addBtn.classList.remove('drag-over'); });
             addBtn.addEventListener('dragover', e => { e.preventDefault(); });
+            // v1.9: сжатие до 2к при drop — как и при выборе файлов
             addBtn.addEventListener('drop', e => {
                 e.preventDefault();
                 addBtn.classList.remove('drag-over');
@@ -5187,28 +5151,25 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const emptyOpt = document.createElement('div');
                 emptyOpt.className = 'custom-select-option';
                 emptyOpt.textContent = '— выбрать —';
-                emptyOpt.onclick = (e) => {
-                    e.stopPropagation();
+                emptyOpt.onclick = (e) => { e.stopPropagation();
                     obj[field] = '';
                     updateVisuals();
                     list.classList.remove('show');
-                    pushHistory('Правка ' + field);
-                };
+                    pushHistory('Правка ' + field); };
                 list.appendChild(emptyOpt);
 
-                const arr = isScale ? (APP.scaleSystem === 'ru' ? RU_SCALES : EN_SCALES) : (APP.montageSystem === 'ru' ? RU_MONTAGE : EN_MONTAGE);
+                const arr = isScale ? (APP.scaleSystem === 'ru' ? RU_SCALES : EN_SCALES) : (APP.montageSystem === 'ru' ?
+                    RU_MONTAGE : EN_MONTAGE);
                 arr.forEach(val => {
                     const o = document.createElement('div');
                     o.className = 'custom-select-option';
                     o.textContent = val;
                     if (obj[field] === val) o.style.color = 'var(--accent)';
-                    o.onclick = (e) => {
-                        e.stopPropagation();
+                    o.onclick = (e) => { e.stopPropagation();
                         obj[field] = val;
                         updateVisuals();
                         list.classList.remove('show');
-                        pushHistory('Правка ' + field);
-                    };
+                        pushHistory('Правка ' + field); };
                     list.appendChild(o);
                 });
             };
@@ -5218,9 +5179,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             display.onclick = (e) => {
                 if (APP.mode !== 'editor') return;
                 e.stopPropagation();
-                document.querySelectorAll('.custom-select-dropdown.show').forEach(el => {
-                    if (el !== list) el.classList.remove('show');
-                });
+                document.querySelectorAll('.custom-select-dropdown.show').forEach(el => { if (el !== list) el
+                        .classList.remove('show'); });
                 list.classList.toggle('show');
             };
 
@@ -5264,7 +5224,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             ta.placeholder = isScale ? 'Крупность...' : 'Монтаж...';
             ta.value = item.extra || '';
             ta.readOnly = APP.mode !== 'editor';
-            ta.addEventListener('input', () => { item.extra = ta.value; autoResizeTA(ta); });
+            // v1.9: история только на blur
+            ta.addEventListener('input', () => {
+                item.extra = ta.value;
+                autoResizeTA(ta);
+            });
             ta.addEventListener('blur', () => { pushHistory('Правка кадра'); });
             ta.addEventListener('focus', () => autoResizeTA(ta));
             setTimeout(() => autoResizeTA(ta), 0);
@@ -5279,17 +5243,16 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             row.extraScales = row.extraScales || [];
 
             const headerRow = document.createElement('div');
-            headerRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:2px;';
+            headerRow.style.cssText =
+                'display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:2px;';
 
             const sysToggle = document.createElement('div');
             sysToggle.className = 'scale-system-toggle scale-t';
             sysToggle.textContent = APP.scaleSystem === 'ru' ? 'RU →EN' : 'EN →RU';
             sysToggle.title = 'Переключить систему крупностей';
-            sysToggle.addEventListener('click', () => {
-                APP.scaleSystem = APP.scaleSystem === 'ru' ? 'en' : 'ru';
+            sysToggle.addEventListener('click', () => { APP.scaleSystem = APP.scaleSystem === 'ru' ? 'en' : 'ru';
                 convertAllScales();
-                pushHistory('Смена системы крупностей');
-            });
+                pushHistory('Смена системы крупностей'); });
 
             const helpBtn = document.createElement('span');
             helpBtn.className = 'help-btn-inline';
@@ -5384,17 +5347,16 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             row.extraMontages = row.extraMontages || [];
 
             const headerRow = document.createElement('div');
-            headerRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:2px;';
+            headerRow.style.cssText =
+                'display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:2px;';
 
             const sysToggle = document.createElement('div');
             sysToggle.className = 'scale-system-toggle montage-t';
             sysToggle.textContent = APP.montageSystem === 'ru' ? 'RU →EN' : 'EN →RU';
             sysToggle.title = 'Переключить систему монтажа';
-            sysToggle.addEventListener('click', () => {
-                APP.montageSystem = APP.montageSystem === 'ru' ? 'en' : 'ru';
+            sysToggle.addEventListener('click', () => { APP.montageSystem = APP.montageSystem === 'ru' ? 'en' : 'ru';
                 convertAllMontages();
-                pushHistory('Смена системы монтажа');
-            });
+                pushHistory('Смена системы монтажа'); });
 
             const helpBtn = document.createElement('span');
             helpBtn.className = 'help-btn-inline';
@@ -5564,63 +5526,45 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function updateTotalTimecode() {
             let total = 0;
-            APP.dirRows.forEach(r => {
-                if (r.type !== 'scene' && r.type !== 'note' && r.timecode) {
-                    const p = r.timecode.split(':').map(Number);
-                    total += ((p[0] || 0) * 60 + (p[1] || 0));
-                }
-            });
-            const m = Math.floor(total / 60), s = total % 60;
-            document.getElementById('totalTimecode').textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            APP.dirRows.forEach(r => { if (r.type !== 'scene' && r.type !== 'note' && r.timecode) { const p = r
+                        .timecode.split(':').map(Number);
+                    total += ((p[0] || 0) * 60 + (p[1] || 0)); } });
+            const m = Math.floor(total / 60),
+                s = total % 60;
+            document.getElementById('totalTimecode').textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2,
+                '0');
         }
 
         function toggleColManager() {
             colManagerOpen = !colManagerOpen;
             const popup = document.getElementById('colManagePopup');
-            if (colManagerOpen) {
-                buildColManagerList();
+            if (colManagerOpen) { buildColManagerList();
                 const btn = document.querySelector('.panel-header button[onclick="toggleColManager()"]');
                 const rect = btn ? btn.getBoundingClientRect() : { right: 500, bottom: 90 };
                 popup.style.right = (window.innerWidth - rect.right) + 'px';
                 popup.style.top = rect.bottom + 4 + 'px';
-                popup.style.display = 'block';
-            } else {
-                popup.style.display = 'none';
-            }
+                popup.style.display = 'block'; } else { popup.style.display = 'none'; }
         }
 
-        function closeColManager() {
-            colManagerOpen = false;
-            document.getElementById('colManagePopup').style.display = 'none';
-        }
+        function closeColManager() { colManagerOpen = false;
+            document.getElementById('colManagePopup').style.display = 'none'; }
 
-        function buildColManagerList() {
-            const list = document.getElementById('colManagerList');
+        function buildColManagerList() { const list = document.getElementById('colManagerList');
             list.innerHTML = '';
-            COLUMNS.forEach(col => {
-                const label = document.createElement('label');
-                const cb = document.createElement('input');
+            COLUMNS.forEach(col => { const label = document.createElement('label'); const cb = document
+                    .createElement('input');
                 cb.type = 'checkbox';
                 cb.checked = col.visible;
-                cb.addEventListener('change', () => {
-                    col.visible = cb.checked;
+                cb.addEventListener('change', () => { col.visible = cb.checked;
                     buildTableHead();
-                    updateTableBody();
-                });
+                    updateTableBody(); });
                 label.appendChild(cb);
                 label.appendChild(document.createTextNode(' ' + col.label));
-                list.appendChild(label);
-            });
-        }
+                list.appendChild(label); }); }
 
-        function hideColumn(id) {
-            const col = COLUMNS.find(c => c.id === id);
-            if (col) {
-                col.visible = false;
+        function hideColumn(id) { const col = COLUMNS.find(c => c.id === id); if (col) { col.visible = false;
                 buildTableHead();
-                updateTableBody();
-            }
-        }
+                updateTableBody(); } }
 
         let dirPanning = false,
             dirPanStart = { x: 0, y: 0 },
@@ -5629,36 +5573,19 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function initDirPanZoom() {
             const inner = document.getElementById('dirScriptInner');
-            inner.addEventListener('mousedown', e => {
-                if (e.button === 1) {
-                    e.preventDefault();
+            inner.addEventListener('mousedown', e => { if (e.button === 1) { e.preventDefault();
                     dirPanning = true;
                     dirPanStart = { x: e.clientX, y: e.clientY };
                     dirScrollStart = { x: inner.scrollLeft, y: inner.scrollTop };
-                    inner.style.cursor = 'grabbing';
-                }
-            });
-            document.addEventListener('mousemove', e => {
-                if (dirPanning) {
-                    inner.scrollLeft = dirScrollStart.x - (e.clientX - dirPanStart.x);
-                    inner.scrollTop = dirScrollStart.y - (e.clientY - dirPanStart.y);
-                }
-            });
-            document.addEventListener('mouseup', () => {
-                if (dirPanning) {
-                    dirPanning = false;
-                    inner.style.cursor = '';
-                }
-            });
-            inner.addEventListener('wheel', e => {
-                if (e.ctrlKey) {
-                    e.preventDefault();
-                    setDirZoom(dirZoom + (e.deltaY > 0 ? -0.1 : 0.1));
-                } else if (e.shiftKey) {
-                    e.preventDefault();
-                    inner.scrollLeft += e.deltaY;
-                }
-            }, { passive: false });
+                    inner.style.cursor = 'grabbing'; } });
+            document.addEventListener('mousemove', e => { if (dirPanning) { inner.scrollLeft = dirScrollStart.x - (e
+                        .clientX - dirPanStart.x);
+                    inner.scrollTop = dirScrollStart.y - (e.clientY - dirPanStart.y); } });
+            document.addEventListener('mouseup', () => { if (dirPanning) { dirPanning = false;
+                    inner.style.cursor = ''; } });
+            inner.addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault();
+                    setDirZoom(dirZoom + (e.deltaY > 0 ? -0.1 : 0.1)); } else if (e.shiftKey) { e.preventDefault();
+                    inner.scrollLeft += e.deltaY; } }, { passive: false });
         }
 
         // ============================================================
@@ -5671,79 +5598,51 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             vp.addEventListener('mouseenter', () => isMouseOverNoetic = true);
             vp.addEventListener('mouseleave', () => isMouseOverNoetic = false);
 
-            vp.addEventListener('wheel', e => {
-                e.preventDefault();
-                e.stopPropagation();
-                const rect = vp.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                const delta = e.deltaY > 0 ? -0.08 : 0.08;
-                const newZoom = Math.max(0.15, Math.min(4, APP.noeticZoom + delta));
+            vp.addEventListener('wheel', e => { e.preventDefault();
+                e.stopPropagation(); const rect = vp.getBoundingClientRect(); const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top; const delta = e.deltaY > 0 ? -0.08 : 0.08; const newZoom = Math
+                    .max(0.15, Math.min(4, APP.noeticZoom + delta));
                 APP.noeticOffsetX = mouseX - (mouseX - APP.noeticOffsetX) * (newZoom / APP.noeticZoom);
                 APP.noeticOffsetY = mouseY - (mouseY - APP.noeticOffsetY) * (newZoom / APP.noeticZoom);
                 APP.noeticZoom = newZoom;
-                applyNoeticTransform();
-            }, { passive: false });
-            vp.addEventListener('mousedown', e => {
-                if (e.button === 1) {
-                    e.preventDefault();
+                applyNoeticTransform(); }, { passive: false });
+            vp.addEventListener('mousedown', e => { if (e.button === 1) { e.preventDefault();
                     noeticMiddlePanning = true;
                     noeticPanStart = { x: e.clientX - APP.noeticOffsetX, y: e.clientY - APP.noeticOffsetY };
-                    vp.style.cursor = 'grabbing';
-                }
-            });
+                    vp.style.cursor = 'grabbing'; } });
             document.addEventListener('mousemove', e => {
-                if (noeticMiddlePanning) {
-                    APP.noeticOffsetX = e.clientX - noeticPanStart.x;
+                if (noeticMiddlePanning) { APP.noeticOffsetX = e.clientX - noeticPanStart.x;
                     APP.noeticOffsetY = e.clientY - noeticPanStart.y;
-                    applyNoeticTransform();
-                }
-                if (noeticPanning) {
-                    APP.noeticOffsetX = e.clientX - noeticPanStart.x;
+                    applyNoeticTransform(); }
+                if (noeticPanning) { APP.noeticOffsetX = e.clientX - noeticPanStart.x;
                     APP.noeticOffsetY = e.clientY - noeticPanStart.y;
-                    applyNoeticTransform();
-                }
-                if (draggingNoeticEl) {
-                    const rect = vp.getBoundingClientRect();
-                    const x = (e.clientX - rect.left - APP.noeticOffsetX) / APP.noeticZoom - draggingNoeticOffset.x;
-                    const y = (e.clientY - rect.top - APP.noeticOffsetY) / APP.noeticZoom - draggingNoeticOffset.y;
+                    applyNoeticTransform(); }
+                if (draggingNoeticEl) { const rect = vp.getBoundingClientRect(); const x = (e.clientX - rect
+                        .left - APP.noeticOffsetX) / APP.noeticZoom - draggingNoeticOffset.x; const y = (e
+                        .clientY - rect.top - APP.noeticOffsetY) / APP.noeticZoom - draggingNoeticOffset.y;
                     draggingNoeticEl.style.left = x + 'px';
-                    draggingNoeticEl.style.top = y + 'px';
-                    const elId = parseInt(draggingNoeticEl.getAttribute('data-neid'));
-                    const elData = APP.noeticElements.find(el => el.id === elId);
-                    if (elData) {
-                        elData.x = x;
-                        elData.y = y;
-                    }
-                }
+                    draggingNoeticEl.style.top = y + 'px'; const elId = parseInt(draggingNoeticEl.getAttribute(
+                        'data-neid')); const elData = APP.noeticElements.find(el => el.id === elId); if (
+                        elData) { elData.x = x;
+                        elData.y = y; } }
             });
-            document.addEventListener('mouseup', e => {
-                if (noeticMiddlePanning) {
-                    noeticMiddlePanning = false;
-                    document.getElementById('noeticViewport').style.cursor = '';
-                }
-                if (noeticPanning) {
+            document.addEventListener('mouseup', e => { if (noeticMiddlePanning) { noeticMiddlePanning = false;
+                    document.getElementById('noeticViewport').style.cursor = ''; } if (noeticPanning) {
                     noeticPanning = false;
-                    document.getElementById('noeticViewport').classList.remove('panning');
-                }
-                if (draggingNoeticEl) {
-                    draggingNoeticEl.classList.remove('dragging');
+                    document.getElementById('noeticViewport').classList.remove('panning'); } if (
+                    draggingNoeticEl) { draggingNoeticEl.classList.remove('dragging');
                     draggingNoeticEl = null;
-                    scheduleHistory('Перемещение элемента');
-                }
-            });
-            vp.addEventListener('contextmenu', e => {
-                if (APP.mode !== 'editor') return;
+                    scheduleHistory('Перемещение элемента'); } });
+            vp.addEventListener('contextmenu', e => { if (APP.mode !== 'editor') return;
                 e.preventDefault();
-                noeticMenuPos = {
-                    x: (e.clientX - document.getElementById('noeticViewport').getBoundingClientRect().left - APP.noeticOffsetX) / APP.noeticZoom,
-                    y: (e.clientY - document.getElementById('noeticViewport').getBoundingClientRect().top - APP.noeticOffsetY) / APP.noeticZoom
-                };
+                noeticMenuPos = { x: (e.clientX - document.getElementById('noeticViewport').getBoundingClientRect()
+                        .left - APP.noeticOffsetX) / APP.noeticZoom, y: (e.clientY - document.getElementById(
+                            'noeticViewport').getBoundingClientRect().top - APP.noeticOffsetY) / APP
+                        .noeticZoom };
                 const menu = document.getElementById('noeticAddMenu');
                 menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
                 menu.style.top = Math.min(e.clientY, window.innerHeight - 220) + 'px';
-                menu.classList.add('show');
-            });
+                menu.classList.add('show'); });
             vp.addEventListener('mousedown', e => {
                 if (e.button === 0 && !e.target.closest('.noetic-el') && !e.altKey) {
                     deselectNoeticEl();
@@ -5776,39 +5675,33 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             });
         }
 
-        function applyNoeticTransform() {
-            document.getElementById('noeticCanvas').style.transform = 'translate(' + APP.noeticOffsetX + 'px,' + APP.noeticOffsetY + 'px) scale(' + APP.noeticZoom + ')';
+        function applyNoeticTransform() { document.getElementById('noeticCanvas').style.transform = 'translate(' + APP
+                .noeticOffsetX + 'px,' + APP.noeticOffsetY + 'px) scale(' + APP.noeticZoom + ')';
             document.querySelectorAll('.noetic-el.selected').forEach(el => {
                 const d = APP.noeticElements.find(x => x.id === parseInt(el.getAttribute('data-neid')));
                 if (d) neUpdateInv(el, d);
             });
-            syncZoomUI();
-        }
+            syncZoomUI(); }
 
-        function openNoeticMenu(e) {
-            if (APP.mode !== 'editor') return;
-            const vp = document.getElementById('noeticViewport');
-            const rect = vp.getBoundingClientRect();
-            noeticMenuPos = {
-                x: (rect.width / 2 - APP.noeticOffsetX) / APP.noeticZoom,
-                y: (rect.height / 2 - APP.noeticOffsetY) / APP.noeticZoom
-            };
+        function openNoeticMenu(e) { if (APP.mode !== 'editor') return; const vp = document.getElementById(
+                'noeticViewport'); const rect = vp.getBoundingClientRect();
+            noeticMenuPos = { x: (rect.width / 2 - APP.noeticOffsetX) / APP.noeticZoom, y: (rect.height / 2 - APP
+                    .noeticOffsetY) / APP.noeticZoom };
             const menu = document.getElementById('noeticAddMenu');
             menu.style.left = (rect.right - 180) + 'px';
             menu.style.top = (rect.top + 40) + 'px';
-            menu.classList.add('show');
-        }
+            menu.classList.add('show'); }
 
         function closeNoeticMenu() { document.getElementById('noeticAddMenu').classList.remove('show'); }
 
-        function addNoeticEl(type) {
-            closeNoeticMenu();
-            if (type === 'image') { pendingNoeticType = 'image'; document.getElementById('noeticImgInput').click(); return; }
-            if (type === 'video') { pendingNoeticType = 'video'; document.getElementById('noeticVideoInput').click(); return; }
-            if (type === 'audio') { pendingNoeticType = 'audio'; document.getElementById('noeticAudioInput').click(); return; }
-            if (type === '3d') { pendingNoeticType = '3d'; document.getElementById('noetic3dInput').click(); return; }
-            addNoeticElAt(type, noeticMenuPos.x, noeticMenuPos.y);
-        }
+        function addNoeticEl(type) { closeNoeticMenu(); if (type === 'image') { pendingNoeticType = 'image';
+                document.getElementById('noeticImgInput').click(); return; } if (type === 'video') { pendingNoeticType =
+                    'video';
+                document.getElementById('noeticVideoInput').click(); return; } if (type === 'audio') { pendingNoeticType =
+                    'audio';
+                document.getElementById('noeticAudioInput').click(); return; } if (type === '3d') { pendingNoeticType = '3d';
+                document.getElementById('noetic3dInput').click(); return; }
+            addNoeticElAt(type, noeticMenuPos.x, noeticMenuPos.y); }
 
         function neEscapeHtml(s) {
             return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -5847,6 +5740,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             rd.readAsDataURL(f);
         }
 
+        // v1.9: изображения сжимаются до 2к перед добавлением
         function neAddMediaFromFile(f, x, y) {
             const ext = neFileExt(f);
             const t = f.type || '';
@@ -6109,7 +6003,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             function move(ev) {
                 const wx = (ev.clientX - vrect.left - APP.noeticOffsetX) / APP.noeticZoom;
                 const wy = (ev.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
-                const dx = wx - startWX, dy = wy - startWY;
+                const dx = wx - startWX,
+                    dy = wy - startWY;
                 if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
                 targets.forEach((t, i) => {
                     t.data.x = startPos[i].x + dx;
@@ -6138,7 +6033,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const vrect = vp.getBoundingClientRect();
             const startWX = (e.clientX - vrect.left - APP.noeticOffsetX) / APP.noeticZoom;
             const startWY = (e.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
-            const startX = elData.x, startY = elData.y;
+            const startX = elData.x,
+                startY = elData.y;
             let moved = false;
 
             el.classList.add('dragging');
@@ -6146,7 +6042,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             function move(ev) {
                 const wx = (ev.clientX - vrect.left - APP.noeticOffsetX) / APP.noeticZoom;
                 const wy = (ev.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
-                const dx = wx - startWX, dy = wy - startWY;
+                const dx = wx - startWX,
+                    dy = wy - startWY;
                 if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
                 elData.x = startX + dx;
                 elData.y = startY + dy;
@@ -6389,7 +6286,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (!box) {
                     box = document.createElement('div');
                     box.id = 'neTextFullscreen';
-                    box.style.cssText = 'max-width:80vw;max-height:80vh;overflow:auto;background:var(--paper);color:#14110c;padding:40px 50px;border-radius:6px;font-family:"Times New Roman",serif;font-size:24px;line-height:1.6;white-space:pre-wrap;box-shadow:0 20px 60px rgba(0,0,0,.7);';
+                    box.style.cssText =
+                        'max-width:80vw;max-height:80vh;overflow:auto;background:var(--paper);color:#14110c;padding:40px 50px;border-radius:6px;font-family:"Times New Roman",serif;font-size:24px;line-height:1.6;white-space:pre-wrap;box-shadow:0 20px 60px rgba(0,0,0,.7);';
                     lb.appendChild(box);
                 }
                 box.style.display = 'block';
@@ -6403,7 +6301,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     v = document.createElement('video');
                     v.id = 'neVideoFullscreen';
                     v.controls = true;
-                    v.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.7);';
+                    v.style.cssText =
+                        'max-width:90vw;max-height:90vh;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.7);';
                     lb.appendChild(v);
                 }
                 v.style.display = 'block';
@@ -6425,7 +6324,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         d.x = targetX;
                         d.y = targetY;
                     }
-                    el.style.transition = 'left .5s cubic-bezier(.22,.68,0,1.2), top .5s cubic-bezier(.22,.68,0,1.2), transform .5s';
+                    el.style.transition =
+                        'left .5s cubic-bezier(.22,.68,0,1.2), top .5s cubic-bezier(.22,.68,0,1.2), transform .5s';
                     el.style.left = targetX + 'px';
                     el.style.top = targetY + 'px';
                     setTimeout(() => el.style.transition = '', 550);
@@ -6495,21 +6395,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             pushHistory('Изменение размера');
         }
 
-        function neBringFront() {
-            if (!selectedNoeticEl) return;
-            const maxZ = Math.max(...APP.noeticElements.map(e => e.z || 1));
+        function neBringFront() { if (!selectedNoeticEl) return; const maxZ = Math.max(...APP.noeticElements.map(e => e.z ||
+                1));
             selectedNoeticEl.data.z = maxZ + 1;
             selectedNoeticEl.el.style.zIndex = maxZ + 1;
-            pushHistory('На передний план');
-        }
+            pushHistory('На передний план'); }
 
-        function neSendBack() {
-            if (!selectedNoeticEl) return;
-            const minZ = Math.min(...APP.noeticElements.map(e => e.z || 1));
+        function neSendBack() { if (!selectedNoeticEl) return; const minZ = Math.min(...APP.noeticElements.map(e => e.z ||
+                1));
             selectedNoeticEl.data.z = Math.max(1, minZ - 1);
             selectedNoeticEl.el.style.zIndex = selectedNoeticEl.data.z;
-            pushHistory('На задний план');
-        }
+            pushHistory('На задний план'); }
 
         function neDataUrlToBlobUrl(dataUrl) {
             if (!dataUrl || dataUrl.indexOf('data:') !== 0) return dataUrl;
@@ -6707,38 +6603,34 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const zone = canvas.querySelector('.noetic-frame-zone[data-zone-rowid="' + rowId + '"]');
             if (!zone) return;
             const vp = document.getElementById('noeticViewport');
-            const vpW = vp.offsetWidth, vpH = vp.offsetHeight;
+            const vpW = vp.offsetWidth,
+                vpH = vp.offsetHeight;
             const zoneX = parseFloat(zone.style.left) || 0;
             const zoneY = parseFloat(zone.style.top) || 0;
             const zoneW = parseFloat(zone.style.width) || 340;
             const zoneH = parseFloat(zone.style.height) || 280;
             const targetOffsetX = vpW / 2 - (zoneX + zoneW / 2) * APP.noeticZoom;
             const targetOffsetY = vpH / 2 - (zoneY + zoneH / 2) * APP.noeticZoom;
-            const startX = APP.noeticOffsetX, startY = APP.noeticOffsetY;
+            const startX = APP.noeticOffsetX,
+                startY = APP.noeticOffsetY;
             const duration = 400;
             const start = performance.now();
 
-            function animate(now) {
-                const t = Math.min(1, (now - start) / duration);
-                const ease = 1 - Math.pow(1 - t, 3);
+            function animate(now) { const t = Math.min(1, (now - start) / duration); const ease = 1 - Math.pow(1 - t,
+                    3);
                 APP.noeticOffsetX = startX + (targetOffsetX - startX) * ease;
                 APP.noeticOffsetY = startY + (targetOffsetY - startY) * ease;
-                applyNoeticTransform();
-                if (t < 1) requestAnimationFrame(animate);
-            }
+                applyNoeticTransform(); if (t < 1) requestAnimationFrame(animate); }
             requestAnimationFrame(animate);
         }
 
-        function buildMontageRef() {
-            const content = document.getElementById('montageRefContent');
+        function buildMontageRef() { const content = document.getElementById('montageRefContent');
             content.innerHTML = '';
-            MONTAGE_REF.forEach(item => {
-                const div = document.createElement('div');
+            MONTAGE_REF.forEach(item => { const div = document.createElement('div');
                 div.className = 'montage-ref-item';
-                div.innerHTML = '<div class="mname">' + item.name + '</div><div class="mrussian">' + item.ru + '</div><div class="mdesc">' + item.desc + '</div>';
-                content.appendChild(div);
-            });
-        }
+                div.innerHTML = '<div class="mname">' + item.name + '</div><div class="mrussian">' + item.ru +
+                    '</div><div class="mdesc">' + item.desc + '</div>';
+                content.appendChild(div); }); }
 
         function openMontageRef() { document.getElementById('montageRef').classList.add('show'); }
         function closeMontageRef() { document.getElementById('montageRef').classList.remove('show'); }
@@ -6773,7 +6665,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const t = document.getElementById('neTextFullscreen');
             if (t) t.style.display = 'none';
             const v = document.getElementById('neVideoFullscreen');
-            if (v) { v.pause(); v.style.display = 'none'; v.removeAttribute('src'); }
+            if (v) { v.pause();
+                v.style.display = 'none';
+                v.removeAttribute('src'); }
             document.getElementById('lightbox').classList.add('show');
         }
 
@@ -6784,8 +6678,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const t = document.getElementById('neTextFullscreen');
             if (t) t.style.display = 'none';
             const v = document.getElementById('neVideoFullscreen');
-            if (v) { v.pause(); v.style.display = 'none'; v.removeAttribute('src'); }
+            if (v) { v.pause();
+                v.style.display = 'none';
+                v.removeAttribute('src'); }
         }
+
 
         // ============================================================
         // МАСШТАБ (интерфейс + блоки), ПОЛНОЭКРАННЫЙ РЕЖИМ
@@ -6846,33 +6743,28 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         function resetAllZoom() {
-            setUiScalePct(100);
+            setUiScalePct(Math.round(defaultUiScale() * 100));
+            // сброс = «как по умолчанию для этого устройства», поэтому сохранённое значение убираем
+            try { localStorage.removeItem('noemUiScale'); } catch (e) {}
             setScriptZoomPct(100);
             setDirZoom(1);
             setNoeticZoomPct(100);
-            ['ui', 'script', 'dir', 'noetic'].forEach(id => {
-                const s = document.getElementById('zs_' + id);
-                if (s) s.value = 100;
-            });
+            ['script', 'dir', 'noetic'].forEach(id => { const s = document.getElementById('zs_' + id); if (s) s.value = 100; });
+            syncZoomUI();
+        }
+
+        // Масштаб интерфейса по умолчанию: на Android меньше (планшет 85%, телефон 75%)
+        function defaultUiScale() {
+            if (typeof TOUCH !== 'undefined' && TOUCH.isAndroid) return TOUCH.isTablet ? 0.85 : 0.75;
+            return 1;
         }
 
         function initUiPrefs() {
-            let saved = null;
-            try { saved = localStorage.getItem('noemUiScale'); } catch (e) {}
-            if (saved) {
-                const v = parseFloat(saved);
-                if (v && v >= 0.6 && v <= 1.6) {
-                    APP.uiScale = v;
-                }
-            }
-            if (!APP.uiScale) {
-                // v2.1: Android по умолчанию 0.8, iOS / другие тач 0.9, десктоп 1.0
-                if (TOUCH.enabled) {
-                    APP.uiScale = TOUCH.isAndroid ? 0.8 : 0.9;
-                } else {
-                    APP.uiScale = 1;
-                }
-            }
+            try {
+                const v = parseFloat(localStorage.getItem('noemUiScale'));
+                if (v && v >= 0.6 && v <= 1.6) APP.uiScale = v;
+            } catch (e) {}
+            if (!APP.uiScale) APP.uiScale = defaultUiScale();
             document.documentElement.style.setProperty('--ui-scale', APP.uiScale);
             syncZoomUI();
             applyLayout();
@@ -6910,101 +6802,67 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             } catch (e) { notify('Полноэкранный режим недоступен'); }
         }
 
-        function toggleSettings() {
-            settingsOpen = !settingsOpen;
-            const popup = document.getElementById('settingsPopup');
+        function toggleSettings() { settingsOpen = !settingsOpen; const popup = document.getElementById('settingsPopup');
             popup.classList.toggle('show', settingsOpen);
             document.getElementById('settingsBtn').classList.toggle('active', settingsOpen);
-            if (settingsOpen) { syncRenumberCheckbox(); syncZoomUI(); }
-        }
+            if (settingsOpen) { syncRenumberCheckbox(); syncZoomUI(); } }
 
-        function toggleEffects(on) {
-            APP.effectsOn = on;
+        function toggleEffects(on) { APP.effectsOn = on;
             document.querySelector('.grain').style.display = on ? 'block' : 'none';
             document.querySelector('.vignette').style.display = on ? 'block' : 'none';
-            document.querySelector('.bg-stagnation').style.animation = on ? 'stagnationFlow 24s ease-in-out infinite alternate' : 'none';
-        }
+            document.querySelector('.bg-stagnation').style.animation = on ? 'stagnationFlow 24s ease-in-out infinite alternate' :
+                'none'; }
 
-        function calcWeight() {
-            const json = JSON.stringify(buildProjectData());
-            const bytes = new TextEncoder().encode(json).length;
-            let display = '';
-            if (bytes < 1024) display = bytes + ' Б';
-            else if (bytes < 1024 * 1024) display = (bytes / 1024).toFixed(1) + ' КБ';
-            else display = (bytes / (1024 * 1024)).toFixed(2) + ' МБ';
-            document.getElementById('projectWeight').textContent = display;
-        }
+        function calcWeight() { const json = JSON.stringify(buildProjectData()); const bytes = new TextEncoder().encode(
+                json).length; let display = ''; if (bytes < 1024) display = bytes + ' Б'; else if (bytes < 1024 * 1024)
+                display = (bytes / 1024).toFixed(1) + ' КБ'; else display = (bytes / (1024 * 1024)).toFixed(2) + ' МБ';
+            document.getElementById('projectWeight').textContent = display; }
 
-        function setProjectPassword() {
-            const val = document.getElementById('passInput').value.trim();
-            if (!val) { notify('Введите пароль'); return; }
+        function setProjectPassword() { const val = document.getElementById('passInput').value.trim(); if (!val) { notify(
+                    'Введите пароль'); return; }
             APP.projectPassword = val;
             document.getElementById('passHint').textContent = '✓ Пароль установлен';
-            notify('Пароль установлен');
-        }
+            notify('Пароль установлен'); }
 
-        function clearProjectPassword() {
-            APP.projectPassword = '';
+        function clearProjectPassword() { APP.projectPassword = '';
             document.getElementById('passInput').value = '';
             document.getElementById('passHint').textContent = 'Пароль снят';
-            notify('Пароль снят');
-        }
+            notify('Пароль снят'); }
 
-        function togglePassVis() {
-            const inp = document.getElementById('passInput');
-            inp.type = inp.type === 'password' ? 'text' : 'password';
-        }
+        function togglePassVis() { const inp = document.getElementById('passInput');
+            inp.type = inp.type === 'password' ? 'text' : 'password'; }
 
-        function checkPassword() {
-            const inp = document.getElementById('passwordModalInput');
-            if (inp.value === APP.pendingOpenData.password) {
-                document.getElementById('passwordModal').classList.remove('show');
+        function checkPassword() { const inp = document.getElementById('passwordModalInput'); if (inp.value === APP
+                .pendingOpenData.password) { document.getElementById('passwordModal').classList.remove('show');
                 loadProjectData(APP.pendingOpenData);
-                APP.pendingOpenData = null;
-            } else {
-                document.getElementById('pmError').style.display = 'block';
-                inp.value = '';
-            }
-        }
+                APP.pendingOpenData = null; } else { document.getElementById('pmError').style.display = 'block';
+                inp.value = ''; } }
 
-        function cancelPasswordModal() {
-            document.getElementById('passwordModal').classList.remove('show');
-            APP.pendingOpenData = null;
-        }
+        function cancelPasswordModal() { document.getElementById('passwordModal').classList.remove('show');
+            APP.pendingOpenData = null; }
 
-        function initSettingsDrag() {
-            const handle = document.getElementById('spDragHandle');
-            const popup = document.getElementById('settingsPopup');
-            handle.addEventListener('mousedown', e => {
-                if (e.target.closest('.sp-close')) return;
-                spDragging = true;
-                const rect = popup.getBoundingClientRect();
+        function initSettingsDrag() { const handle = document.getElementById('spDragHandle'); const popup = document
+                .getElementById('settingsPopup');
+            handle.addEventListener('mousedown', e => { if (e.target.closest('.sp-close')) return; spDragging = true; const rect = popup.getBoundingClientRect();
                 spDragStart = { x: e.clientX, y: e.clientY };
                 spInitPos = { x: rect.left, y: rect.top };
-                e.preventDefault();
-            });
-            document.addEventListener('mousemove', e => {
-                if (!spDragging) return;
-                const dx = e.clientX - spDragStart.x,
+                e.preventDefault(); });
+            document.addEventListener('mousemove', e => { if (!spDragging) return; const dx = e.clientX - spDragStart
+                    .x,
                     dy = e.clientY - spDragStart.y;
                 popup.style.right = 'auto';
                 popup.style.top = (spInitPos.y + dy) + 'px';
-                popup.style.left = (spInitPos.x + dx) + 'px';
-            });
-            document.addEventListener('mouseup', () => spDragging = false);
-        }
+                popup.style.left = (spInitPos.x + dx) + 'px'; });
+            document.addEventListener('mouseup', () => spDragging = false); }
 
         function toggleLocModal() {
             const m = document.getElementById('locModal');
-            if (m.style.display === 'block') { m.style.display = 'none'; }
-            else {
-                renderLocList();
+            if (m.style.display === 'block') { m.style.display = 'none'; } else { renderLocList();
                 const btn = document.querySelector('button[title="Локации"]');
                 const rect = btn ? btn.getBoundingClientRect() : { right: 200, bottom: 80 };
                 m.style.right = (window.innerWidth - rect.right) + 'px';
                 m.style.top = rect.bottom + 4 + 'px';
-                m.style.display = 'block';
-            }
+                m.style.display = 'block'; }
         }
         function closeLocModal() { document.getElementById('locModal').style.display = 'none'; }
 
@@ -7013,7 +6871,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             l.innerHTML = '';
             if (!APP.locations.length) {
                 const empty = document.createElement('div');
-                empty.style.cssText = 'font-size:11px;color:var(--muted);font-family:"Courier New",monospace;text-align:center;padding:8px 0;';
+                empty.style.cssText =
+                    'font-size:11px;color:var(--muted);font-family:"Courier New",monospace;text-align:center;padding:8px 0;';
                 empty.textContent = 'Нет локаций';
                 l.appendChild(empty);
                 return;
@@ -7035,13 +6894,15 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     const inp = document.createElement('input');
                     inp.type = 'text';
                     inp.value = loc;
-                    inp.style.cssText = "flex:1; background:transparent; border:1px dashed var(--accent); color:var(--text); font-family:inherit; font-size:inherit; outline:none;";
+                    inp.style.cssText =
+                        "flex:1; background:transparent; border:1px dashed var(--accent); color:var(--text); font-family:inherit; font-size:inherit; outline:none;";
                     inp.onblur = inp.onkeydown = (ev) => {
                         if (ev.type === 'keydown' && ev.key !== 'Enter') return;
                         const newVal = inp.value.trim().toUpperCase();
                         if (newVal && newVal !== loc) {
                             APP.locations[i] = newVal;
-                            APP.dirRows.forEach(r => { if (r.type === 'scene' && r.sceneLoc === loc) r.sceneLoc = newVal; });
+                            APP.dirRows.forEach(r => { if (r.type === 'scene' && r.sceneLoc === loc) r
+                                    .sceneLoc = newVal; });
                             updateTableBody();
                             pushHistory('Правка локации');
                         }
@@ -7055,11 +6916,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const delBtn = document.createElement('button');
                 delBtn.className = 'loc-del';
                 delBtn.textContent = '✕';
-                delBtn.onclick = () => {
-                    APP.locations.splice(i, 1);
+                delBtn.onclick = () => { APP.locations.splice(i, 1);
                     renderLocList();
-                    pushHistory('Удаление локации');
-                };
+                    pushHistory('Удаление локации'); };
 
                 d.append(spn, editBtn, delBtn);
                 l.appendChild(d);
@@ -7069,20 +6928,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function addLocation() {
             const inp = document.getElementById('newLocInp');
             const v = inp.value.trim().toUpperCase();
-            if (v && !APP.locations.includes(v)) {
-                APP.locations.push(v);
+            if (v && !APP.locations.includes(v)) { APP.locations.push(v);
                 inp.value = '';
                 renderLocList();
-                pushHistory('Добавление локации');
-            }
+                pushHistory('Добавление локации'); }
         }
 
         document.getElementById('newLocInp').addEventListener('keydown', e => { if (e.key === 'Enter') addLocation(); });
 
         function toggleTimeModal() {
             const m = document.getElementById('timeModal');
-            if (m.style.display === 'block') { m.style.display = 'none'; }
-            else {
+            if (m.style.display === 'block') { m.style.display = 'none'; } else {
                 renderTimeList();
                 const btn = document.querySelector('button[title="Время суток"]');
                 const rect = btn ? btn.getBoundingClientRect() : { right: 280, bottom: 80 };
@@ -7098,7 +6954,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const l = document.getElementById('timeList');
             l.innerHTML = '';
             if (!APP.times.length) {
-                l.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;">Нет элементов</div>';
+                l.innerHTML =
+                    '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;">Нет элементов</div>';
                 return;
             }
             APP.times.forEach((t, i) => {
@@ -7117,13 +6974,15 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     const inp = document.createElement('input');
                     inp.type = 'text';
                     inp.value = t;
-                    inp.style.cssText = "flex:1; background:transparent; border:1px dashed var(--accent); color:var(--text); outline:none;";
+                    inp.style.cssText =
+                        "flex:1; background:transparent; border:1px dashed var(--accent); color:var(--text); outline:none;";
                     inp.onblur = inp.onkeydown = (ev) => {
                         if (ev.type === 'keydown' && ev.key !== 'Enter') return;
                         const newVal = inp.value.trim().toUpperCase();
                         if (newVal && newVal !== t) {
                             APP.times[i] = newVal;
-                            APP.dirRows.forEach(r => { if (r.type === 'scene' && r.sceneTime === t) r.sceneTime = newVal; });
+                            APP.dirRows.forEach(r => { if (r.type === 'scene' && r.sceneTime === t) r
+                                    .sceneTime = newVal; });
                             updateTableBody();
                             pushHistory('Правка времени');
                         }
@@ -7137,11 +6996,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const delBtn = document.createElement('button');
                 delBtn.className = 'loc-del';
                 delBtn.textContent = '✕';
-                delBtn.onclick = () => {
-                    APP.times.splice(i, 1);
+                delBtn.onclick = () => { APP.times.splice(i, 1);
                     renderTimeList();
-                    pushHistory('Удаление времени');
-                };
+                    pushHistory('Удаление времени'); };
 
                 d.append(spn, editBtn, delBtn);
                 l.appendChild(d);
@@ -7151,20 +7008,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function addTime() {
             const inp = document.getElementById('newTimeInp');
             const v = inp.value.trim().toUpperCase();
-            if (v && !APP.times.includes(v)) {
-                APP.times.push(v);
+            if (v && !APP.times.includes(v)) { APP.times.push(v);
                 inp.value = '';
                 renderTimeList();
-                pushHistory('Добавление времени');
-            }
+                pushHistory('Добавление времени'); }
         }
 
         document.getElementById('newTimeInp').addEventListener('keydown', e => { if (e.key === 'Enter') addTime(); });
 
         function toggleIntExtModal() {
             const m = document.getElementById('intExtModal');
-            if (m.style.display === 'block') { m.style.display = 'none'; }
-            else {
+            if (m.style.display === 'block') { m.style.display = 'none'; } else {
                 renderIntExtList();
                 const btn = document.querySelector('button[title="ИНТ/ЭКСТ"]');
                 const rect = btn ? btn.getBoundingClientRect() : { right: 360, bottom: 80 };
@@ -7180,7 +7034,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const l = document.getElementById('intExtList');
             l.innerHTML = '';
             if (!APP.intExts.length) {
-                l.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;">Нет значений</div>';
+                l.innerHTML =
+                    '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;">Нет значений</div>';
                 return;
             }
             APP.intExts.forEach((ie, i) => {
@@ -7199,13 +7054,15 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     const inp = document.createElement('input');
                     inp.type = 'text';
                     inp.value = ie;
-                    inp.style.cssText = "flex:1; background:transparent; border:1px dashed var(--accent); color:var(--text); outline:none;";
+                    inp.style.cssText =
+                        "flex:1; background:transparent; border:1px dashed var(--accent); color:var(--text); outline:none;";
                     inp.onblur = inp.onkeydown = (ev) => {
                         if (ev.type === 'keydown' && ev.key !== 'Enter') return;
                         const newVal = inp.value.trim().toUpperCase();
                         if (newVal && newVal !== ie) {
                             APP.intExts[i] = newVal;
-                            APP.dirRows.forEach(r => { if (r.type === 'scene' && r.sceneIntExt === ie) r.sceneIntExt = newVal; });
+                            APP.dirRows.forEach(r => { if (r.type === 'scene' && r.sceneIntExt === ie) r
+                                    .sceneIntExt = newVal; });
                             updateTableBody();
                             pushHistory('Правка ИНТ/ЭКСТ');
                         }
@@ -7219,11 +7076,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const delBtn = document.createElement('button');
                 delBtn.className = 'loc-del';
                 delBtn.textContent = '✕';
-                delBtn.onclick = () => {
-                    APP.intExts.splice(i, 1);
+                delBtn.onclick = () => { APP.intExts.splice(i, 1);
                     renderIntExtList();
-                    pushHistory('Удаление ИНТ/ЭКСТ');
-                };
+                    pushHistory('Удаление ИНТ/ЭКСТ'); };
 
                 d.append(spn, editBtn, delBtn);
                 l.appendChild(d);
@@ -7244,13 +7099,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         document.getElementById('newIntExtInp').addEventListener('keydown', e => { if (e.key === 'Enter') addIntExt(); });
 
         function buildProjectData() {
-            document.querySelectorAll('.noetic-el').forEach(el => {
-                const id = parseInt(el.getAttribute('data-neid'));
-                const d = APP.noeticElements.find(e => e.id === id);
-                if (d && (d.type === 'text' || d.type === 'note') && el._body) d.text = el._body.innerHTML;
-            });
+            document.querySelectorAll('.noetic-el').forEach(el => { const id = parseInt(el.getAttribute('data-neid'));
+                const d = APP.noeticElements.find(e => e.id === id); if (d && (d.type === 'text' || d.type === 'note') && el._body)
+                    d.text = el._body.innerHTML; });
             return {
-                version: '2.1',
+                version: '2.0',
                 title: document.getElementById('projectTitle').textContent,
                 password: APP.projectPassword || '',
                 mode: APP.mode,
@@ -7286,19 +7139,14 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             };
         }
 
-        function saveProject() {
-            const data = buildProjectData();
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            const title = document.getElementById('projectTitle').textContent || 'noem_ocean';
+        function saveProject() { const data = buildProjectData(); const json = JSON.stringify(data, null, 2); const blob =
+                new Blob([json], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document
+                .createElement('a');
+            a.href = url; const title = document.getElementById('projectTitle').textContent || 'noem_ocean';
             a.download = title.replace(/\s+/g, '_') + '.noemocean';
             a.click();
             URL.revokeObjectURL(url);
-            notify('Проект сохранён');
-        }
+            notify('Проект сохранён'); }
 
         function newProject() {
             customConfirm('Создать новый проект? Несохранённые данные будут потеряны.', 'СОЗДАТЬ', () => {
@@ -7308,8 +7156,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 dirRowIdCounter = 1;
                 sceneNumCounter = 1;
                 noeticElIdCounter = 1;
-                APP.scriptZoom = 1;
-                setDirZoom(1);
+                APP.scriptZoom = 1; setDirZoom(1);
                 APP.scriptOffsetX = 20;
                 APP.scriptOffsetY = 20;
                 APP.noeticZoom = 1;
@@ -7347,19 +7194,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const f = e.target.files[0];
             if (!f) return;
             const rd = new FileReader();
-            rd.onload = ev => {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    if (data.password) {
-                        APP.pendingOpenData = data;
+            rd.onload = ev => { try { const data = JSON.parse(ev.target.result); if (data.password) { APP
+                            .pendingOpenData = data;
                         document.getElementById('passwordModal').classList.add('show');
                         document.getElementById('passwordModalInput').value = '';
-                        document.getElementById('pmError').style.display = 'none';
-                    } else {
-                        loadProjectData(data);
-                    }
-                } catch (err) { notify('Ошибка открытия файла'); }
-            };
+                        document.getElementById('pmError').style.display = 'none'; } else { loadProjectData(
+                            data); } } catch (err) { notify('Ошибка открытия файла'); } };
             rd.readAsText(f);
             e.target.value = '';
         });
@@ -7389,17 +7229,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             APP.intExts = data.intExts || ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
             APP.intExtMode = data.intExtMode || 'switch';
 
-            if (data.columns) data.columns.forEach(dc => {
-                const c = COLUMNS.find(c => c.id === dc.id);
-                if (c) { c.visible = dc.visible; c.width = dc.width || c.width; }
-            });
+            if (data.columns) data.columns.forEach(dc => { const c = COLUMNS.find(c => c.id === dc.id); if (c) { c
+                        .visible = dc.visible;
+                    c.width = dc.width || c.width; } });
 
-            {
-                const m1 = /([\d.]+)px/.exec(data.p1Width || '');
-                if (m1) LAYOUT.W1 = Math.max(LAYOUT.MIN1, Math.round(+m1[1]));
-                const m3 = /([\d.]+)px/.exec(data.p3Width || '');
-                if (m3) LAYOUT.W3 = Math.max(LAYOUT.MIN3, Math.round(+m3[1]));
-            }
+            { const m1 = /([\d.]+)px/.exec(data.p1Width || ''); if (m1) LAYOUT.W1 = Math.max(LAYOUT.MIN1, Math.round(+m1[1]));
+              const m3 = /([\d.]+)px/.exec(data.p3Width || ''); if (m3) LAYOUT.W3 = Math.max(LAYOUT.MIN3, Math.round(+m3[1])); }
             setDirZoom(data.dirZoom || 1);
             p1Collapsed = data.p1Collapsed || false;
             p2Collapsed = data.p2Collapsed || false;
@@ -7418,14 +7253,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             toggleEffects(APP.effectsOn);
             syncRenumberCheckbox();
 
-            if (APP.scriptBlocks.length > 0) {
-                renderScriptBlocks();
+            if (APP.scriptBlocks.length > 0) { renderScriptBlocks();
                 document.getElementById('uploadScriptArea').style.display = 'none';
-                document.getElementById('scriptCanvas').style.display = 'block';
-            } else {
-                document.getElementById('scriptCanvas').style.display = 'none';
-                document.getElementById('uploadScriptArea').style.display = 'flex';
-            }
+                document.getElementById('scriptCanvas').style.display = 'block'; } else { document.getElementById(
+                    'scriptCanvas').style.display = 'none';
+                document.getElementById('uploadScriptArea').style.display = 'flex'; }
 
             applyScriptTransform();
             buildTableHead();
@@ -7444,28 +7276,21 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             pushHistory('Открытие проекта');
         }
 
-        function exportJson() {
-            const data = buildProjectData();
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
+        function exportJson() { const data = buildProjectData(); const json = JSON.stringify(data, null, 2); const blob =
+                new Blob([json], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document
+                .createElement('a');
             a.href = url;
             a.download = 'noem_ocean_export.json';
             a.click();
             URL.revokeObjectURL(url);
-            notify('JSON экспортирован');
-        }
+            notify('JSON экспортирован'); }
 
         let notifyTimer = null;
 
-        function notify(msg) {
-            const el = document.getElementById('notify');
+        function notify(msg) { const el = document.getElementById('notify');
             el.textContent = msg;
-            el.classList.add('show');
-            if (notifyTimer) clearTimeout(notifyTimer);
-            notifyTimer = setTimeout(() => el.classList.remove('show'), 2200);
-        }
+            el.classList.add('show'); if (notifyTimer) clearTimeout(notifyTimer);
+            notifyTimer = setTimeout(() => el.classList.remove('show'), 2200); }
 
         document.getElementById('noeticViewport').addEventListener('contextmenu', e => e.preventDefault());
 
@@ -7520,23 +7345,43 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         })();
 
         // ================================================================
-        // v2.1 — ANDROID / TOUCH SUPPORT
+        // v2.0 — ANDROID / TOUCH SUPPORT
         // ================================================================
+        const TOUCH = {
+            enabled: false,
+            isAndroid: false,
+            isTablet: false,
+            longPressDelay: 500,
+            doubleTapDelay: 320
+        };
+
+        (function detectTouch() {
+            try {
+                const ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
+                TOUCH.enabled = ('ontouchstart' in window)
+                    || (navigator.maxTouchPoints > 0)
+                    || (navigator.msMaxTouchPoints > 0);
+                // Android определяем не только по User-Agent: в режиме «Версия для ПК»
+                // (по умолчанию включён на больших планшетах) слова "Android" в UA нет.
+                const uaData = navigator.userAgentData;
+                TOUCH.isAndroid = /android/.test(ua)
+                    || !!(uaData && /android/i.test(uaData.platform || ''))
+                    || (TOUCH.enabled && /^linux (arm|aarch)/i.test(navigator.platform || ''));
+                TOUCH.isTablet = Math.min(screen.width || 0, screen.height || 0) >= 600;
+                // На десктопах Windows с тачскрином не считаем "мобильным", но тач всё равно поддерживаем
+                if (TOUCH.enabled) {
+                    document.body.classList.add('touch-device');
+                    if (TOUCH.isAndroid) {
+                        document.body.classList.add('android-device');
+                        document.body.classList.add(TOUCH.isTablet ? 'android-tablet' : 'android-phone');
+                    }
+                }
+            } catch (e) {}
+        })();
+
         function initTouchSupport() {
             if (!TOUCH.enabled) return;
             try {
-                // v2.1: уменьшаем дефолтную ширину панелей на тач-устройствах,
-                // чтобы центральной панели хватало места под кнопки
-                const w = window.innerWidth;
-                if (w < 900) {
-                    LAYOUT.W1 = 220;
-                    LAYOUT.W3 = 260;
-                } else if (w < 1200) {
-                    LAYOUT.W1 = 240;
-                    LAYOUT.W3 = 280;
-                }
-                applyLayout();
-
                 // Pinch-zoom + pan для литературного сценария
                 attachTouchPanZoom(document.getElementById('scriptContainer'), {
                     getZoom:   () => APP.scriptZoom,
@@ -7559,37 +7404,31 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     skipSelector: '.noetic-el'
                 });
 
-                // Pan для таблицы режиссёрского сценария (нативный скролл)
+                // Pan для таблицы режиссёрского сценария (используем нативный скролл)
                 const dsi = document.getElementById('dirScriptInner');
                 if (dsi) dsi.style.webkitOverflowScrolling = 'touch';
 
+                // Touch-перетаскивание элементов ноэтического блока
                 initTouchNoeticDrag();
+                // Long-press → контекстное меню добавления элемента
                 initTouchNoeticLongPress();
+                // Double-tap для редактирования текста
                 initTouchDoubleTap();
+
+                // Touch-ресайз панелей
                 initTouchPanelResize();
+
+                // Touch-перетаскивание строк режиссёрского сценария
                 initTouchRowDrag();
+
+                // Touch-перетаскивание popup настроек
                 initTouchSettingsDrag();
 
-                // Запрет зум-жестов на всей странице (уже отключено через meta viewport)
+                // Защита от двойного тапа (zoom страницы) — уже отключено meta viewport,
+                // но на некоторых устройствах требуется дополнительно
                 document.addEventListener('gesturestart', e => e.preventDefault());
                 document.addEventListener('gesturechange', e => e.preventDefault());
                 document.addEventListener('gestureend', e => e.preventDefault());
-
-                // Пересчёт при повороте экрана
-                window.addEventListener('orientationchange', () => {
-                    setTimeout(() => { applyLayout(); updateSizeBars(); }, 200);
-                });
-                window.addEventListener('resize', () => {
-                    const w2 = window.innerWidth;
-                    if (w2 < 900) {
-                        LAYOUT.W1 = Math.min(LAYOUT.W1, 220);
-                        LAYOUT.W3 = Math.min(LAYOUT.W3, 260);
-                    } else if (w2 < 1200) {
-                        LAYOUT.W1 = Math.min(LAYOUT.W1, 240);
-                        LAYOUT.W3 = Math.min(LAYOUT.W3, 280);
-                    }
-                    applyLayout();
-                });
             } catch (err) {
                 console.warn('Touch init error:', err);
             }
@@ -8047,6 +7886,108 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
             document.addEventListener('touchend', () => { dragging = false; }, { passive: true });
         }
+    </script>
+
+    <script>
+        // ================================================================
+        // v2.1 — ANDROID: вьюпорт, высота шапки, всплывающие окна
+        // ================================================================
+        (function androidViewportFix() {
+            const root = document.documentElement;
+            const topbar = document.querySelector('.topbar');
+            let queued = 0;
+
+            function measure() {
+                queued = 0;
+                // Высота доступной области (учитывает адресную строку и экранную клавиатуру)
+                const vv = window.visualViewport;
+                const h = Math.round(Math.min(window.innerHeight || 0, (vv && vv.height) || Infinity));
+                if (h > 100) root.style.setProperty('--app-h', h + 'px');
+                // Реальная высота шапки (она может переноситься на несколько строк)
+                if (topbar) {
+                    const bottom = Math.ceil(topbar.getBoundingClientRect().bottom);
+                    if (bottom > 20 && bottom < (window.innerHeight || 9999) * 0.6) {
+                        root.style.setProperty('--topbar-h', bottom + 'px');
+                    }
+                }
+                if (typeof applyLayout === 'function') applyLayout();
+            }
+            function schedule() { if (!queued) queued = requestAnimationFrame(measure); }
+
+            window.addEventListener('resize', schedule);
+            window.addEventListener('orientationchange', () => { schedule(); setTimeout(schedule, 250); setTimeout(schedule, 700); });
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', schedule);
+            if ('ResizeObserver' in window && topbar) new ResizeObserver(schedule).observe(topbar);
+            ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => { schedule(); setTimeout(schedule, 300); }));
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+            window.addEventListener('load', () => { schedule(); setTimeout(schedule, 300); });
+            measure();
+
+            // ---- Всплывающие окна: не выпускаем за границы экрана ----
+            let busy = false;
+            function visible(el) { return getComputedStyle(el).display !== 'none'; }
+
+            function clampFixed(el) {
+                const m = 8, vw = root.clientWidth, vh = window.innerHeight;
+                const r = el.getBoundingClientRect();
+                if (!r.width || !r.height) return;
+                let dx = 0, dy = 0;
+                if (r.right > vw - m) dx = vw - m - r.right;
+                if (r.left + dx < m) dx = m - r.left;
+                if (r.bottom > vh - m) dy = vh - m - r.bottom;
+                if (r.top + dy < m) dy = m - r.top;
+                if (!dx && !dy) return;
+                el.style.left = Math.round(r.left + dx) + 'px';
+                el.style.top = Math.round(r.top + dy) + 'px';
+                el.style.right = 'auto';
+            }
+
+            // Меню экспорта лежит внутри шапки (у неё zoom) — сдвигаем через right с учётом масштаба
+            function fitExportMenu(el) {
+                const z = (window.APP && APP.uiScale) || 1, m = 8;
+                el.style.right = ''; el.style.maxHeight = '';
+                const r = el.getBoundingClientRect();
+                const vw = root.clientWidth, vh = window.innerHeight;
+                let dx = 0;
+                if (r.left < m) dx = m - r.left;
+                else if (r.right > vw - m) dx = vw - m - r.right;
+                if (dx) el.style.right = (-dx / z) + 'px';
+                el.style.maxHeight = Math.max(120, (vh - r.top - m) / z) + 'px';
+            }
+
+            const watched = [
+                { el: document.getElementById('historyDropdown'), kind: 'fixed', resetOnHide: true },
+                { el: document.getElementById('noeticAddMenu'), kind: 'fixed' },
+                { el: document.getElementById('settingsPopup'), kind: 'fixed' },
+                { el: document.getElementById('exportMenu'), kind: 'export' }
+            ];
+            document.querySelectorAll('.col-manage-popup').forEach(el => watched.push({ el, kind: 'fixed', resetOnHide: true }));
+
+            const mo = new MutationObserver(() => {
+                if (busy) return;
+                busy = true;
+                try {
+                    watched.forEach(w => {
+                        if (!w.el) return;
+                        if (!visible(w.el)) {
+                            if (w.resetOnHide && w.el.style.left) w.el.style.left = '';
+                            return;
+                        }
+                        if (w.kind === 'export') fitExportMenu(w.el); else clampFixed(w.el);
+                    });
+                } finally { mo.takeRecords(); busy = false; }
+            });
+            watched.forEach(w => { if (w.el) mo.observe(w.el, { attributes: true, attributeFilter: ['class', 'style'] }); });
+
+            // ---- Свёрнутая панель разворачивается тапом по всей полоске ----
+            document.querySelectorAll('.panel').forEach(p => {
+                p.addEventListener('click', e => {
+                    if (!p.classList.contains('collapsed')) return;
+                    if (e.target.closest('.collapse-btn')) return;
+                    if (typeof collapsePanel === 'function') collapsePanel(+p.id.replace('panel', ''));
+                });
+            });
+        })();
     </script>
 </body>
 </html>
