@@ -1370,6 +1370,185 @@
             font-family: 'Courier New', monospace;
         }
         .zoom-row input[type=range] { grid-column: 1 / 3; width: 100%; accent-color: var(--accent); cursor: pointer; margin: 0; }
+
+        /* ================================================================
+           ANDROID / TOUCH SUPPORT
+           ================================================================ */
+        body.touch-device {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+        }
+        body.touch-device * { -webkit-touch-callout: none; }
+        body.touch-device input,
+        body.touch-device textarea,
+        body.touch-device [contenteditable="true"] { -webkit-touch-callout: default; }
+
+        /* Крупные touch-цели */
+        body.touch-device .tbtn,
+        body.touch-device .panel-header button {
+            min-height: 34px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        body.touch-device .history-btn { width: 34px; height: 34px; font-size: 14px; }
+        body.touch-device .history-input { width: 52px; padding: 6px 4px; }
+        body.touch-device .mode-toggle button { padding: 8px 10px !important; }
+        body.touch-device .row-btn { padding: 7px 9px; font-size: 17px; min-width: 32px; }
+        body.touch-device .row-drag-handle { font-size: 22px; padding: 6px 10px; cursor: grab; }
+        body.touch-device .ne-row-cb { width: 20px; height: 20px; }
+        body.touch-device .ne-row-cb:checked::after { font-size: 16px; top: -3px; left: 3px; }
+        body.touch-device .collapse-btn { width: 32px; font-size: 14px; }
+        body.touch-device .frame-renum-btn,
+        body.touch-device .frame-freeze-btn { padding: 4px 7px; font-size: 14px; }
+        body.touch-device .frame-num-input,
+        body.touch-device .timecode-input { font-size: 15px; width: 58px; padding: 4px 0; }
+        body.touch-device .cell-textarea,
+        body.touch-device .note-textarea { font-size: 13px; min-height: 48px; }
+        body.touch-device .custom-select-display {
+            padding: 10px 28px 10px 10px;
+            font-size: 12px; min-height: 38px;
+        }
+        body.touch-device .custom-select-option { padding: 12px 12px; font-size: 13px; }
+        body.touch-device .custom-select-caret { right: 10px; font-size: 11px; }
+        body.touch-device .storyboard-add { height: 42px; font-size: 22px; }
+        body.touch-device .storyboard-del-btn {
+            opacity: 1;
+            width: 32px; height: 32px; font-size: 16px;
+            top: 6px; right: 6px;
+        }
+        body.touch-device .storyboard-reorder-badge { opacity: 1; font-size: 11px; padding: 2px 7px; }
+        body.touch-device .noetic-add-menu button { padding: 14px 16px; font-size: 14px; }
+        body.touch-device .ne-tbtn { padding: 9px 12px; font-size: 13px; }
+        body.touch-device .ne-toolbar { gap: 6px; padding: 8px; }
+        body.touch-device #neFontSize { height: 34px !important; font-size: 13px; width: 70px !important; }
+        body.touch-device .sp-btn-small { width: 36px; height: 36px; font-size: 18px; }
+        body.touch-device .sp-popup-btn { padding: 12px; font-size: 13px; }
+        body.touch-device .pass-input { padding: 10px 34px 10px 10px; font-size: 13px; }
+        body.touch-device .pass-eye { font-size: 18px; padding: 4px; }
+        body.touch-device .loc-add-row button { width: 36px; height: 36px; font-size: 20px; }
+        body.touch-device .loc-add-row input { padding: 8px 10px; font-size: 13px; }
+        body.touch-device .add-row-btn { padding: 14px; font-size: 14px; }
+        body.touch-device .help-btn-inline { font-size: 12px; padding: 6px; }
+        body.touch-device .scene-edit-btn { font-size: 18px; padding: 6px 8px; }
+        body.touch-device .s-clickable { padding: 4px 6px; }
+        body.touch-device .ne-swatch { width: 26px; height: 26px; }
+        body.touch-device .export-menu button { padding: 14px 12px; font-size: 13px; }
+        body.touch-device .history-item { padding: 12px 12px; font-size: 13px; }
+        body.touch-device .notify { font-size: 14px; padding: 14px 26px; bottom: 34px; }
+        body.touch-device .montage-ref-close,
+        body.touch-device .lb-close { width: 44px; height: 44px; font-size: 26px; padding: 8px; }
+
+        /* Возвращаемые жесты для viewports */
+        body.touch-device .script-container,
+        body.touch-device .noetic-viewport {
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        body.touch-device .dir-script-inner {
+            touch-action: pan-x pan-y;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Правила для редактируемых полей (текст всё же выделяется) */
+        body.touch-device .cell-textarea,
+        body.touch-device .note-textarea,
+        body.touch-device input,
+        body.touch-device [contenteditable="true"] {
+            -webkit-user-select: text;
+            user-select: text;
+            touch-action: auto;
+        }
+        body.touch-device .script-block[contenteditable="true"],
+        body.touch-device .ne-body[contenteditable="true"],
+        body.touch-device .ne-caption[contenteditable="true"] {
+            -webkit-user-select: text;
+            user-select: text;
+            touch-action: auto;
+        }
+
+        /* Большие ручки выделения */
+        body.touch-device .ne-scale-handle { width: 20px; height: 20px; border-width: 3px; }
+        body.touch-device .ne-rotate-handle { width: 24px; height: 24px; }
+        body.touch-device .ne-text-resize-handle { width: 20px; height: 20px; }
+        body.touch-device .ne-rotate-tl {
+            transform: translate(calc(-50% - 22px * var(--ne-inv, 1)), calc(-50% - 22px * var(--ne-inv, 1))) scale(var(--ne-inv, 1));
+        }
+        body.touch-device .ne-rotate-br {
+            transform: translate(calc(-50% + 22px * var(--ne-inv, 1)), calc(-50% + 22px * var(--ne-inv, 1))) scale(var(--ne-inv, 1));
+        }
+        body.touch-device .ne-text-resize-handle {
+            transform: translate(
+                calc(-50% + 24px * var(--ne-inv, 1)),
+                calc(-50% - 24px * var(--ne-inv, 1))
+            ) scale(var(--ne-inv, 1));
+        }
+
+        /* Ресайзеры панелей — шире на тач-устройствах */
+        body.touch-device .resizer { width: 12px; }
+
+        /* Отключаем hover-эффекты там, где они мешают */
+        @media (hover: none) {
+            body.touch-device .tbtn:hover { background: var(--panel-bg3); color: var(--text); }
+            body.touch-device .tbtn.active:hover { background: var(--accent); color: #14110c; }
+            body.touch-device .panel-header button:hover { background: var(--panel-bg3); color: var(--text); }
+            body.touch-device .row-btn:hover { background: none; color: var(--muted); }
+            body.touch-device .row-btn:active { background: var(--accent2); color: #fff; }
+            body.touch-device .script-block:hover { background: transparent; }
+            body.touch-device .dir-table tr:hover td { background: var(--cell-bg); }
+            body.touch-device .shot-card:hover { transform: none; }
+            body.touch-device .storyboard-img:hover { border-color: var(--border); }
+            body.touch-device .noetic-el:hover > .ne-grip { opacity: 0; }
+        }
+
+        /* Адаптив для узких экранов */
+        @media (max-width: 980px) {
+            body.touch-device .topbar {
+                height: auto;
+                min-height: 56px;
+                display: flex;
+                flex-wrap: wrap;
+                padding: 6px 8px;
+                gap: 6px;
+                align-items: center;
+            }
+            body.touch-device .topbar-left { flex: 1 1 auto; min-width: 0; }
+            body.touch-device .topbar-left .app-name { font-size: 13px; letter-spacing: 2px; }
+            body.touch-device .topbar-left .logo { font-size: 13px; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
+            body.touch-device .topbar-center { order: 2; flex: 1 1 100%; justify-content: center; padding: 2px 0; }
+            body.touch-device .topbar-right {
+                order: 3; flex: 1 1 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            body.touch-device .mode-toggle button { width: 90px; min-width: 90px; font-size: 11px; }
+            body.touch-device .main-layout {
+                top: auto !important;
+                position: relative;
+                height: calc(100vh - 118px);
+                margin-top: 118px;
+            }
+            body.touch-device .history-controls { order: -1; }
+        }
+
+        /* Для очень узких телефонов */
+        @media (max-width: 560px) {
+            body.touch-device .main-layout { margin-top: 130px; height: calc(100vh - 130px); }
+            body.touch-device .resizer { width: 16px; }
+            body.touch-device .panel-title-text { font-size: 10px; letter-spacing: 1px; }
+        }
+
+        /* Индикация long-press: короткий «пульс» */
+        @keyframes touchPulse {
+            0% { box-shadow: 0 0 0 0 var(--accent); }
+            100% { box-shadow: 0 0 0 14px rgba(200,162,74,0); }
+        }
+        body.touch-device .touch-pulse { animation: touchPulse 0.42s ease-out; }
+
+        /* Плавное скрытие системного контекстного меню на тач */
+        body.touch-device .noetic-viewport,
+        body.touch-device .script-container { -webkit-touch-callout: none; }
     </style>
 </head>
 <body>
@@ -3132,6 +3311,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             // Инициализируем режим редактирования сразу при загрузке,
             // чтобы панель истории/отмены была видна без клика по кнопке
             setMode('editor');
+
+            // v2.0: включаем поддержку сенсорных экранов / Android
+            initTouchSupport();
         });
 
         let confirmCallback = null;
@@ -7069,6 +7251,539 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const btn = document.getElementById('themeBtn');
             if (btn) btn.innerHTML = SUN_SVG;
         })();
+
+        // ================================================================
+        // v2.0 — ANDROID / TOUCH SUPPORT
+        // ================================================================
+        const TOUCH = {
+            enabled: false,
+            isAndroid: false,
+            longPressDelay: 500,
+            doubleTapDelay: 320
+        };
+
+        (function detectTouch() {
+            try {
+                const ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
+                TOUCH.isAndroid = /android/.test(ua);
+                TOUCH.enabled = ('ontouchstart' in window)
+                    || (navigator.maxTouchPoints > 0)
+                    || (navigator.msMaxTouchPoints > 0);
+                // На десктопах Windows с тачскрином не считаем "мобильным", но тач всё равно поддерживаем
+                if (TOUCH.enabled) {
+                    document.body.classList.add('touch-device');
+                    if (TOUCH.isAndroid) document.body.classList.add('android-device');
+                }
+            } catch (e) {}
+        })();
+
+        function initTouchSupport() {
+            if (!TOUCH.enabled) return;
+            try {
+                // Pinch-zoom + pan для литературного сценария
+                attachTouchPanZoom(document.getElementById('scriptContainer'), {
+                    getZoom:   () => APP.scriptZoom,
+                    setZoom:   z => { APP.scriptZoom = z; },
+                    getOffset: () => ({ x: APP.scriptOffsetX, y: APP.scriptOffsetY }),
+                    setOffset: (x, y) => { APP.scriptOffsetX = x; APP.scriptOffsetY = y; },
+                    minZoom: 0.3, maxZoom: 3,
+                    applyFn: applyScriptTransform,
+                    skipSelector: '.script-block[contenteditable="true"], input, textarea'
+                });
+
+                // Pinch-zoom + pan для ноэтического блока
+                attachTouchPanZoom(document.getElementById('noeticViewport'), {
+                    getZoom:   () => APP.noeticZoom,
+                    setZoom:   z => { APP.noeticZoom = z; },
+                    getOffset: () => ({ x: APP.noeticOffsetX, y: APP.noeticOffsetY }),
+                    setOffset: (x, y) => { APP.noeticOffsetX = x; APP.noeticOffsetY = y; },
+                    minZoom: 0.15, maxZoom: 4,
+                    applyFn: applyNoeticTransform,
+                    skipSelector: '.noetic-el'
+                });
+
+                // Pan для таблицы режиссёрского сценария (используем нативный скролл)
+                const dsi = document.getElementById('dirScriptInner');
+                if (dsi) dsi.style.webkitOverflowScrolling = 'touch';
+
+                // Touch-перетаскивание элементов ноэтического блока
+                initTouchNoeticDrag();
+                // Long-press → контекстное меню добавления элемента
+                initTouchNoeticLongPress();
+                // Double-tap для редактирования текста
+                initTouchDoubleTap();
+
+                // Touch-ресайз панелей
+                initTouchPanelResize();
+
+                // Touch-перетаскивание строк режиссёрского сценария
+                initTouchRowDrag();
+
+                // Touch-перетаскивание popup настроек
+                initTouchSettingsDrag();
+
+                // Защита от двойного тапа (zoom страницы) — уже отключено meta viewport,
+                // но на некоторых устройствах требуется дополнительно
+                document.addEventListener('gesturestart', e => e.preventDefault());
+                document.addEventListener('gesturechange', e => e.preventDefault());
+                document.addEventListener('gestureend', e => e.preventDefault());
+            } catch (err) {
+                console.warn('Touch init error:', err);
+            }
+        }
+
+        // -------- Утилита: двумерный пан + pinch-zoom --------
+        function attachTouchPanZoom(container, opts) {
+            if (!container) return;
+            let startTouches = null;
+            let startZoom = 1;
+            let startOffset = { x: 0, y: 0 };
+            let startDist = 0;
+            let startMid = { x: 0, y: 0 };
+            let moved = false;
+            let panning = false;
+
+            const dist = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            const mid  = (t1, t2) => ({ x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 });
+
+            const shouldSkip = target => {
+                if (!opts.skipSelector) return false;
+                try { return !!target.closest(opts.skipSelector); } catch (e) { return false; }
+            };
+
+            container.addEventListener('touchstart', e => {
+                if (shouldSkip(e.target)) return;
+                if (e.touches.length === 1) {
+                    startTouches = [e.touches[0]];
+                    startOffset = opts.getOffset();
+                    moved = false;
+                    panning = true;
+                } else if (e.touches.length === 2) {
+                    startTouches = [e.touches[0], e.touches[1]];
+                    startZoom = opts.getZoom();
+                    startOffset = opts.getOffset();
+                    startDist = dist(e.touches[0], e.touches[1]);
+                    startMid = mid(e.touches[0], e.touches[1]);
+                    moved = true;
+                    panning = false;
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', e => {
+                if (!startTouches) return;
+                if (e.touches.length === 1 && panning) {
+                    const t = e.touches[0];
+                    const dx = t.clientX - startTouches[0].clientX;
+                    const dy = t.clientY - startTouches[0].clientY;
+                    if (!moved && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) moved = true;
+                    if (moved) {
+                        opts.setOffset(startOffset.x + dx, startOffset.y + dy);
+                        opts.applyFn();
+                        e.preventDefault();
+                    }
+                } else if (e.touches.length === 2) {
+                    const d = dist(e.touches[0], e.touches[1]);
+                    const m = mid(e.touches[0], e.touches[1]);
+                    const scaleK = d / (startDist || 1);
+                    const newZoom = Math.max(opts.minZoom || 0.1, Math.min(opts.maxZoom || 5, startZoom * scaleK));
+
+                    const rect = container.getBoundingClientRect();
+                    const midLocalX = startMid.x - rect.left;
+                    const midLocalY = startMid.y - rect.top;
+                    const ratio = newZoom / startZoom;
+                    const newOffsetX = midLocalX - (midLocalX - startOffset.x) * ratio + (m.x - startMid.x);
+                    const newOffsetY = midLocalY - (midLocalY - startOffset.y) * ratio + (m.y - startMid.y);
+
+                    opts.setZoom(newZoom);
+                    opts.setOffset(newOffsetX, newOffsetY);
+                    opts.applyFn();
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchend', e => {
+                if (e.touches.length === 0) {
+                    startTouches = null;
+                    panning = false;
+                    moved = false;
+                } else if (e.touches.length === 1) {
+                    startTouches = [e.touches[0]];
+                    startOffset = opts.getOffset();
+                    panning = true;
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchcancel', () => {
+                startTouches = null;
+                panning = false;
+                moved = false;
+            });
+        }
+
+        // -------- Touch-перетаскивание элементов ноэтического блока --------
+        function initTouchNoeticDrag() {
+            const vp = document.getElementById('noeticViewport');
+            if (!vp) return;
+
+            vp.addEventListener('touchstart', e => {
+                const el = e.target.closest('.noetic-el');
+                if (!el) return;
+                if (e.target.closest('.ne-handle') || e.target.closest('.ne-3d-orbit')) return;
+                const tag = e.target.tagName;
+                if (tag === 'VIDEO' || tag === 'AUDIO' || tag === 'CANVAS') return;
+                if (el._body && el._body.isContentEditable) return;
+                if (e.target.classList.contains('ne-caption') && e.target.isContentEditable) return;
+                if (e.touches.length > 1) return;
+
+                const t = e.touches[0];
+                const id = parseInt(el.getAttribute('data-neid'));
+                const data = APP.noeticElements.find(x => x.id === id);
+                if (!data) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (APP.mode === 'editor') {
+                    const inMulti = neSelectedEls.some(s => s.el === el);
+                    if (!inMulti && !(selectedNoeticEl && selectedNoeticEl.el === el)) {
+                        selectNoeticEl(el, data);
+                    }
+                    startTouchNoeticDrag(el, data, t);
+                } else {
+                    startTouchNoeticViewDrag(el, data, t);
+                }
+            }, { passive: false });
+        }
+
+        function startTouchNoeticDrag(el, elData, startTouch) {
+            const vp = document.getElementById('noeticViewport');
+            const vrect = vp.getBoundingClientRect();
+            const startWX = (startTouch.clientX - vrect.left - APP.noeticOffsetX) / APP.noeticZoom;
+            const startWY = (startTouch.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
+
+            let targets;
+            if (neSelectedEls.some(s => s.el === el)) {
+                targets = neSelectedEls.slice();
+            } else {
+                targets = [{ el, data: elData }];
+            }
+            const startPos = targets.map(t => ({ x: t.data.x, y: t.data.y }));
+            let moved = false;
+
+            targets.forEach(t => t.el.classList.add('dragging'));
+
+            function move(ev) {
+                if (ev.touches.length !== 1) return;
+                const t = ev.touches[0];
+                const wx = (t.clientX - vrect.left - APP.noeticOffsetX) / APP.noeticZoom;
+                const wy = (t.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
+                const dx = wx - startWX;
+                const dy = wy - startWY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+                targets.forEach((tg, i) => {
+                    tg.data.x = startPos[i].x + dx;
+                    tg.data.y = startPos[i].y + dy;
+                    tg.el.style.left = tg.data.x + 'px';
+                    tg.el.style.top  = tg.data.y + 'px';
+                });
+                ev.preventDefault();
+            }
+
+            function up() {
+                vp.removeEventListener('touchmove', move);
+                vp.removeEventListener('touchend', up);
+                vp.removeEventListener('touchcancel', up);
+                targets.forEach(t => t.el.classList.remove('dragging'));
+                if (moved) {
+                    targets.forEach(t => { t.data.rowId = neFindOwner(t.data, neZoneLayout); });
+                    if (selectedNoeticEl && APP.mode === 'editor') showNeToolbar(selectedNoeticEl.el, selectedNoeticEl.data);
+                    scheduleHistory('Перемещение элемента');
+                }
+            }
+
+            vp.addEventListener('touchmove', move, { passive: false });
+            vp.addEventListener('touchend', up, { passive: true });
+            vp.addEventListener('touchcancel', up, { passive: true });
+        }
+
+        function startTouchNoeticViewDrag(el, elData, startTouch) {
+            const vp = document.getElementById('noeticViewport');
+            const vrect = vp.getBoundingClientRect();
+            const startWX = (startTouch.clientX - vrect.left - APP.noeticOffsetX) / APP.noeticZoom;
+            const startWY = (startTouch.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
+            const startX = elData.x;
+            const startY = elData.y;
+            let moved = false;
+
+            el.classList.add('dragging');
+
+            function move(ev) {
+                if (ev.touches.length !== 1) return;
+                const t = ev.touches[0];
+                const wx = (t.clientX - vrect.left - APP.noeticOffsetX) / APP.noeticZoom;
+                const wy = (t.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
+                const dx = wx - startWX;
+                const dy = wy - startWY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+                elData.x = startX + dx;
+                elData.y = startY + dy;
+                el.style.left = elData.x + 'px';
+                el.style.top  = elData.y + 'px';
+                ev.preventDefault();
+            }
+
+            function up() {
+                vp.removeEventListener('touchmove', move);
+                vp.removeEventListener('touchend', up);
+                vp.removeEventListener('touchcancel', up);
+                el.classList.remove('dragging');
+                if (moved && neDragPersist) {
+                    elData.rowId = neFindOwner(elData, neZoneLayout);
+                }
+                if (moved && !neDragPersist) {
+                    el.style.transition = 'left .4s cubic-bezier(.22,.68,0,1.2), top .4s cubic-bezier(.22,.68,0,1.2)';
+                    el.style.left = startX + 'px';
+                    el.style.top = startY + 'px';
+                    elData.x = startX;
+                    elData.y = startY;
+                    setTimeout(() => el.style.transition = '', 450);
+                }
+            }
+
+            vp.addEventListener('touchmove', move, { passive: false });
+            vp.addEventListener('touchend', up, { passive: true });
+            vp.addEventListener('touchcancel', up, { passive: true });
+        }
+
+        // -------- Long-press по пустому месту → меню добавления элемента --------
+        function initTouchNoeticLongPress() {
+            const vp = document.getElementById('noeticViewport');
+            if (!vp) return;
+            let timer = null;
+            let startX = 0, startY = 0;
+            let moved = false;
+
+            vp.addEventListener('touchstart', e => {
+                if (APP.mode !== 'editor') return;
+                if (e.touches.length !== 1) return;
+                if (e.target.closest('.noetic-el')) return;
+                if (e.target.closest('.noetic-frame-zone')) return;
+
+                const t = e.touches[0];
+                startX = t.clientX;
+                startY = t.clientY;
+                moved = false;
+
+                timer = setTimeout(() => {
+                    if (moved) return;
+                    const rect = vp.getBoundingClientRect();
+                    noeticMenuPos = {
+                        x: (startX - rect.left - APP.noeticOffsetX) / APP.noeticZoom,
+                        y: (startY - rect.top - APP.noeticOffsetY) / APP.noeticZoom
+                    };
+                    const menu = document.getElementById('noeticAddMenu');
+                    menu.style.left = Math.min(startX, window.innerWidth - 200) + 'px';
+                    menu.style.top = Math.min(startY, window.innerHeight - 240) + 'px';
+                    menu.classList.add('show');
+                    if (navigator.vibrate) { try { navigator.vibrate(30); } catch (err) {} }
+                }, TOUCH.longPressDelay);
+            }, { passive: true });
+
+            vp.addEventListener('touchmove', e => {
+                if (e.touches.length !== 1) return;
+                const t = e.touches[0];
+                if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) {
+                    moved = true;
+                    if (timer) { clearTimeout(timer); timer = null; }
+                }
+            }, { passive: true });
+
+            const endHandler = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            vp.addEventListener('touchend', endHandler, { passive: true });
+            vp.addEventListener('touchcancel', endHandler, { passive: true });
+        }
+
+        // -------- Double-tap по элементу → редактирование --------
+        function initTouchDoubleTap() {
+            const vp = document.getElementById('noeticViewport');
+            if (!vp) return;
+            let lastTapTime = 0;
+            let lastTapEl = null;
+
+            vp.addEventListener('touchend', e => {
+                const el = e.target.closest('.noetic-el');
+                if (!el) return;
+                if (e.changedTouches.length !== 1) return;
+
+                const now = Date.now();
+                if (now - lastTapTime < TOUCH.doubleTapDelay && lastTapEl === el) {
+                    lastTapTime = 0;
+                    lastTapEl = null;
+                    const id = parseInt(el.getAttribute('data-neid'));
+                    const data = APP.noeticElements.find(x => x.id === id);
+                    if (!data) return;
+                    if (APP.mode === 'editor') {
+                        selectNoeticEl(el, data);
+                        if (data.type === 'text') {
+                            neStartEdit(el, data);
+                        } else if (e.target.classList.contains('ne-caption')) {
+                            e.target.contentEditable = 'true';
+                            e.target.focus();
+                        }
+                    } else {
+                        openNoeticFullscreen(data);
+                    }
+                } else {
+                    lastTapTime = now;
+                    lastTapEl = el;
+                }
+            }, { passive: true });
+        }
+
+        // -------- Touch-ресайз панелей --------
+        function initTouchPanelResize() {
+            [1, 2].forEach(idx => {
+                const rz = document.getElementById('resizer' + idx);
+                if (!rz) return;
+                let active = false;
+
+                rz.addEventListener('touchstart', e => {
+                    if (e.touches.length !== 1) return;
+                    if ((idx === 1 && (p1Collapsed || (p2Collapsed && p3Collapsed))) ||
+                        (idx === 2 && (p3Collapsed || (p2Collapsed && p1Collapsed)))) return;
+                    applyLayout();
+                    resizingPanel = idx;
+                    resizeStartX = e.touches[0].clientX;
+                    resizeStartWidths = [LAYOUT.eff1, 0, LAYOUT.eff3];
+                    document.getElementById('mainLayout').classList.add('no-anim');
+                    rz.classList.add('dragging');
+                    active = true;
+                    e.preventDefault();
+                }, { passive: false });
+
+                rz.addEventListener('touchmove', e => {
+                    if (!active || resizingPanel !== idx) return;
+                    if (e.touches.length !== 1) return;
+                    onResizerMove({ clientX: e.touches[0].clientX });
+                    e.preventDefault();
+                }, { passive: false });
+
+                const endTouch = () => {
+                    if (!active) return;
+                    active = false;
+                    onResizerUp();
+                };
+                rz.addEventListener('touchend', endTouch, { passive: true });
+                rz.addEventListener('touchcancel', endTouch, { passive: true });
+            });
+        }
+
+        // -------- Touch-перетаскивание строк режиссёрского сценария --------
+        function initTouchRowDrag() {
+            const tbody = document.getElementById('dirTableBody');
+            if (!tbody) return;
+            let dragging = false;
+            let draggedRowId = null;
+
+            tbody.addEventListener('touchstart', e => {
+                if (APP.mode !== 'editor') return;
+                const handle = e.target.closest('.row-drag-handle');
+                if (!handle) return;
+                if (e.touches.length !== 1) return;
+                const tr = handle.closest('tr');
+                if (!tr) return;
+                draggedRowId = parseInt(tr.getAttribute('data-rowid'));
+                const row = APP.dirRows.find(r => r.id === draggedRowId);
+                if (!row) return;
+                if (row.multiSelected) {
+                    dirDragRowIds = APP.dirRows.filter(r => r.multiSelected).map(r => r.id);
+                } else {
+                    dirDragRowIds = [draggedRowId];
+                }
+                dragging = true;
+                tr.style.opacity = '0.4';
+                tr.classList.add('dragging-row');
+                if (navigator.vibrate) { try { navigator.vibrate(15); } catch (err) {} }
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchmove', e => {
+                if (!dragging || e.touches.length !== 1) return;
+                const t = e.touches[0];
+                const el = document.elementFromPoint(t.clientX, t.clientY);
+                document.querySelectorAll('.drag-over-row').forEach(r => r.classList.remove('drag-over-row'));
+                if (el) {
+                    const tr = el.closest('tr');
+                    if (tr) {
+                        const tid = parseInt(tr.getAttribute('data-rowid'));
+                        if (!dirDragRowIds.includes(tid)) tr.classList.add('drag-over-row');
+                    }
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            const finishDrag = e => {
+                if (!dragging) return;
+                dragging = false;
+                const t = e.changedTouches ? e.changedTouches[0] : null;
+                document.querySelectorAll('.drag-over-row').forEach(r => r.classList.remove('drag-over-row'));
+                document.querySelectorAll('#dirTableBody tr').forEach(tr => {
+                    tr.style.opacity = '1';
+                    tr.classList.remove('dragging-row');
+                });
+                if (t) {
+                    const el = document.elementFromPoint(t.clientX, t.clientY);
+                    if (el) {
+                        const tr = el.closest('tr');
+                        if (tr) {
+                            const tid = parseInt(tr.getAttribute('data-rowid'));
+                            if (!dirDragRowIds.includes(tid)) {
+                                moveRowTo(dirDragRowIds, tid);
+                            }
+                        }
+                    }
+                }
+                draggedRowId = null;
+                dirDragRowIds = [];
+            };
+
+            document.addEventListener('touchend', finishDrag, { passive: true });
+            document.addEventListener('touchcancel', finishDrag, { passive: true });
+        }
+
+        // -------- Touch-перетаскивание popup настроек --------
+        function initTouchSettingsDrag() {
+            const handle = document.getElementById('spDragHandle');
+            const popup = document.getElementById('settingsPopup');
+            if (!handle || !popup) return;
+
+            let dragging = false;
+            let startX = 0, startY = 0;
+            let initLeft = 0, initTop = 0;
+
+            handle.addEventListener('touchstart', e => {
+                if (e.target.closest('.sp-close')) return;
+                if (e.touches.length !== 1) return;
+                dragging = true;
+                const rect = popup.getBoundingClientRect();
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                initLeft = rect.left;
+                initTop = rect.top;
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchmove', e => {
+                if (!dragging || e.touches.length !== 1) return;
+                const t = e.touches[0];
+                popup.style.right = 'auto';
+                popup.style.left = (initLeft + t.clientX - startX) + 'px';
+                popup.style.top  = (initTop  + t.clientY - startY) + 'px';
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchend', () => { dragging = false; }, { passive: true });
+        }
     </script>
 </body>
 </html>
