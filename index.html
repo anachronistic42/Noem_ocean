@@ -6,7 +6,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#14110c" />
     <title>Noem.ocean</title>
-    <!-- Noem.ocean v2.1 (Android fixes) -->
+    <!-- Noem.ocean v2.2 (Android fixes + scene stats + note controls + 3D icon) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -700,6 +700,46 @@
         body:not(.viewer-mode) .noetic-el:hover > .ne-3d-orbit,
         body:not(.viewer-mode) .noetic-el.selected > .ne-3d-orbit { display: flex; }
         .ne-3d-wrap.orbit > .ne-3d-orbit { background: var(--accent); color: #14110c; display: flex; }
+
+        /* v2.2: 3D-элемент отображается как иконка */
+        .ne-3d-icon {
+            background: var(--panel-bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            user-select: none;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+            min-width: 84px;
+            min-height: 84px;
+            text-align: center;
+        }
+        .ne-3d-icon.no-frame {
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+        .ne-3d-icon-inner {
+            font-size: 30px;
+            line-height: 1;
+            pointer-events: none;
+        }
+        .ne-3d-icon-label {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            letter-spacing: .5px;
+            color: var(--muted);
+            max-width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        body.light-theme .ne-3d-icon { background: var(--panel-bg3); }
 
         .noetic-add-menu {
             position: fixed; background: var(--dropdown-bg); border: 1px solid var(--accent);
@@ -1952,25 +1992,13 @@
         // =====================================================================
         // v1.9 — МЕДИА-РЕЕСТР И КОМПРЕССИЯ ИЗОБРАЖЕНИЙ
         // =====================================================================
-        // Проблема: история хранила полный снимок APP, включая base64 картинок,
-        // видео, аудио, 3D-моделей. При 50 шагах истории это легко давало
-        // гигабайты памяти и крашило браузер (OOM).
-        //
-        // Решение: base64 не попадает в снимки истории. Каждое уникальное медиа
-        // регистрируется в MEDIA под коротким ID, а в снимке остаётся только
-        // ссылка вида "__M__:m123". Один и тот же base64 → одна запись в MEDIA
-        // (дедупликация по хэшу), поэтому даже 500 шагов истории с медиа
-        // занимают считанные мегабайты.
-        // =====================================================================
-
         const MEDIA_PREFIX = '__M__:';
 
         const MEDIA = {
-            byId: new Map(),      // id -> dataURL
-            byHash: new Map(),    // hash -> id (дедупликация)
+            byId: new Map(),
+            byHash: new Map(),
             counter: 1,
             hashStr(s) {
-                // FNV-1a 32-bit
                 let h = 2166136261 >>> 0;
                 for (let i = 0; i < s.length; i++) {
                     h ^= s.charCodeAt(i);
@@ -1981,7 +2009,6 @@
             register(dataURL) {
                 if (typeof dataURL !== 'string') return dataURL;
                 if (!dataURL.startsWith('data:')) return dataURL;
-                // Короткие dataURL (иконки, шум) не индексируем — экономим реестр
                 if (dataURL.length < 2048) return dataURL;
                 const h = this.hashStr(dataURL);
                 if (this.byHash.has(h)) {
@@ -2008,7 +2035,6 @@
             }
         };
 
-        // Replacer для JSON.stringify: заменяет длинные dataURL на ссылки MEDIA
         function mediaReplacer(key, value) {
             if (typeof value === 'string' && value.length > 2048 && value.startsWith('data:')) {
                 return MEDIA.register(value);
@@ -2016,7 +2042,6 @@
             return value;
         }
 
-        // Reviver для JSON.parse: восстанавливает dataURL из ссылок MEDIA
         function mediaReviver(key, value) {
             if (typeof value === 'string' && value.startsWith(MEDIA_PREFIX)) {
                 return MEDIA.resolve(value);
@@ -2024,7 +2049,6 @@
             return value;
         }
 
-        // --- Утилита: File -> dataURL ---
         function fileToDataURL(file) {
             return new Promise((resolve, reject) => {
                 const rd = new FileReader();
@@ -2034,14 +2058,10 @@
             });
         }
 
-        // --- Сжатие изображения до maxDim по длинной стороне ---
-        // Возвращает dataURL (JPEG или PNG, что меньше). Если исходник уже
-        // маленький — возвращает как есть.
         function compressImage(dataURL, maxDim = 2000, quality = 0.85) {
             return new Promise(resolve => {
                 if (!dataURL || typeof dataURL !== 'string') return resolve(dataURL);
                 if (!dataURL.startsWith('data:image/')) return resolve(dataURL);
-                // GIF (может быть анимированным) и SVG не трогаем
                 if (dataURL.startsWith('data:image/gif') || dataURL.startsWith('data:image/svg')) {
                     return resolve(dataURL);
                 }
@@ -2056,7 +2076,6 @@
                         const longest = Math.max(w, h);
                         const isPng = dataURL.startsWith('data:image/png');
 
-                        // Если картинка и так небольшая — не трогаем
                         if (longest <= maxDim && dataURL.length < 400 * 1024) {
                             return resolve(dataURL);
                         }
@@ -2072,7 +2091,6 @@
                         c.width = nw;
                         c.height = nh;
                         const ctx = c.getContext('2d');
-                        // Белая подложка — чтобы прозрачность не стала чёрной в JPEG
                         if (!isPng) {
                             ctx.fillStyle = '#ffffff';
                             ctx.fillRect(0, 0, nw, nh);
@@ -2085,7 +2103,6 @@
                             if (pngOut.length < out.length) out = pngOut;
                         }
 
-                        // Если не стало меньше — оставляем оригинал
                         if (out.length >= dataURL.length) return resolve(dataURL);
                         resolve(out);
                     } catch (e) {
@@ -2133,14 +2150,9 @@
         let historySuspended = false;
         let historyDebounceTimer = null;
 
-        // Максимальный суммарный размер сериализованных снимков истории.
-        // Медиа вынесено в MEDIA, поэтому в снимке остаются только ссылки,
-        // и этот лимит покрывает десятки тысяч обычных изменений.
-        const HISTORY_TOTAL_LIMIT = 20 * 1024 * 1024; // 20 МБ символов ≈ 40 МБ UTF-16
+        const HISTORY_TOTAL_LIMIT = 20 * 1024 * 1024;
 
         function captureState() {
-            // Снимок делаем через JSON с replacer'ом — так длинные dataURL
-            // превращаются в ссылки MEDIA и не занимают историю.
             const raw = JSON.stringify({
                 dirRows: APP.dirRows,
                 noeticElements: APP.noeticElements,
@@ -2161,7 +2173,6 @@
         }
 
         function restoreState(state) {
-            // Возвращаем dataURL из MEDIA по ссылкам
             const resolved = JSON.parse(JSON.stringify(state), mediaReviver);
             APP.dirRows = resolved.dirRows || [];
             APP.noeticElements = resolved.noeticElements || [];
@@ -2222,11 +2233,8 @@
             }
             historyStack.push({ state, str, label: label || 'Изменение', time: Date.now() });
 
-            // Жёсткий потолок по количеству шагов
             while (historyStack.length > maxHistorySteps) historyStack.shift();
 
-            // Дополнительный потолок по суммарному размеру сериализованных снимков.
-            // Медиа уже вырезано, так что это защита от гигантских текстовых проектов.
             let totalSize = 0;
             for (const h of historyStack) totalSize += h.str.length;
             while (totalSize > HISTORY_TOTAL_LIMIT && historyStack.length > 5) {
@@ -2677,7 +2685,7 @@
             notify('Word-документ экспортирован');
         }
 
-        // === Excel (.xlsx) — картинки внутри ячеек ===
+        // === Excel (.xlsx) ===
         async function exportExcel() {
             closeExportMenu();
             const { cols, items } = collectExportData();
@@ -2953,7 +2961,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             notify('Excel-документ экспортирован');
         }
 
-        // === PDF (чистый и оформленный) — скачивается сразу, без открытия вкладок ===
+        // === PDF ===
         async function exportPdf(styled) {
             closeExportMenu();
             const { cols, items } = collectExportData();
@@ -3310,7 +3318,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (!APP.intExts || !APP.intExts.length) APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
             if (!APP.intExtMode) APP.intExtMode = 'switch';
 
-            // ---- v1.9: раскадровка — с сжатием ----
             document.getElementById('storyboardImgInput').addEventListener('change', async e => {
                 const files = Array.from(e.target.files);
                 e.target.value = '';
@@ -3337,11 +3344,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             applyTheme(APP.theme);
             syncRenumberCheckbox();
 
-            // Инициализируем режим редактирования сразу при загрузке,
-            // чтобы панель истории/отмены была видна без клика по кнопке
             setMode('editor');
 
-            // v2.0: включаем поддержку сенсорных экранов / Android
             initTouchSupport();
         });
 
@@ -3547,8 +3551,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             eff1: 320, eff3: 380
         };
 
-        // Сколько панелей одновременно помещается на экране:
-        // телефон (< 520px) — 1, узкий экран / планшет в портрете (< 960px на тач-устройстве) — 2, иначе 3.
         function maxOpenPanels() {
             const ml = document.getElementById('mainLayout');
             const w = ml ? ml.clientWidth : 0;
@@ -3573,7 +3575,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function setPanelCollapsed(n, v) { if (n === 1) p1Collapsed = v; else if (n === 2) p2Collapsed = v; else p3Collapsed = v; }
         function isPanelCollapsed(n) { return n === 1 ? p1Collapsed : (n === 2 ? p2Collapsed : p3Collapsed); }
 
-        // Сворачиваем лишние панели; порядок «жертв»: Ноэтический блок → Литературный → Режиссёрский
         function limitOpenPanels(max, exceptPanel) {
             const order = [3, 1, 2].filter(n => n !== exceptPanel);
             for (const n of order) {
@@ -3582,7 +3583,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
         }
 
-        // Разделитель неактивен, если соседняя панель свёрнута — делаем его тонким, чтобы не занимал место
         function syncResizerState() {
             const r1 = document.getElementById('resizer1'), r2 = document.getElementById('resizer2');
             if (r1) r1.classList.toggle('rz-off', p1Collapsed || (p2Collapsed && p3Collapsed));
@@ -3639,10 +3639,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             setPanelCollapsed(n, !wasCollapsed);
             const max = maxOpenPanels();
             if (wasCollapsed) {
-                // раскрыли панель — если не хватает места, сворачиваем остальные
                 limitOpenPanels(max, n);
             } else if (openPanelCount() === 0 && max < 3) {
-                // на узком экране нельзя свернуть всё — открываем соседнюю панель
                 setPanelCollapsed(n === 2 ? 1 : 2, false);
             }
             syncPanelCollapsedDom();
@@ -4517,6 +4515,24 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     dragHandleN.onmouseleave = () => { tr.draggable = false;
                         tr.classList.remove('is-dragging-handle'); };
 
+                    const upBtnN = document.createElement('button');
+                    upBtnN.className = 'row-btn';
+                    upBtnN.title = 'Вверх';
+                    upBtnN.textContent = '↑';
+                    upBtnN.onclick = () => moveRow(row.id, -1);
+
+                    const dnBtnN = document.createElement('button');
+                    dnBtnN.className = 'row-btn';
+                    dnBtnN.title = 'Вниз';
+                    dnBtnN.textContent = '↓';
+                    dnBtnN.onclick = () => moveRow(row.id, 1);
+
+                    const dupBtnN = document.createElement('button');
+                    dupBtnN.className = 'row-btn';
+                    dupBtnN.title = 'Дублировать';
+                    dupBtnN.textContent = '⧉';
+                    dupBtnN.onclick = () => duplicateRow(row.id);
+
                     const delBtnN = document.createElement('button');
                     delBtnN.className = 'row-btn';
                     delBtnN.title = 'Удалить';
@@ -4524,7 +4540,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     delBtnN.style.color = 'var(--accent2)';
                     delBtnN.onclick = () => deleteRow(row.id);
 
-                    rowActions.append(cbWrapN, dragHandleN, delBtnN);
+                    rowActions.append(cbWrapN, dragHandleN, upBtnN, dnBtnN, dupBtnN, delBtnN);
                     tdAct.appendChild(rowActions);
 
                     tr.addEventListener('dragstart', e => {
@@ -4554,7 +4570,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     ta.placeholder = 'Текст пометки...';
                     ta.value = row.customText || '';
                     ta.readOnly = APP.mode !== 'editor';
-                    // v1.9: история только на blur — не копим снимки на каждый символ
                     ta.addEventListener('input', () => { row.customText = ta.value; autoResizeTA(ta); });
                     ta.addEventListener('blur', () => { pushHistory('Правка пометки'); });
                     ta.addEventListener('focus', () => autoResizeTA(ta));
@@ -4777,6 +4792,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             recalcAllSceneStats();
         }
 
+        // v2.2: пометки не прерывают подсчёт кадров внутри сцены
         function calcSceneStatsForRow(sceneId) {
             let frames = 0,
                 totalSec = 0;
@@ -4785,7 +4801,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const r = APP.dirRows[i];
                 if (r.id === sceneId && r.type === 'scene') { found = true; continue; }
                 if (found) {
-                    if (r.type === 'scene' || r.type === 'note') break;
+                    if (r.type === 'scene') break;
+                    if (r.type === 'note') continue;
                     frames++;
                     if (r.timecode) {
                         const p = r.timecode.split(':').map(Number);
@@ -4878,8 +4895,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             ta.placeholder = placeholder;
             ta.value = row[field] || '';
             ta.readOnly = APP.mode !== 'editor';
-            // v1.9: история — только при потере фокуса. Раньше был scheduleHistory на
-            // каждый ввод, что при печати за минуту накапливало десятки снимков.
             ta.addEventListener('input', () => { row[field] = ta.value; autoResizeTA(ta); });
             ta.addEventListener('blur', () => { pushHistory('Правка кадра'); });
             ta.addEventListener('focus', () => autoResizeTA(ta));
@@ -5102,7 +5117,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             addBtn.addEventListener('dragleave', e => { e.preventDefault();
                 addBtn.classList.remove('drag-over'); });
             addBtn.addEventListener('dragover', e => { e.preventDefault(); });
-            // v1.9: сжатие до 2к при drop — как и при выборе файлов
             addBtn.addEventListener('drop', e => {
                 e.preventDefault();
                 addBtn.classList.remove('drag-over');
@@ -5224,7 +5238,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             ta.placeholder = isScale ? 'Крупность...' : 'Монтаж...';
             ta.value = item.extra || '';
             ta.readOnly = APP.mode !== 'editor';
-            // v1.9: история только на blur
             ta.addEventListener('input', () => {
                 item.extra = ta.value;
                 autoResizeTA(ta);
@@ -5740,7 +5753,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             rd.readAsDataURL(f);
         }
 
-        // v1.9: изображения сжимаются до 2к перед добавлением
         function neAddMediaFromFile(f, x, y) {
             const ext = neFileExt(f);
             const t = f.type || '';
@@ -5923,9 +5935,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 audio.preload = 'metadata';
                 el.appendChild(audio);
             } else if (t === '3d') {
-                el.classList.add('ne-3d-wrap');
-                el.style.width = (elData.width || 260) + 'px';
-                el.style.height = (elData.height || 180) + 'px';
+                // v2.2: 3D-элемент отображается компактной иконкой
+                el.classList.add('ne-3d-icon');
+                const ic = document.createElement('div');
+                ic.className = 'ne-3d-icon-inner';
+                ic.textContent = '🧊';
+                el.appendChild(ic);
+                const lbl = document.createElement('div');
+                lbl.className = 'ne-3d-icon-label';
+                const nm = elData.fileName ? elData.fileName.replace(/\.[^.]+$/, '') : '3D';
+                lbl.textContent = nm.slice(0, 18);
+                el.appendChild(lbl);
             }
             if (elData.hasFrame === false) el.classList.add('no-frame');
 
@@ -5969,17 +5989,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
             canvas.appendChild(el);
 
-            if (t === '3d') {
-                const orbit = document.createElement('div');
-                orbit.className = 'ne-3d-orbit';
-                orbit.textContent = '⟳';
-                orbit.title = 'Вращать модель мышью (вкл/выкл)';
-                orbit.addEventListener('mousedown', ev => ev.stopPropagation());
-                orbit.addEventListener('click', ev => { ev.stopPropagation(); el.classList.toggle('orbit'); });
-                el.appendChild(neMakeGrip());
-                init3DViewer(el, elData);
-                el.appendChild(orbit);
-            }
             return el;
         }
 
@@ -6309,7 +6318,42 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 v.src = elData.src;
                 v.play().catch(() => {});
                 lb.classList.add('show');
+            } else if (elData.type === '3d') {
+                // v2.2: 3D открывается на весь экран
+                openFullscreen3D(elData);
             }
+        }
+
+        function openFullscreen3D(elData) {
+            const lb = document.getElementById('lightbox');
+            document.getElementById('lightboxImg').style.display = 'none';
+            const t = document.getElementById('neTextFullscreen');
+            if (t) t.style.display = 'none';
+            const v = document.getElementById('neVideoFullscreen');
+            if (v) { v.pause(); v.style.display = 'none'; v.removeAttribute('src'); }
+
+            let box = document.getElementById('ne3DFullscreen');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'ne3DFullscreen';
+                lb.appendChild(box);
+                // клики внутри 3D-вьюпорта не должны закрывать lightbox
+                box.addEventListener('click', e => e.stopPropagation());
+                box.addEventListener('mousedown', e => e.stopPropagation());
+                box.addEventListener('dblclick', e => e.stopPropagation());
+            }
+            box.innerHTML = '';
+            box.style.cssText =
+                'width:min(90vw, 1200px); height:min(80vh, 800px); position:relative; ' +
+                'background:#0d0a06; border-radius:8px; overflow:hidden; ' +
+                'box-shadow:0 20px 60px rgba(0,0,0,.7); display:block;';
+
+            lb.classList.add('show');
+
+            // Теперь размеры уже посчитаны
+            const W = box.clientWidth || 800;
+            const H = box.clientHeight || 600;
+            init3DViewer(box, Object.assign({}, elData, { width: W, height: H }));
         }
 
         function returnAllNoeticEls() {
@@ -6515,13 +6559,15 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
 
             function animate() {
-                if (!wrap.isConnected) {
+                if (!wrap.isConnected || !stage.isConnected) {
                     controls.dispose();
                     renderer.dispose();
                     if (renderer.forceContextLoss) renderer.forceContextLoss();
                     return;
                 }
                 requestAnimationFrame(animate);
+                // не рендерим, пока контейнер скрыт
+                if (stage.offsetParent === null) return;
                 controls.update();
                 renderer.render(scene, camera);
             }
@@ -6668,6 +6714,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (v) { v.pause();
                 v.style.display = 'none';
                 v.removeAttribute('src'); }
+            const b = document.getElementById('ne3DFullscreen');
+            if (b) { b.innerHTML = ''; b.style.display = 'none'; }
             document.getElementById('lightbox').classList.add('show');
         }
 
@@ -6681,6 +6729,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (v) { v.pause();
                 v.style.display = 'none';
                 v.removeAttribute('src'); }
+            const b = document.getElementById('ne3DFullscreen');
+            if (b) { b.innerHTML = ''; b.style.display = 'none'; }
         }
 
 
@@ -6744,7 +6794,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function resetAllZoom() {
             setUiScalePct(Math.round(defaultUiScale() * 100));
-            // сброс = «как по умолчанию для этого устройства», поэтому сохранённое значение убираем
             try { localStorage.removeItem('noemUiScale'); } catch (e) {}
             setScriptZoomPct(100);
             setDirZoom(1);
@@ -6753,7 +6802,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             syncZoomUI();
         }
 
-        // Масштаб интерфейса по умолчанию: на Android меньше (планшет 85%, телефон 75%)
         function defaultUiScale() {
             if (typeof TOUCH !== 'undefined' && TOUCH.isAndroid) return TOUCH.isTablet ? 0.85 : 0.75;
             return 1;
@@ -7361,14 +7409,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 TOUCH.enabled = ('ontouchstart' in window)
                     || (navigator.maxTouchPoints > 0)
                     || (navigator.msMaxTouchPoints > 0);
-                // Android определяем не только по User-Agent: в режиме «Версия для ПК»
-                // (по умолчанию включён на больших планшетах) слова "Android" в UA нет.
                 const uaData = navigator.userAgentData;
                 TOUCH.isAndroid = /android/.test(ua)
                     || !!(uaData && /android/i.test(uaData.platform || ''))
                     || (TOUCH.enabled && /^linux (arm|aarch)/i.test(navigator.platform || ''));
                 TOUCH.isTablet = Math.min(screen.width || 0, screen.height || 0) >= 600;
-                // На десктопах Windows с тачскрином не считаем "мобильным", но тач всё равно поддерживаем
                 if (TOUCH.enabled) {
                     document.body.classList.add('touch-device');
                     if (TOUCH.isAndroid) {
@@ -7382,7 +7427,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function initTouchSupport() {
             if (!TOUCH.enabled) return;
             try {
-                // Pinch-zoom + pan для литературного сценария
                 attachTouchPanZoom(document.getElementById('scriptContainer'), {
                     getZoom:   () => APP.scriptZoom,
                     setZoom:   z => { APP.scriptZoom = z; },
@@ -7393,7 +7437,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     skipSelector: '.script-block[contenteditable="true"], input, textarea'
                 });
 
-                // Pinch-zoom + pan для ноэтического блока
                 attachTouchPanZoom(document.getElementById('noeticViewport'), {
                     getZoom:   () => APP.noeticZoom,
                     setZoom:   z => { APP.noeticZoom = z; },
@@ -7404,28 +7447,16 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     skipSelector: '.noetic-el'
                 });
 
-                // Pan для таблицы режиссёрского сценария (используем нативный скролл)
                 const dsi = document.getElementById('dirScriptInner');
                 if (dsi) dsi.style.webkitOverflowScrolling = 'touch';
 
-                // Touch-перетаскивание элементов ноэтического блока
                 initTouchNoeticDrag();
-                // Long-press → контекстное меню добавления элемента
                 initTouchNoeticLongPress();
-                // Double-tap для редактирования текста
                 initTouchDoubleTap();
-
-                // Touch-ресайз панелей
                 initTouchPanelResize();
-
-                // Touch-перетаскивание строк режиссёрского сценария
                 initTouchRowDrag();
-
-                // Touch-перетаскивание popup настроек
                 initTouchSettingsDrag();
 
-                // Защита от двойного тапа (zoom страницы) — уже отключено meta viewport,
-                // но на некоторых устройствах требуется дополнительно
                 document.addEventListener('gesturestart', e => e.preventDefault());
                 document.addEventListener('gesturechange', e => e.preventDefault());
                 document.addEventListener('gestureend', e => e.preventDefault());
@@ -7434,7 +7465,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
         }
 
-        // -------- Утилита: двумерный пан + pinch-zoom --------
         function attachTouchPanZoom(container, opts) {
             if (!container) return;
             let startTouches = null;
@@ -7522,7 +7552,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             });
         }
 
-        // -------- Touch-перетаскивание элементов ноэтического блока --------
         function initTouchNoeticDrag() {
             const vp = document.getElementById('noeticViewport');
             if (!vp) return;
@@ -7657,7 +7686,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             vp.addEventListener('touchcancel', up, { passive: true });
         }
 
-        // -------- Long-press по пустому месту → меню добавления элемента --------
         function initTouchNoeticLongPress() {
             const vp = document.getElementById('noeticViewport');
             if (!vp) return;
@@ -7705,7 +7733,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             vp.addEventListener('touchcancel', endHandler, { passive: true });
         }
 
-        // -------- Double-tap по элементу → редактирование --------
         function initTouchDoubleTap() {
             const vp = document.getElementById('noeticViewport');
             if (!vp) return;
@@ -7742,7 +7769,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }, { passive: true });
         }
 
-        // -------- Touch-ресайз панелей --------
         function initTouchPanelResize() {
             [1, 2].forEach(idx => {
                 const rz = document.getElementById('resizer' + idx);
@@ -7780,7 +7806,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             });
         }
 
-        // -------- Touch-перетаскивание строк режиссёрского сценария --------
         function initTouchRowDrag() {
             const tbody = document.getElementById('dirTableBody');
             if (!tbody) return;
@@ -7853,7 +7878,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             document.addEventListener('touchcancel', finishDrag, { passive: true });
         }
 
-        // -------- Touch-перетаскивание popup настроек --------
         function initTouchSettingsDrag() {
             const handle = document.getElementById('spDragHandle');
             const popup = document.getElementById('settingsPopup');
@@ -7899,11 +7923,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
             function measure() {
                 queued = 0;
-                // Высота доступной области (учитывает адресную строку и экранную клавиатуру)
                 const vv = window.visualViewport;
                 const h = Math.round(Math.min(window.innerHeight || 0, (vv && vv.height) || Infinity));
                 if (h > 100) root.style.setProperty('--app-h', h + 'px');
-                // Реальная высота шапки (она может переноситься на несколько строк)
                 if (topbar) {
                     const bottom = Math.ceil(topbar.getBoundingClientRect().bottom);
                     if (bottom > 20 && bottom < (window.innerHeight || 9999) * 0.6) {
@@ -7923,7 +7945,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             window.addEventListener('load', () => { schedule(); setTimeout(schedule, 300); });
             measure();
 
-            // ---- Всплывающие окна: не выпускаем за границы экрана ----
             let busy = false;
             function visible(el) { return getComputedStyle(el).display !== 'none'; }
 
@@ -7942,7 +7963,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 el.style.right = 'auto';
             }
 
-            // Меню экспорта лежит внутри шапки (у неё zoom) — сдвигаем через right с учётом масштаба
             function fitExportMenu(el) {
                 const z = (window.APP && APP.uiScale) || 1, m = 8;
                 el.style.right = ''; el.style.maxHeight = '';
@@ -7979,7 +7999,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             });
             watched.forEach(w => { if (w.el) mo.observe(w.el, { attributes: true, attributeFilter: ['class', 'style'] }); });
 
-            // ---- Свёрнутая панель разворачивается тапом по всей полоске ----
             document.querySelectorAll('.panel').forEach(p => {
                 p.addEventListener('click', e => {
                     if (!p.classList.contains('collapsed')) return;
