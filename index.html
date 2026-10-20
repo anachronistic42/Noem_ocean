@@ -6,6 +6,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#f5f5f7" />
     <title>Noem.ocean</title>
+    <!-- Noem.ocean v3.2 (all imported images converted to JPG/PNG: storyboard = JPG only, noetic block = JPG or PNG; webp fixed in Word export) -->
+    <!-- Noem.ocean v3.1 (hidden JSON export, video as card, 3D view modes, toolbar on dblclick, 16:9 text, title tooltips) -->
     <!-- Noem.ocean v3.0 (title ellipsis, save toast near button, touch long-press drag, pinch zoom, textarea resync) -->
     <!-- Noem.ocean v2.9 (opened file stays the save target + effects off by default) -->
     <!-- Noem.ocean v2.8 (save overwrites one file + save as)
@@ -746,6 +748,27 @@
         }
         body.light-theme .ne-3d-icon { background: var(--panel-bg3); }
 
+        /* v3.1: режимы просмотра 3D на весь экран */
+        .ne3d-modebar {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 20;
+            display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: calc(100% - 20px);
+        }
+        .ne3d-mode-btn {
+            background: var(--panel-bg3); border: 1px solid var(--border); color: var(--text);
+            padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+            font-family: 'Courier New', monospace; transition: all .2s; white-space: nowrap;
+        }
+        .ne3d-mode-btn:hover { border-color: var(--accent); }
+        .ne3d-mode-btn.active { background: var(--accent); color: #14110c; border-color: var(--accent); }
+
+        /* v3.1: подсказка с полным названием обрезанных заголовков панелей */
+        .ui-tip {
+            position: fixed; z-index: 10000; display: none; pointer-events: none; max-width: 300px;
+            background: var(--dropdown-bg); color: var(--text); border: 1px solid var(--accent);
+            border-radius: 4px; padding: 4px 9px; font-size: 11px; font-family: 'Courier New', monospace;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, .5);
+        }
+
         .noetic-add-menu {
             position: fixed; background: var(--dropdown-bg); border: 1px solid var(--accent);
             border-radius: 8px; padding: 8px; z-index: 500; display: none;
@@ -767,6 +790,9 @@
             box-shadow: 0 8px 30px rgba(0, 0, 0, .6);
         }
         .ne-toolbar.show { display: flex; }
+        /* v3.1 — «+ Добавить» только в редакторе, «↩ Вернуть» только в просмотре */
+        body.viewer-mode #neAddBtn { display: none !important; }
+        body:not(.viewer-mode) #neReturnBtn { display: none !important; }
         .ne-tbtn {
             background: var(--panel-bg3); border: 1px solid var(--border); color: var(--text);
             padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;
@@ -913,6 +939,9 @@
         }
         .sp-popup-btn:hover { background: var(--accent); color: #14110c; }
         .sp-divider { border-top: 1px solid var(--border); margin: 2px 0; }
+        #appVersionLabel { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 10px; text-align: center; margin: 0; }
+        #appVersionLabel .sp-version { font-family: 'Courier New', monospace; font-size: 15px; font-weight: 700; letter-spacing: .5px; color: var(--accent); }
+        #appVersionLabel .sp-dev { font-size: 11px; color: var(--muted); font-style: italic; }
         .sp-hint { font-size: 10px; color: var(--muted); font-style: italic; opacity: .7; }
         .pass-input-wrap { position: relative; flex: 1; }
         .pass-input {
@@ -1820,9 +1849,10 @@
         </div>
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
-        <button class="sp-popup-btn" onclick="exportJson()">Экспорт JSON</button>
-        <div class="sp-divider"></div>
-        <div class="sp-hint" id="appVersionLabel" style="text-align:center;margin:0;">Noem.ocean v3.0</div>
+        <div id="appVersionLabel">
+            <span class="sp-version">Noem.ocean v3.2</span>
+            <span class="sp-dev">Разработчик Noem.ocean - Александр Тумали</span>
+        </div>
     </div>
 
     <div id="passwordModal">
@@ -2039,9 +2069,9 @@
         <div class="panel" id="panel3">
             <div class="panel-header">
                 <span class="panel-title-text">Ноэтический блок</span>
-                <button onclick="openNoeticMenu(event)">+ Добавить</button>
+                <button id="neAddBtn" onclick="openNoeticMenu(event)">+ Добавить</button>
                 <button id="neDragPersistBtn" onclick="toggleNeDragPersist()" style="display:none;" title="Закрепить перетаскивание">Перетаскивание</button>
-                <button onclick="returnAllNoeticEls()" title="Вернуть элементы">↩ Вернуть</button>
+                <button id="neReturnBtn" onclick="returnAllNoeticEls()" title="Вернуть элементы">↩ Вернуть</button>
                 <button id="collapseP3" class="collapse-btn" onclick="collapsePanel(3)" title="Свернуть">▶</button>
             </div>
             <div class="noetic-viewport" id="noeticViewport">
@@ -2144,25 +2174,30 @@
             });
         }
 
-        function compressImage(dataURL, maxDim = 2000, quality = 0.85) {
+        // v3.2 — все картинки при импорте приводятся к JPG или PNG.
+        // target 'jpg'    — только JPG (раскадровка);
+        // target 'png-ok' — JPG или PNG (ноэтический блок): PNG остаётся PNG, прозрачные картинки (webp/gif/svg) → PNG, остальное → JPG.
+        function compressImage(dataURL, maxDim = 2000, quality = 0.85, target = 'jpg') {
             return new Promise(resolve => {
                 if (!dataURL || typeof dataURL !== 'string') return resolve(dataURL);
-                if (!dataURL.startsWith('data:image/')) return resolve(dataURL);
-                if (dataURL.startsWith('data:image/gif') || dataURL.startsWith('data:image/svg')) {
-                    return resolve(dataURL);
-                }
+                const mm = /^data:(image\/[^;,]+)/i.exec(dataURL);
+                if (!mm) return resolve(dataURL);
+                const mime = mm[1].toLowerCase();
+                const isJpeg = mime === 'image/jpeg' || mime === 'image/jpg';
+                const isPng = mime === 'image/png';
+                const keepPngAsIs = target === 'png-ok' && isPng;
+                const alreadyOk = isJpeg || keepPngAsIs;
 
                 const img = new Image();
                 img.onload = () => {
                     try {
-                        const w = img.naturalWidth || 0;
-                        const h = img.naturalHeight || 0;
+                        let w = img.naturalWidth || 0;
+                        let h = img.naturalHeight || 0;
+                        if ((!w || !h) && mime === 'image/svg+xml') { w = 1024; h = 768; }
                         if (!w || !h) return resolve(dataURL);
 
                         const longest = Math.max(w, h);
-                        const isPng = dataURL.startsWith('data:image/png');
-
-                        if (longest <= maxDim && dataURL.length < 400 * 1024) {
+                        if (alreadyOk && longest <= maxDim && dataURL.length < 400 * 1024) {
                             return resolve(dataURL);
                         }
 
@@ -2173,23 +2208,37 @@
                             nh = Math.max(1, Math.round(h * k));
                         }
 
-                        const c = document.createElement('canvas');
-                        c.width = nw;
-                        c.height = nh;
-                        const ctx = c.getContext('2d');
-                        if (!isPng) {
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(0, 0, nw, nh);
-                        }
-                        ctx.drawImage(img, 0, 0, nw, nh);
+                        const draw = (bg) => {
+                            const c = document.createElement('canvas');
+                            c.width = nw; c.height = nh;
+                            const ctx = c.getContext('2d');
+                            if (bg) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, nw, nh); }
+                            ctx.drawImage(img, 0, 0, nw, nh);
+                            return c;
+                        };
 
-                        let out = c.toDataURL('image/jpeg', quality);
-                        if (isPng) {
-                            const pngOut = c.toDataURL('image/png');
-                            if (pngOut.length < out.length) out = pngOut;
+                        let usePng = false;
+                        if (target === 'png-ok') {
+                            if (isPng) usePng = true;
+                            else if (!isJpeg) {
+                                // есть ли у картинки прозрачность?
+                                const probe = draw(false);
+                                const sw = Math.min(nw, 256), sh = Math.max(1, Math.round(nh * sw / nw));
+                                const pc = document.createElement('canvas');
+                                pc.width = sw; pc.height = sh;
+                                const pctx = pc.getContext('2d');
+                                pctx.drawImage(probe, 0, 0, sw, sh);
+                                const px = pctx.getImageData(0, 0, sw, sh).data;
+                                for (let i = 3; i < px.length; i += 4) { if (px[i] < 250) { usePng = true; break; } }
+                            }
                         }
 
-                        if (out.length >= dataURL.length) return resolve(dataURL);
+                        const out = usePng
+                            ? draw(false).toDataURL('image/png')
+                            : draw(true).toDataURL('image/jpeg', quality);
+
+                        // уже подходящий формат: не раздуваем файл
+                        if (alreadyOk && out.length >= dataURL.length && longest <= maxDim) return resolve(dataURL);
                         resolve(out);
                     } catch (e) {
                         resolve(dataURL);
@@ -2198,6 +2247,17 @@
                 img.onerror = () => resolve(dataURL);
                 img.src = dataURL;
             });
+        }
+
+        // v3.2 — гарантирует, что картинка в экспорте (Word/Excel/ZIP) — JPG или PNG (старые проекты могут содержать .webp)
+        async function ensureExportableImage(src, target) {
+            if (typeof src !== 'string') return src;
+            const m = /^data:(image\/[^;,]+)/i.exec(src);
+            if (!m) return src;
+            const mime = m[1].toLowerCase();
+            const ok = mime === 'image/jpeg' || mime === 'image/jpg' || (mime === 'image/png' && target !== 'jpg');
+            if (ok) return src;
+            return await compressImage(src, 100000, 0.92, target || 'png-ok');
         }
 
         let APP = {
@@ -2544,7 +2604,8 @@
                 const imgs = row.storyboard || [];
                 if (!imgs.length) continue;
                 const numPart = sbSafeName(row.numDisplay || String(row.num).padStart(4, '0')) || pad(row.num || 0, 4);
-                for (const src of imgs) {
+                for (const src0 of imgs) {
+                    const src = await ensureExportableImage(src0, 'jpg');
                     let bytes = null, ext = 'jpg';
                     if (typeof src === 'string' && src.startsWith('data:')) {
                         const d = dataURLToBytes(src);
@@ -2625,7 +2686,8 @@
 
                 // загрузка изображений кадра
                 const loaded = [];
-                for (const src of (row.storyboard || [])) {
+                for (const src0 of (row.storyboard || [])) {
+                    const src = await ensureExportableImage(src0, 'jpg');
                     let bytes = null, ext = 'jpg', mime = 'image/jpeg';
                     if (typeof src === 'string' && src.startsWith('data:')) {
                         const d = dataURLToBytes(src);
@@ -2857,6 +2919,7 @@
             let imgCounter = 0;
 
             async function registerImage(dataURL) {
+                dataURL = await ensureExportableImage(dataURL, 'png-ok');
                 const parsed = dataURLToBytes(dataURL);
                 if (!parsed) return null;
                 const id  = ++imgCounter;
@@ -3031,7 +3094,8 @@
                 for (const cell of it.cells) {
                     cell.registered = [];
                     if (cell.imgs && cell.imgs.length) {
-                        for (const src of cell.imgs) {
+                        for (const src0 of cell.imgs) {
+                            const src = await ensureExportableImage(src0, 'png-ok');
                             const parsed = dataURLToBytes(src);
                             if (!parsed) continue;
                             const id = ++imgCounter;
@@ -3623,7 +3687,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         // =====================================================================
         // v2.7 — АВТОСОХРАНЕНИЕ И ВОССТАНОВЛЕНИЕ ТЕКУЩЕГО ПРОЕКТА (IndexedDB)
         // =====================================================================
-        const APP_VERSION = '3.0';
+        const APP_VERSION = '3.2';
         const AUTOSAVE = {
             DB: 'noemOceanAutosave', STORE: 'kv', KEY: 'currentProject',
             ready: false, dirty: false, timer: null, db: null
@@ -6274,6 +6338,31 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
+        // v3.1: вставленный/перетащенный текст по умолчанию — рамка 16:9, пока пользователь сам не изменит её размер
+        function neApplyDefaultTextRatio(el, d) {
+            const MIN_W = 160, MAX_W = 720, STEP = 20;
+            el.style.maxWidth = 'none';
+            let fitW = null;
+            for (let w = MIN_W; w <= MAX_W; w += STEP) {
+                el.style.width = w + 'px';
+                el.style.height = 'auto';
+                const h = el.offsetHeight;
+                if (h <= Math.round(w * 9 / 16)) { fitW = w; break; }
+            }
+            if (fitW === null) {
+                // очень длинный текст: ширина максимальная, высота по содержимому (чтобы ничего не обрезалось)
+                el.style.width = MAX_W + 'px';
+                el.style.height = 'auto';
+                d.width = MAX_W;
+                d.height = null;
+                return;
+            }
+            d.width = fitW;
+            d.height = Math.round(fitW * 9 / 16);
+            el.style.width = d.width + 'px';
+            el.style.height = d.height + 'px';
+        }
+
         function addNoeticElAt(type, x, y, opts) {
             opts = opts || {};
             if (type === 'note') type = 'text';
@@ -6288,6 +6377,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (opts.textures) elData.textures = opts.textures;
             APP.noeticElements.push(elData);
             const el = renderNoeticEl(elData);
+            if (type === 'text' && opts.text) neApplyDefaultTextRatio(el, elData);
             elData.rowId = neFindOwner(elData, neZoneLayout);
             updateNoeticElCount();
             pushHistory('Добавление элемента');
@@ -6312,11 +6402,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const t = f.type || '';
             if (t.startsWith('image/')) {
                 neReadDataUrl(f, async url => {
-                    const compressed = await compressImage(url, 2000, 0.85);
+                    const compressed = await compressImage(url, 2000, 0.85, 'png-ok');
                     addNoeticElAt('image', x, y, { src: compressed });
                 });
             } else if (t.startsWith('video/') || ['mp4', 'webm', 'mov', 'm4v', 'ogv'].includes(ext)) {
-                neReadDataUrl(f, url => addNoeticElAt('video', x, y, { src: url }));
+                neReadDataUrl(f, url => addNoeticElAt('video', x, y, { src: url, fileName: f.name }));
             } else if (t.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(ext)) {
                 neReadDataUrl(f, url => addNoeticElAt('audio', x, y, { src: url }));
             } else if (['fbx', 'obj', 'glb', 'gltf', 'zip'].includes(ext)) {
@@ -6472,14 +6562,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 });
                 el.appendChild(cap);
             } else if (t === 'video') {
-                el.classList.add('ne-video-wrap');
-                const video = document.createElement('video');
-                video.src = elData.src;
-                video.controls = true;
-                video.preload = 'metadata';
-                if (elData.width) video.style.width = elData.width + 'px';
-                el.appendChild(video);
-                el.appendChild(neMakeGrip());
+                // v3.1: видео отображается компактной карточкой с иконкой (как 3D); просмотр — двойной щелчок в режиме просмотра
+                el.classList.add('ne-3d-icon', 'ne-video-icon');
+                const ic = document.createElement('div');
+                ic.className = 'ne-3d-icon-inner';
+                ic.textContent = '🎬';
+                el.appendChild(ic);
+                const lbl = document.createElement('div');
+                lbl.className = 'ne-3d-icon-label';
+                const nm = elData.fileName ? elData.fileName.replace(/\.[^.]+$/, '') : 'Видео';
+                lbl.textContent = nm.slice(0, 18);
+                el.appendChild(lbl);
             } else if (t === 'audio') {
                 el.classList.add('ne-audio-wrap');
                 el.appendChild(neMakeGrip());
@@ -6529,7 +6622,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 e.stopPropagation();
                 if (e.target.closest('.ne-handle')) return;
                 if (APP.mode === 'editor') {
-                    selectNoeticEl(el, elData);
+                    if (!(selectedNoeticEl && selectedNoeticEl.el === el)) selectNoeticEl(el, elData);
+                    showNeToolbar(el, elData);
                     if (elData.type === 'text') {
                         neStartEdit(el, elData);
                     } else if (e.target.classList.contains('ne-caption')) {
@@ -6568,7 +6662,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const wy = (ev.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
                 const dx = wx - startWX,
                     dy = wy - startWY;
-                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) { moved = true; neHideToolbar(); }
                 targets.forEach((t, i) => {
                     t.data.x = startPos[i].x + dx;
                     t.data.y = startPos[i].y + dy;
@@ -6583,7 +6677,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 targets.forEach(t => t.el.classList.remove('dragging'));
                 if (moved) {
                     targets.forEach(t => { t.data.rowId = neFindOwner(t.data, neZoneLayout); });
-                    if (selectedNoeticEl && APP.mode === 'editor') showNeToolbar(selectedNoeticEl.el, selectedNoeticEl.data);
                     scheduleHistory('Перемещение элемента');
                 }
             }
@@ -6607,7 +6700,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const wy = (ev.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
                 const dx = wx - startWX,
                     dy = wy - startWY;
-                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) { moved = true; neHideToolbar(); }
                 elData.x = startX + dx;
                 elData.y = startY + dy;
                 el.style.left = elData.x + 'px';
@@ -6667,7 +6760,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         document.removeEventListener('mousemove', move);
                         document.removeEventListener('mouseup', up);
                         if (changed) {
-                            if (APP.mode === 'editor') showNeToolbar(el, elData);
+                            if (APP.mode === 'editor' && neToolbarVisible()) showNeToolbar(el, elData);
                             pushHistory('Масштаб элемента');
                         }
                     };
@@ -6743,14 +6836,25 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
         }
 
-        function selectNoeticEl(el, elData) {
+        function selectNoeticEl(el, elData, withToolbar) {
             deselectNoeticEl();
             clearNeMultiSelect();
             selectedNoeticEl = { el, data: elData };
             el.classList.add('selected');
             neAttachHandles(el, elData);
             neUpdateInv(el, elData);
-            if (APP.mode === 'editor') showNeToolbar(el, elData);
+            // v3.1: доп. панель — только при двойном клике; при одинарном клике только рамка с маркерами
+            if (withToolbar && APP.mode === 'editor') showNeToolbar(el, elData);
+        }
+
+        function neHideToolbar() {
+            const tb = document.getElementById('neToolbar');
+            if (tb) tb.classList.remove('show');
+        }
+
+        function neToolbarVisible() {
+            const tb = document.getElementById('neToolbar');
+            return !!(tb && tb.classList.contains('show'));
         }
 
         function deselectNoeticEl() {
@@ -6769,12 +6873,31 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             document.getElementById('neTextTools').style.display = isText ? 'contents' : 'none';
             if (isText) document.getElementById('neFontSize').value = String(Math.round(elData.fontSize || 16));
             document.getElementById('neFrameBtn').textContent = elData.hasFrame === false ? 'Рамка' : 'Без рамки';
-            const rect = el.getBoundingClientRect();
-            let top = rect.top - 50;
-            if (top < 60) top = rect.bottom + 8;
-            tb.style.left = Math.max(4, Math.min(rect.left, window.innerWidth - 300)) + 'px';
-            tb.style.top = top + 'px';
+            // v3.1: панель ставится так, чтобы не перекрывать элемент (сверху → снизу → справа → слева)
+            tb.style.left = '0px';
+            tb.style.top = '0px';
             tb.classList.add('show');
+            const rect = el.getBoundingClientRect();
+            const tw = tb.offsetWidth, th = tb.offsetHeight;
+            const vw = window.innerWidth, vh = window.innerHeight;
+            const GAP = 36, EDGE = 4;
+            const clamp = (v, a, b) => Math.max(a, Math.min(v, b));
+            const cx = clamp(rect.left + rect.width / 2 - tw / 2, EDGE, Math.max(EDGE, vw - tw - EDGE));
+            const cy = clamp(rect.top + rect.height / 2 - th / 2, EDGE, Math.max(EDGE, vh - th - EDGE));
+            const cands = [
+                { l: cx, t: rect.top - th - GAP },
+                { l: cx, t: rect.bottom + GAP },
+                { l: rect.right + GAP, t: cy },
+                { l: rect.left - tw - GAP, t: cy }
+            ];
+            let pick = cands.find(c => c.l >= EDGE && c.t >= EDGE && c.l + tw <= vw - EDGE && c.t + th <= vh - EDGE);
+            if (!pick) {
+                const above = rect.top, below = vh - rect.bottom;
+                pick = above >= below ? { l: cx, t: clamp(rect.top - th - GAP, EDGE, vh - th - EDGE) }
+                                      : { l: cx, t: clamp(rect.bottom + GAP, EDGE, vh - th - EDGE) };
+            }
+            tb.style.left = pick.l + 'px';
+            tb.style.top = pick.t + 'px';
         }
 
         function clearNeMultiSelect() {
@@ -6907,7 +7030,25 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             // Теперь размеры уже посчитаны
             const W = box.clientWidth || 800;
             const H = box.clientHeight || 600;
-            init3DViewer(box, Object.assign({}, elData, { width: W, height: H }));
+            const api = init3DViewer(box, Object.assign({}, elData, { width: W, height: H }));
+            if (api && api.setMode) {
+                const bar = document.createElement('div');
+                bar.className = 'ne3d-modebar';
+                const modes = [['main', 'Основной'], ['tex', 'Только текстуры'], ['wire', 'Только сетка'], ['plain', 'Модель без текстур']];
+                modes.forEach(([key, label]) => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'ne3d-mode-btn' + (key === 'main' ? ' active' : '');
+                    b.textContent = label;
+                    b.addEventListener('click', ev => {
+                        ev.stopPropagation();
+                        api.setMode(key);
+                        bar.querySelectorAll('.ne3d-mode-btn').forEach(x => x.classList.toggle('active', x === b));
+                    });
+                    bar.appendChild(b);
+                });
+                box.appendChild(bar);
+            }
         }
 
         function returnAllNoeticEls() {
@@ -7062,6 +7203,43 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 return url;
             });
 
+            // v3.1: режимы просмотра — main / tex / wire / plain
+            let viewMode = 'main';
+            const rev = parseInt(THREE.REVISION) || 128;
+            function makeModeMat(m, mesh, mode) {
+                const o = {};
+                if (rev < 129) { o.skinning = !!mesh.isSkinnedMesh; o.morphTargets = !!(m && m.morphTargets); }
+                const side = m && m.side !== undefined ? m.side : THREE.FrontSide;
+                if (mode === 'tex') {
+                    const hasMap = !!(m && m.map);
+                    return new THREE.MeshBasicMaterial(Object.assign(o, {
+                        map: hasMap ? m.map : null,
+                        color: hasMap ? new THREE.Color(0xffffff) : (m && m.color ? m.color.clone() : new THREE.Color(0xffffff)),
+                        side, transparent: !!(m && m.transparent), opacity: m && m.opacity !== undefined ? m.opacity : 1,
+                        alphaTest: m && m.alphaTest ? m.alphaTest : 0, vertexColors: !!(m && m.vertexColors)
+                    }));
+                }
+                if (mode === 'wire') {
+                    return new THREE.MeshBasicMaterial(Object.assign(o, { color: 0xe8c26a, wireframe: true, side }));
+                }
+                return new THREE.MeshStandardMaterial(Object.assign(o, { color: 0xcfcfcf, roughness: 0.85, metalness: 0, side }));
+            }
+            function applyViewMode(mode) {
+                viewMode = mode;
+                scene.traverse(ch => {
+                    if (!ch.isMesh || !ch.userData._neOrig) return;
+                    const orig = ch.userData._neOrig;
+                    if (mode === 'main') { ch.material = orig; return; }
+                    ch.userData._neModes = ch.userData._neModes || {};
+                    if (!ch.userData._neModes[mode]) {
+                        const arr = Array.isArray(orig) ? orig : [orig];
+                        const made = arr.map(m => makeModeMat(m, ch, mode));
+                        ch.userData._neModes[mode] = Array.isArray(orig) ? made : made[0];
+                    }
+                    ch.material = ch.userData._neModes[mode];
+                });
+            }
+
             function place(obj) {
                 const box = new THREE.Box3().setFromObject(obj);
                 const c = box.getCenter(new THREE.Vector3());
@@ -7082,6 +7260,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     });
                 });
                 scene.add(obj);
+                obj.traverse(ch => { if (ch.isMesh) ch.userData._neOrig = ch.material; });
+                applyViewMode(viewMode);
                 msg.remove();
             }
             const fail = err => { console.error('3D load error:', err); msg.textContent = 'Не удалось загрузить модель'; };
@@ -7126,6 +7306,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 renderer.render(scene, camera);
             }
             animate();
+            return { setMode: applyViewMode };
         }
 
         function updateNoeticElCount() { document.getElementById('noeticElCount').textContent = APP.noeticElements.length; }
@@ -8480,7 +8661,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const wy = (t.clientY - vrect.top - APP.noeticOffsetY) / APP.noeticZoom;
                 const dx = wx - startWX;
                 const dy = wy - startWY;
-                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) { moved = true; neHideToolbar(); }
                 targets.forEach((tg, i) => {
                     tg.data.x = startPos[i].x + dx;
                     tg.data.y = startPos[i].y + dy;
@@ -8497,7 +8678,6 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 targets.forEach(t => t.el.classList.remove('dragging'));
                 if (moved) {
                     targets.forEach(t => { t.data.rowId = neFindOwner(t.data, neZoneLayout); });
-                    if (selectedNoeticEl && APP.mode === 'editor') showNeToolbar(selectedNoeticEl.el, selectedNoeticEl.data);
                     scheduleHistory('Перемещение элемента');
                 }
             }
@@ -8622,7 +8802,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     const data = APP.noeticElements.find(x => x.id === id);
                     if (!data) return;
                     if (APP.mode === 'editor') {
-                        selectNoeticEl(el, data);
+                        if (!(selectedNoeticEl && selectedNoeticEl.el === el)) selectNoeticEl(el, data);
+                        showNeToolbar(el, data);
                         if (data.type === 'text') {
                             neStartEdit(el, data);
                         } else if (e.target.classList.contains('ne-caption')) {
@@ -9160,6 +9341,31 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 });
             }
         }
+    </script>
+    <script>
+        // v3.1 — при наведении на обрезанное («…») название блока показываем окошко с полным названием
+        (function () {
+            const tip = document.createElement('div');
+            tip.className = 'ui-tip';
+            document.body.appendChild(tip);
+            function hide() { tip.style.display = 'none'; }
+            document.addEventListener('mousemove', e => {
+                if (document.body.classList.contains('touch-device')) return;
+                const t = e.target.closest ? e.target.closest('.panel-title-text') : null;
+                if (!t || t.scrollWidth <= t.clientWidth + 1) { hide(); return; }
+                tip.textContent = t.textContent.trim();
+                tip.style.display = 'block';
+                let x = e.clientX + 14, y = e.clientY + 18;
+                const w = tip.offsetWidth, h = tip.offsetHeight;
+                if (x + w > window.innerWidth - 4) x = Math.max(4, window.innerWidth - w - 4);
+                if (y + h > window.innerHeight - 4) y = e.clientY - h - 10;
+                tip.style.left = x + 'px';
+                tip.style.top = y + 'px';
+            });
+            document.addEventListener('mouseleave', hide);
+            document.addEventListener('mousedown', hide);
+            window.addEventListener('blur', hide);
+        })();
     </script>
 </body>
 </html>
