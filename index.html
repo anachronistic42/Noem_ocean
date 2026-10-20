@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#14110c" />
+    <meta name="theme-color" content="#f5f5f7" />
     <title>Noem.ocean</title>
+    <!-- Noem.ocean v2.6 (export menu reorder + animatic export XMEML) -->
     <!-- Noem.ocean v2.2 (Android fixes + scene stats + note controls + 3D icon) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
@@ -1620,7 +1621,7 @@
         body.touch-device .script-container { -webkit-touch-callout: none; }
     </style>
 </head>
-<body>
+<body class="light-theme">
     <div class="bg-layer bg-stagnation"></div>
     <div class="grain"></div>
     <div class="vignette"></div>
@@ -1701,6 +1702,23 @@
                             <circle cx="14.5" cy="12.5" r="1" fill="currentColor"/>
                         </svg>
                         PDF (с оформлением)
+                    </button>
+                    <button onclick="exportStoryboardZip()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="14" rx="2"/>
+                            <circle cx="9" cy="10" r="1.5"/>
+                            <path d="M21 16l-5-5-8 8"/>
+                        </svg>
+                        Раскадровка (.zip)
+                    </button>
+                    <button onclick="exportAnimatic()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>
+                        </svg>
+                        Аниматик (.zip)
                     </button>
                 </div>
             </div>
@@ -1824,6 +1842,10 @@
             ЛОКАЦИИ
             <button onclick="toggleLocModal()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
         </div>
+        <div style="margin-bottom:8px; font-size:11px; display:flex; gap:10px; align-items:center; color:var(--text);">
+            <label><input type="radio" name="locModeRadio" value="switch" onchange="APP.locMode='switch'; renderLocList();"> Переключатель</label>
+            <label><input type="radio" name="locModeRadio" value="list" onchange="APP.locMode='list'; renderLocList();"> Список</label>
+        </div>
         <div id="locList" class="loc-list"></div>
         <div class="loc-add-row">
             <input type="text" id="newLocInp" placeholder="Новая локация..." onkeydown="if(event.key==='Enter')addLocation()" />
@@ -1844,6 +1866,32 @@
         <div class="loc-add-row">
             <input type="text" id="newTimeInp" placeholder="Новое время..." onkeydown="if(event.key==='Enter')addTime()" />
             <button onclick="addTime()">+</button>
+        </div>
+    </div>
+
+    <div id="scaleListModal" class="col-manage-popup" style="display:none; width: 260px;">
+        <div style="font-size:11px;color:var(--accent);font-family:'Courier New', monospace; margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            СВОИ КРУПНОСТИ
+            <button onclick="closeCustomListModal('scale')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+        </div>
+        <div style="margin-bottom:8px;font-size:10px;color:var(--muted);">Свои пункты добавляются в конец выпадающего списка в таблице.</div>
+        <div id="scaleListItems" class="loc-list"></div>
+        <div class="loc-add-row">
+            <input type="text" id="newScaleListInp" placeholder="Новая крупность..." onkeydown="if(event.key==='Enter')addCustomListItem('scale')" />
+            <button onclick="addCustomListItem('scale')">+</button>
+        </div>
+    </div>
+
+    <div id="montageListModal" class="col-manage-popup" style="display:none; width: 260px;">
+        <div style="font-size:11px;color:var(--accent);font-family:'Courier New', monospace; margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            СВОЙ МОНТАЖ
+            <button onclick="closeCustomListModal('montage')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+        </div>
+        <div style="margin-bottom:8px;font-size:10px;color:var(--muted);">Свои пункты добавляются в конец выпадающего списка в таблице.</div>
+        <div id="montageListItems" class="loc-list"></div>
+        <div class="loc-add-row">
+            <input type="text" id="newMontageListInp" placeholder="Новый тип монтажа..." onkeydown="if(event.key==='Enter')addCustomListItem('montage')" />
+            <button onclick="addCustomListItem('montage')">+</button>
         </div>
     </div>
 
@@ -1927,6 +1975,8 @@
                 <button onclick="toggleIntExtModal()" title="ИНТ/ЭКСТ">ИНТ/ЭКСТ</button>
                 <button onclick="toggleLocModal()" title="Локации">Локации</button>
                 <button onclick="toggleTimeModal()" title="Время суток">Время суток</button>
+                <button id="scaleListBtn" onclick="toggleCustomListModal('scale')" title="Свои крупности">Крупности</button>
+                <button id="montageListBtn" onclick="toggleCustomListModal('montage')" title="Свои типы монтажа">Монтаж</button>
                 <button onclick="toggleColManager()" title="Управление колонками">⚙ Колонки</button>
                 <button id="collapseP2" class="collapse-btn" onclick="collapsePanel(2)" title="Свернуть">◀</button>
             </div>
@@ -2119,7 +2169,7 @@
             projectPassword: '',
             pendingOpenData: null,
             effectsOn: true,
-            theme: 'dark',
+            theme: 'light',
             showRenumberConfirm: true,
             scriptZoom: 1,
             scriptOffsetX: 20,
@@ -2137,8 +2187,11 @@
             locations: [],
             times: ['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ', 'ГЛУБОКАЯ НОЧЬ'],
             timeMode: 'switch',
-            intExts: ['ИНТ.', 'ЭКСТ.', 'НАТ.'],
-            intExtMode: 'switch'
+            intExts: ['ИНТ.', 'ЭКСТ.', 'НАТ.', 'ИНТ-ЭКСТ.'],
+            intExtMode: 'switch',
+            locMode: 'list',
+            customScales: [],
+            customMontages: []
         };
 
         // ============================================================
@@ -2162,6 +2215,9 @@
                 intExts: APP.intExts,
                 timeMode: APP.timeMode,
                 intExtMode: APP.intExtMode,
+                locMode: APP.locMode,
+                customScales: APP.customScales,
+                customMontages: APP.customMontages,
                 scaleSystem: APP.scaleSystem,
                 montageSystem: APP.montageSystem,
                 dirRowIdCounter,
@@ -2182,6 +2238,9 @@
             APP.intExts = (resolved.intExts || []).slice();
             APP.timeMode = resolved.timeMode || 'switch';
             APP.intExtMode = resolved.intExtMode || 'switch';
+            APP.locMode = resolved.locMode || 'list';
+            APP.customScales = (resolved.customScales || []).slice();
+            APP.customMontages = (resolved.customMontages || []).slice();
             APP.scaleSystem = resolved.scaleSystem || 'ru';
             APP.montageSystem = resolved.montageSystem || 'en';
             dirRowIdCounter = resolved.dirRowIdCounter || 1;
@@ -2415,6 +2474,236 @@
             a.href = url; a.download = filename;
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1500);
+        }
+
+        // ============================================================
+        // ЭКСПОРТ РАСКАДРОВКИ (ZIP): папки по сценам, файлы "00023_0011.ext"
+        // ============================================================
+        function sbSafeName(str, maxLen) {
+            let t = String(str == null ? '' : str).replace(/[\\\/:*?"<>|\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim();
+            t = t.replace(/[. ]+$/, '');
+            if (maxLen && t.length > maxLen) t = t.slice(0, maxLen).trim();
+            return t;
+        }
+
+        async function exportStoryboardZip() {
+            closeExportMenu();
+            if (typeof JSZip === 'undefined') { notify('Библиотека JSZip не загружена'); return; }
+            renumberRows();
+            const zip = new JSZip();
+            let order = 0, sceneIdx = 0;
+            let folder = null;
+            const pad = (n, w) => String(n).padStart(w, '0');
+            const ensureNoScene = () => { if (!folder) folder = zip.folder('00_Без сцены'); };
+
+            for (const row of APP.dirRows) {
+                if (row.type === 'scene') {
+                    sceneIdx++;
+                    const name = sbSafeName(exportSceneText(row), 90) || ('Сцена ' + sceneIdx);
+                    folder = zip.folder(pad(sceneIdx, 2) + '_' + name);
+                    continue;
+                }
+                if (row.type === 'note') continue;
+                const imgs = row.storyboard || [];
+                if (!imgs.length) continue;
+                const numPart = sbSafeName(row.numDisplay || String(row.num).padStart(4, '0')) || pad(row.num || 0, 4);
+                for (const src of imgs) {
+                    let bytes = null, ext = 'jpg';
+                    if (typeof src === 'string' && src.startsWith('data:')) {
+                        const d = dataURLToBytes(src);
+                        if (d) { bytes = d.bytes; ext = mimeToExt(d.mime) || 'jpg'; }
+                    } else if (typeof src === 'string' && src) {
+                        try {
+                            const resp = await fetch(src);
+                            const blob = await resp.blob();
+                            bytes = new Uint8Array(await blob.arrayBuffer());
+                            ext = mimeToExt((blob.type || '').toLowerCase()) || 'jpg';
+                        } catch (err) { /* пропуск */ }
+                    }
+                    if (!bytes) continue;
+                    order++;
+                    ensureNoScene();
+                    folder.file(pad(order, 5) + '_' + numPart + '.' + ext, bytes);
+                }
+            }
+            if (!order) { notify('В раскадровке нет изображений'); return; }
+            const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+            downloadBlob(blob, projectFileBase() + '_раскадровка.zip');
+            notify('Раскадровка экспортирована: ' + order + ' изобр.');
+        }
+
+
+        // ============================================================
+        // ЭКСПОРТ АНИМАТИКА (ZIP): FCP7 XML (xmeml v4) + папка storyboard
+        // Premiere Pro / DaVinci Resolve / Final Cut 7 / Vegas и др.
+        // V1 — кадры раскадровки по хронометражу; V2 — субтитры со сценой
+        // над первыми кадрами новых сцен.
+        // ============================================================
+        function amTimecodeToSec(tc) {
+            if (!tc) return 0;
+            const p = String(tc).split(':').map(Number);
+            return (p[0] || 0) * 60 + (p[1] || 0);
+        }
+        function amSrtTime(fr, fps) {
+            const ms = Math.round(fr / fps * 1000);
+            const h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000),
+                  s = Math.floor(ms % 60000 / 1000), z = ms % 1000;
+            const p = (n, w) => String(n).padStart(w || 2, '0');
+            return p(h) + ':' + p(m) + ':' + p(s) + ',' + p(z, 3);
+        }
+        function amBytesDims(bytes, mime) {
+            return new Promise(resolve => {
+                const url = URL.createObjectURL(new Blob([bytes], { type: mime || 'image/png' }));
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve({ w: img.naturalWidth || 1920, h: img.naturalHeight || 1080 }); };
+                img.onerror = () => { URL.revokeObjectURL(url); resolve({ w: 1920, h: 1080 }); };
+                img.src = url;
+            });
+        }
+
+        async function exportAnimatic() {
+            closeExportMenu();
+            if (typeof JSZip === 'undefined') { notify('Библиотека JSZip не загружена'); return; }
+            renumberRows();
+
+            const FPS = 25, SEQ_W = 1920, SEQ_H = 1080, STILL_DUR = 108000;
+            const pad = (n, w) => String(n).padStart(w, '0');
+            const zip = new JSZip();
+            const imgFolder = zip.folder('storyboard');
+
+            // --- Сбор кадров и сцен в порядке режиссёрского сценария ---
+            const v1 = [];       // { name, path, w, h, start, end }
+            const subs = [];     // { text, start, end }
+            let cursor = 0;      // в кадрах (fps)
+            let order = 0;
+            let pendingScene = null;
+
+            for (const row of APP.dirRows) {
+                if (row.type === 'scene') { pendingScene = exportSceneText(row); continue; }
+                if (row.type === 'note') continue;
+
+                let sec = amTimecodeToSec(row.timecode);
+                if (sec <= 0) sec = 1;
+                let len = sec * FPS;
+
+                // загрузка изображений кадра
+                const loaded = [];
+                for (const src of (row.storyboard || [])) {
+                    let bytes = null, ext = 'jpg', mime = 'image/jpeg';
+                    if (typeof src === 'string' && src.startsWith('data:')) {
+                        const d = dataURLToBytes(src);
+                        if (d) { bytes = d.bytes; mime = d.mime; ext = mimeToExt(d.mime) || 'jpg'; }
+                    } else if (typeof src === 'string' && src) {
+                        try {
+                            const resp = await fetch(src);
+                            const blob = await resp.blob();
+                            bytes = new Uint8Array(await blob.arrayBuffer());
+                            mime = (blob.type || 'image/jpeg').toLowerCase();
+                            ext = mimeToExt(mime) || 'jpg';
+                        } catch (err) { /* пропуск */ }
+                    }
+                    if (bytes) loaded.push({ bytes, ext, mime });
+                }
+
+                // несколько изображений в кадре делят хронометраж поровну
+                if (loaded.length > len) len = loaded.length;
+                const numPart = sbSafeName(row.numDisplay || String(row.num).padStart(4, '0'))
+                    .replace(/[^A-Za-z0-9_\-]/g, '') || pad(row.num || 0, 4);
+                const base = Math.floor(len / Math.max(1, loaded.length));
+                let t = cursor;
+                for (let i = 0; i < loaded.length; i++) {
+                    order++;
+                    const l = (i === loaded.length - 1) ? (cursor + len - t) : base;
+                    const fname = pad(order, 5) + '_' + numPart + '.' + loaded[i].ext;
+                    imgFolder.file(fname, loaded[i].bytes);
+                    const dim = await amBytesDims(loaded[i].bytes, loaded[i].mime);
+                    v1.push({ name: fname, path: 'storyboard/' + fname, w: dim.w, h: dim.h, start: t, end: t + l });
+                    t += l;
+                }
+
+                // субтитр сцены — над первым кадром новой сцены
+                if (pendingScene !== null) {
+                    const first = loaded.length ? base : len;
+                    subs.push({ text: pendingScene, start: cursor, end: cursor + first });
+                    pendingScene = null;
+                }
+                cursor += len;
+            }
+
+            if (!v1.length) { notify('В раскадровке нет изображений'); return; }
+            const total = cursor;
+            const projName = (document.getElementById('projectTitle').textContent || 'Noem.ocean').trim();
+            const rateXml = '<rate><timebase>' + FPS + '</timebase><ntsc>FALSE</ntsc></rate>';
+
+            // --- V1: кадры ---
+            let v1Xml = '';
+            let prevEnd = 0;
+            v1.forEach((c, i) => {
+                const len = c.end - c.start;
+                const fit = Math.min(SEQ_W / c.w, SEQ_H / c.h) * 100;
+                const scaleXml = Math.abs(fit - 100) < 0.01 ? '' :
+                    '<filter><effect><name>Basic Motion</name><effectid>basic</effectid><effectcategory>motion</effectcategory>' +
+                    '<effecttype>motion</effecttype><mediatype>video</mediatype>' +
+                    '<parameter><parameterid>scale</parameterid><name>Scale</name><valuemin>0</valuemin><valuemax>1000</valuemax><value>' + fit.toFixed(3) + '</value></parameter>' +
+                    '</effect></filter>';
+                v1Xml += '<clipitem id="clipitem-' + (i + 1) + '"><name>' + xmlEsc(c.name) + '</name><enabled>TRUE</enabled>' +
+                    '<duration>' + STILL_DUR + '</duration>' + rateXml +
+                    '<start>' + c.start + '</start><end>' + c.end + '</end><in>0</in><out>' + len + '</out>' +
+                    '<pixelaspectratio>square</pixelaspectratio><stillframe>TRUE</stillframe><anamorphic>FALSE</anamorphic><alphatype>none</alphatype>' +
+                    '<file id="file-' + (i + 1) + '"><name>' + xmlEsc(c.name) + '</name><pathurl>' + xmlEsc(c.path) + '</pathurl>' + rateXml +
+                    '<duration>' + STILL_DUR + '</duration><media><video><samplecharacteristics>' + rateXml +
+                    '<width>' + c.w + '</width><height>' + c.h + '</height><anamorphic>FALSE</anamorphic><pixelaspectratio>square</pixelaspectratio>' +
+                    '</samplecharacteristics></video></media></file>' + scaleXml + '</clipitem>\n';
+            });
+
+            // --- V2: субтитры (генератор Text) ---
+            const txtParam = (id, name, val) => '<parameter><parameterid>' + id + '</parameterid><name>' + name + '</name><value>' + val + '</value></parameter>';
+            let v2Xml = '';
+            subs.forEach((s, i) => {
+                const len = s.end - s.start;
+                v2Xml += '<generatoritem id="generatoritem-' + (i + 1) + '"><name>' + xmlEsc(s.text.slice(0, 60)) + '</name><enabled>TRUE</enabled>' +
+                    '<duration>' + len + '</duration>' + rateXml +
+                    '<start>' + s.start + '</start><end>' + s.end + '</end><in>0</in><out>' + len + '</out><anamorphic>FALSE</anamorphic><alphatype>black</alphatype>' +
+                    '<effect><name>Text</name><effectid>Text</effectid><effectcategory>Text</effectcategory><effecttype>generator</effecttype><mediatype>video</mediatype>' +
+                    txtParam('str', 'Text', xmlEsc(s.text)) +
+                    txtParam('fontname', 'Font', 'Arial') +
+                    txtParam('fontsize', 'Size', '36') +
+                    txtParam('fontstyle', 'Style', '1') +
+                    txtParam('fontalign', 'Alignment', '2') +
+                    '<parameter><parameterid>fontcolor</parameterid><name>Font Color</name><value><alpha>255</alpha><red>255</red><green>255</green><blue>255</blue></value></parameter>' +
+                    '<parameter><parameterid>origin</parameterid><name>Origin</name><value><horiz>0</horiz><vert>-0.38</vert></value></parameter>' +
+                    '</effect></generatoritem>\n';
+            });
+
+            // --- маркеры сцен ---
+            let markersXml = '';
+            subs.forEach(s => {
+                markersXml += '<marker><name>' + xmlEsc(s.text.slice(0, 80)) + '</name><comment>' + xmlEsc(s.text) +
+                    '</comment><in>' + s.start + '</in><out>-1</out></marker>\n';
+            });
+
+            const xml =
+'<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE xmeml>\n<xmeml version="4">\n' +
+'<sequence id="sequence-1"><name>' + xmlEsc(projName) + ' — аниматик</name><duration>' + total + '</duration>' + rateXml +
+'<timecode>' + rateXml + '<string>00:00:00:00</string><frame>0</frame><displayformat>NDF</displayformat></timecode>\n' +
+'<media><video><format><samplecharacteristics>' + rateXml + '<width>' + SEQ_W + '</width><height>' + SEQ_H + '</height>' +
+'<anamorphic>FALSE</anamorphic><pixelaspectratio>square</pixelaspectratio><fielddominance>none</fielddominance></samplecharacteristics></format>\n' +
+'<track>\n' + v1Xml + '<enabled>TRUE</enabled><locked>FALSE</locked></track>\n' +
+'<track>\n' + v2Xml + '<enabled>TRUE</enabled><locked>FALSE</locked></track>\n' +
+'</video></media>\n' + markersXml + '</sequence>\n</xmeml>\n';
+
+            // --- SRT как запасной вариант для субтитров ---
+            let srt = '';
+            subs.forEach((s, i) => {
+                srt += (i + 1) + '\n' + amSrtTime(s.start, FPS) + ' --> ' + amSrtTime(s.end, FPS) + '\n' + s.text + '\n\n';
+            });
+
+            const base = projectFileBase();
+            zip.file(base + '_animatic.xml', xml);
+            zip.file(base + '_scenes.srt', '\ufeff' + srt);
+            const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+            downloadBlob(blob, base + '_аниматик.zip');
+            notify('Аниматик экспортирован: ' + v1.length + ' кадр., ' + subs.length + ' сцен');
         }
 
         function colLetter(n) {
@@ -3172,6 +3461,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 btn.innerHTML = isLight ? MOON_SVG : SUN_SVG;
                 btn.title = isLight ? 'Тёмная тема' : 'Светлая тема';
             }
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', isLight ? '#f5f5f7' : '#14110c');
         }
 
         function toggleTheme() {
@@ -3315,8 +3606,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 'ГЛУБОКАЯ НОЧЬ'
             ];
             if (!APP.timeMode) APP.timeMode = 'switch';
-            if (!APP.intExts || !APP.intExts.length) APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
+            if (!APP.intExts || !APP.intExts.length) APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.', 'ИНТ-ЭКСТ.'];
             if (!APP.intExtMode) APP.intExtMode = 'switch';
+            if (!APP.locMode) APP.locMode = 'list';
+            if (!APP.customScales) APP.customScales = [];
+            if (!APP.customMontages) APP.customMontages = [];
 
             document.getElementById('storyboardImgInput').addEventListener('change', async e => {
                 const files = Array.from(e.target.files);
@@ -3436,6 +3730,42 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             );
         }
 
+        function toggleRenumberScene(row) {
+            if (row.restartNumbering) {
+                customConfirm('Убрать новую автоматическую нумерацию с этой сцены?', 'УБРАТЬ', () => {
+                    row.restartNumbering = false;
+                    row.restartFrom = null;
+                    renumberRows();
+                    updateTableBody();
+                    pushHistory('Снятие перенумерации сцен');
+                });
+                return;
+            }
+            const apply = () => {
+                const base = (row.customSceneNum !== undefined && row.customSceneNum !== false)
+                    ? (parseInt(row.customSceneNum) || row.sceneNum) : row.sceneNum;
+                row.restartNumbering = true;
+                row.restartFrom = base;
+                renumberRows();
+                updateTableBody();
+                pushHistory('Новая нумерация с сцены');
+                notify('Нумерация сцен продолжена с номера ' + base);
+            };
+            if (!APP.showRenumberConfirm) { apply(); return; }
+            customConfirm(
+                'Задать новую автоматическую нумерацию сцен, начиная с этой сцены?\n\n' +
+                '• Эта сцена сохранит свой номер.\n' +
+                '• Последующие сцены получат номера по порядку (следующая +1).\n' +
+                '• Сцены с ручным номером сохранят свои значения.',
+                'ЗАДАТЬ',
+                (dontShow) => {
+                    if (dontShow) { APP.showRenumberConfirm = false; syncRenumberCheckbox(); }
+                    apply();
+                },
+                { checkbox: 'Не показывать это уведомление' }
+            );
+        }
+
         function setMode(m) {
             if (m === 'viewer') {
                 APP.noeticElements.forEach(el => {
@@ -3493,7 +3823,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 }
 
                 if (e.key === 'Escape') { closeNoeticMenu(); closeMontageRef(); closeScaleRef(); closeLightbox();
-                    deselectNoeticEl(); clearNeMultiSelect(); clearSelection(); closeLocModal(); closeTimeModal();
+                    deselectNoeticEl(); clearNeMultiSelect(); clearSelection(); closeLocModal(); closeTimeModal(); closeCustomListModal('scale'); closeCustomListModal('montage');
                     document.getElementById('historyDropdown').classList.remove('show'); }
 
                 if (e.key === 'Delete' || e.key === 'Del') {
@@ -4091,7 +4421,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             let scCounter = 1;
             APP.dirRows.forEach(row => {
                 if (row.type === 'scene' && !row.isCustomText) {
-                    if (row.customSceneNum !== undefined && row.customSceneNum !== false) {
+                    if (row.restartNumbering && row.restartFrom != null) {
+                        row.sceneNum = row.restartFrom;
+                        scCounter = row.restartFrom + 1;
+                    } else if (row.customSceneNum !== undefined && row.customSceneNum !== false) {
                         // ручной номер сцены — не трогаем
                     } else {
                         row.sceneNum = scCounter++;
@@ -4253,6 +4586,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                                 if (parsed.num) row.customSceneNum = parsed.num;
                                 else row.customSceneNum = false;
                                 row.sceneIntExt = parsed.intExt || 'ИНТ.';
+                                if (row.sceneIntExt && !APP.intExts.includes(row.sceneIntExt)) APP.intExts.push(row.sceneIntExt);
                                 row.sceneLoc = parsed.loc || row.sceneLoc;
                                 row.sceneTime = parsed.time || 'ДЕНЬ';
                                 row.sceneInfo = parsed.info || '';
@@ -4353,6 +4687,14 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         if (APP.mode === 'editor') {
                             pLoc.onclick = (e) => {
                                 e.stopPropagation();
+                                if (APP.locMode === 'switch' && APP.locations.length) {
+                                    const arr = APP.locations;
+                                    const idx = arr.indexOf(row.sceneLoc);
+                                    row.sceneLoc = arr[(idx + 1) % arr.length];
+                                    pLoc.textContent = ` ${row.sceneLoc}.`;
+                                    pushHistory('Правка сцены');
+                                    return;
+                                }
                                 document.querySelectorAll('.ne-scene-dropdown').forEach(el => el.remove());
                                 const list = document.createElement('div');
                                 list.className = 'custom-select-dropdown show ne-scene-dropdown';
@@ -4459,7 +4801,19 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
                     const headRow = document.createElement('div');
                     headRow.className = 'scene-head-row';
-                    headRow.append(editBtn, textWrap);
+                    if (APP.mode === 'editor' && !row.isCustomText) {
+                        const sRenum = document.createElement('button');
+                        sRenum.className = 'frame-renum-btn' + (row.restartNumbering ? ' active' : '');
+                        sRenum.style.marginRight = '4px';
+                        sRenum.title = row.restartNumbering
+                            ? 'Убрать новую нумерацию с этой сцены'
+                            : 'Задать новую автоматическую нумерацию с этой сцены';
+                        sRenum.textContent = row.restartNumbering ? '⟲' : '№';
+                        sRenum.addEventListener('click', (e) => { e.stopPropagation(); toggleRenumberScene(row); });
+                        headRow.append(editBtn, sRenum, textWrap);
+                    } else {
+                        headRow.append(editBtn, textWrap);
+                    }
 
                     wrap.append(headRow, statsWrap);
                     tdContent.appendChild(wrap);
@@ -4758,19 +5112,69 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         function tryParseSceneText(text) {
-            const rx =
-                /^(?:СЦЕНА\s*)?(\d+)?\s*(?:СЦЕНА)?\s*[-.]?\s*(ИНТ|ЭКСТ|НАТ)\.?\s+(.*?)\.\s+(РАССВЕТ|УТРО|ПОЛДЕНЬ|ДЕНЬ|ЗАКАТ|ВЕЧЕР|СУМЕРКИ|НОЧЬ|ГЛУБОКАЯ\s+НОЧЬ)\.?\s*(?:\(?(.*?)\)?)?$/i;
-            const m = text.trim().match(rx);
-            if (m) {
-                return {
-                    num: parseInt(m[1]) || null,
-                    intExt: m[2].toUpperCase() + '.',
-                    loc: m[3].trim().toUpperCase(),
-                    time: m[4].toUpperCase(),
-                    info: m[5] ? m[5].trim() : ''
-                };
+            // Распознаёт: "1. ИНТ. ПОДЪЕЗД. У ДОМА РИТЫ. РАННЕЕ УТРО." / "Сцена 3 - ЭКСТ. КУХНЯ. ДЕНЬ. (инфо)"
+            let src = String(text || '').replace(/\s+/g, ' ').trim();
+            if (!src) return null;
+            const normV = v => String(v).trim().toUpperCase().replace(/\.+$/, '').replace(/\s+/g, ' ');
+            const escRx = v => v.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
+
+            // 1) номер сцены (необязательный): "1." / "1)" / "Сцена 1 -" / "№1"
+            let num = null;
+            let mNum = src.match(/^(?:СЦЕНА\s*)?(?:№\s*)?(\d+)\s*[.)\-–—:]?\s*(?:СЦЕНА\s*)?[-–—:.]?\s*/i);
+            if (mNum) {
+                num = parseInt(mNum[1]) || null;
+                src = src.slice(mNum[0].length);
+            } else {
+                const mWord = src.match(/^СЦЕНА\s*[-–—:.]?\s*/i);
+                if (mWord) src = src.slice(mWord[0].length);
             }
-            return null;
+
+            // 2) ИНТ/ЭКСТ: встроенные + все пункты из пользовательского списка
+            const ieMap = new Map();
+            ['ИНТ', 'ЭКСТ', 'НАТ', 'ИНТ-ЭКСТ', 'ИНТ/ЭКСТ', 'ИНТ./ЭКСТ'].forEach(v => ieMap.set(v, v + '.'));
+            (APP.intExts || []).forEach(v => { const k = normV(v); if (k) ieMap.set(k, v); });
+            const ieKeys = Array.from(ieMap.keys()).sort((a, b) => b.length - a.length);
+            const ieRx = new RegExp('^(' + ieKeys.map(k => escRx(k).replace(/ /g, '\\s+')).join('|') + ')(?:\\.|(?=\\s))\\s*', 'i');
+            const mIe = src.match(ieRx);
+            if (!mIe) return null;
+            const intExt = ieMap.get(normV(mIe[1])) || (normV(mIe[1]) + '.');
+
+            // 3) хвост: ЛОКАЦИЯ. ВРЕМЯ СУТОК. (инфо)
+            let rest = src.slice(mIe[0].length).trim();
+            let info = '';
+            const mInfo = rest.match(/\s*\(([^()]*)\)\s*\.?\s*$/);
+            if (mInfo) { info = mInfo[1].trim(); rest = rest.slice(0, mInfo.index).trim(); }
+            rest = rest.replace(/[.\s]+$/, '').trim();
+            if (!rest) return null;
+            const segs = rest.split(/\.\s+/).map(x => x.trim()).filter(Boolean);
+            if (segs.length < 2) return null;
+
+            const timeSet = new Set(['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ', 'ГЛУБОКАЯ НОЧЬ']);
+            (APP.times || []).forEach(t => { const k = normV(t); if (k) timeSet.add(k); });
+            const timeKeys = Array.from(timeSet).sort((a, b) => b.length - a.length);
+
+            let loc = '', time = '', tail = '';
+            // а) сначала ищем известное время суток (поддерживает хвост без скобок)
+            for (let j = 1; j < segs.length && !time; j++) {
+                const up = segs[j].toUpperCase();
+                for (const t of timeKeys) {
+                    if (up === t || up.startsWith(t + ' ')) {
+                        time = t;
+                        tail = [segs[j].slice(t.length).trim()].concat(segs.slice(j + 1)).filter(Boolean).join('. ');
+                        loc = segs.slice(0, j).join('. ');
+                        break;
+                    }
+                }
+            }
+            // б) иначе — последний сегмент считаем временем суток (напр. "РАННЕЕ УТРО")
+            if (!time) {
+                const last = segs[segs.length - 1];
+                if (last.length > 40 || last.split(' ').length > 4) return null;
+                time = last.toUpperCase();
+                loc = segs.slice(0, -1).join('. ');
+            }
+            if (tail) info = info ? (tail + ' ' + info) : tail;
+            return { num, intExt, loc: loc.toUpperCase(), time: time.toUpperCase(), info };
         }
 
         function parseSceneDrop(text, row) {
@@ -4780,6 +5184,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (parsed.num) row.customSceneNum = parsed.num;
                 else row.customSceneNum = false;
                 row.sceneIntExt = parsed.intExt;
+                if (row.sceneIntExt && !APP.intExts.includes(row.sceneIntExt)) APP.intExts.push(row.sceneIntExt);
                 row.sceneLoc = parsed.loc;
                 row.sceneTime = parsed.time;
                 row.sceneInfo = parsed.info || '';
@@ -5172,8 +5577,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     pushHistory('Правка ' + field); };
                 list.appendChild(emptyOpt);
 
-                const arr = isScale ? (APP.scaleSystem === 'ru' ? RU_SCALES : EN_SCALES) : (APP.montageSystem === 'ru' ?
-                    RU_MONTAGE : EN_MONTAGE);
+                const arr = isScale ? getScaleOptions() : getMontageOptions();
                 arr.forEach(val => {
                     const o = document.createElement('div');
                     o.className = 'custom-select-option';
@@ -5334,7 +5738,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 };
                 list.appendChild(emptyOpt);
 
-                const scales = APP.scaleSystem === 'ru' ? RU_SCALES : EN_SCALES;
+                const scales = getScaleOptions();
                 scales.forEach(s => {
                     const o = document.createElement('div');
                     o.className = 'custom-select-option';
@@ -5438,7 +5842,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 };
                 list.appendChild(emptyOpt);
 
-                const mTypes = APP.montageSystem === 'ru' ? RU_MONTAGE : EN_MONTAGE;
+                const mTypes = getMontageOptions();
                 mTypes.forEach(m => {
                     const o = document.createElement('div');
                     o.className = 'custom-select-option';
@@ -5493,6 +5897,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         copy._frames = 0;
                         copy._duration = '00:00';
                         copy.customSceneNum = false;
+                        copy.restartNumbering = false;
+                        copy.restartFrom = null;
                     }
                     return copy;
                 });
@@ -5508,6 +5914,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     copy._frames = 0;
                     copy._duration = '00:00';
                     copy.customSceneNum = false;
+                    copy.restartNumbering = false;
+                    copy.restartFrom = null;
                 }
                 APP.dirRows.splice(idx + 1, 0, copy);
             }
@@ -6906,6 +7314,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function toggleLocModal() {
             const m = document.getElementById('locModal');
             if (m.style.display === 'block') { m.style.display = 'none'; } else { renderLocList();
+                const lmr = document.querySelector('input[name="locModeRadio"][value="' + (APP.locMode || 'list') + '"]');
+                if (lmr) lmr.checked = true;
                 const btn = document.querySelector('button[title="Локации"]');
                 const rect = btn ? btn.getBoundingClientRect() : { right: 200, bottom: 80 };
                 m.style.right = (window.innerWidth - rect.right) + 'px';
@@ -7146,6 +7556,129 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         document.getElementById('newIntExtInp').addEventListener('keydown', e => { if (e.key === 'Enter') addIntExt(); });
 
+        // ============================================================
+        // СВОИ ПУНКТЫ: КРУПНОСТИ И МОНТАЖ
+        // ============================================================
+        function getScaleOptions() {
+            return (APP.scaleSystem === 'ru' ? RU_SCALES : EN_SCALES).concat(APP.customScales || []);
+        }
+        function getMontageOptions() {
+            return (APP.montageSystem === 'ru' ? RU_MONTAGE : EN_MONTAGE).concat(APP.customMontages || []);
+        }
+
+        const CUSTOM_LISTS = {
+            scale: { modal: 'scaleListModal', list: 'scaleListItems', inp: 'newScaleListInp', btn: 'scaleListBtn',
+                key: 'customScales', empty: 'Своих крупностей нет',
+                builtin: () => RU_SCALES.concat(EN_SCALES), hist: 'крупности' },
+            montage: { modal: 'montageListModal', list: 'montageListItems', inp: 'newMontageListInp', btn: 'montageListBtn',
+                key: 'customMontages', empty: 'Своих типов монтажа нет',
+                builtin: () => RU_MONTAGE.concat(EN_MONTAGE), hist: 'монтажа' }
+        };
+
+        function toggleCustomListModal(kind) {
+            const c = CUSTOM_LISTS[kind];
+            const m = document.getElementById(c.modal);
+            if (m.style.display === 'block') { m.style.display = 'none'; return; }
+            ['scale', 'montage'].forEach(k => { if (k !== kind) closeCustomListModal(k); });
+            renderCustomList(kind);
+            const btn = document.getElementById(c.btn);
+            const rect = btn ? btn.getBoundingClientRect() : { right: 400, bottom: 80 };
+            m.style.right = (window.innerWidth - rect.right) + 'px';
+            m.style.top = rect.bottom + 4 + 'px';
+            m.style.display = 'block';
+        }
+        function closeCustomListModal(kind) {
+            const m = document.getElementById(CUSTOM_LISTS[kind].modal);
+            if (m) m.style.display = 'none';
+        }
+
+        function renameCustomValue(kind, oldV, newV) {
+            APP.dirRows.forEach(r => {
+                if (kind === 'scale') {
+                    if (r.scale === oldV) r.scale = newV;
+                    (r.extraScales || []).forEach(it => { if (it.value === oldV) it.value = newV; });
+                } else {
+                    if (r.montage === oldV) r.montage = newV;
+                    (r.extraMontages || []).forEach(it => { if (it.value === oldV) it.value = newV; });
+                }
+            });
+        }
+
+        function renderCustomList(kind) {
+            const c = CUSTOM_LISTS[kind];
+            const arr = APP[c.key];
+            const l = document.getElementById(c.list);
+            l.innerHTML = '';
+            if (!arr.length) {
+                l.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;">' + c.empty + '</div>';
+                return;
+            }
+            arr.forEach((val, i) => {
+                const d = document.createElement('div');
+                d.className = 'loc-item';
+                const spn = document.createElement('span');
+                spn.textContent = val;
+                spn.style.flex = '1';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'loc-del';
+                editBtn.textContent = '✎';
+                editBtn.style.color = 'var(--muted)';
+                editBtn.onclick = () => {
+                    if (d.querySelector('input')) return;
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.value = val;
+                    inp.style.cssText = 'flex:1; background:transparent; border:1px dashed var(--accent); color:var(--text); outline:none;';
+                    let done = false;
+                    inp.onblur = inp.onkeydown = (ev) => {
+                        if (ev.type === 'keydown' && ev.key !== 'Enter') return;
+                        if (done) return;
+                        done = true;
+                        const nv = inp.value.trim();
+                        const dup = nv && (arr.includes(nv) || c.builtin().includes(nv));
+                        if (nv && nv !== val && !dup) {
+                            arr[i] = nv;
+                            renameCustomValue(kind, val, nv);
+                            updateTableBody();
+                            pushHistory('Правка ' + c.hist);
+                        }
+                        renderCustomList(kind);
+                    };
+                    d.insertBefore(inp, spn);
+                    d.removeChild(spn);
+                    inp.focus();
+                };
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'loc-del';
+                delBtn.textContent = '✕';
+                delBtn.onclick = () => {
+                    arr.splice(i, 1);
+                    renderCustomList(kind);
+                    updateTableBody();
+                    pushHistory('Удаление ' + c.hist);
+                };
+
+                d.append(spn, editBtn, delBtn);
+                l.appendChild(d);
+            });
+        }
+
+        function addCustomListItem(kind) {
+            const c = CUSTOM_LISTS[kind];
+            const inp = document.getElementById(c.inp);
+            const v = inp.value.trim();
+            if (!v) return;
+            const arr = APP[c.key];
+            if (arr.includes(v) || c.builtin().includes(v)) { notify('Такой пункт уже есть'); return; }
+            arr.push(v);
+            inp.value = '';
+            renderCustomList(kind);
+            updateTableBody();
+            pushHistory('Добавление ' + c.hist);
+        }
+
         function buildProjectData() {
             document.querySelectorAll('.noetic-el').forEach(el => { const id = parseInt(el.getAttribute('data-neid'));
                 const d = APP.noeticElements.find(e => e.id === id); if (d && (d.type === 'text' || d.type === 'note') && el._body)
@@ -7178,6 +7711,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 timeMode: APP.timeMode,
                 intExts: APP.intExts,
                 intExtMode: APP.intExtMode,
+                locMode: APP.locMode,
+                customScales: APP.customScales,
+                customMontages: APP.customMontages,
                 p1Width: '0 0 ' + LAYOUT.W1 + 'px',
                 p3Width: '0 0 ' + LAYOUT.W3 + 'px',
                 dirZoom: dirZoom,
@@ -7216,8 +7752,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 APP.locations = ['СТАНЦИЯ', 'КУХНЯ', 'КОМНАТА', 'КРЫША', 'ПРИРОДА'];
                 APP.times = ['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ', 'ГЛУБОКАЯ НОЧЬ'];
                 APP.timeMode = 'switch';
-                APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
+                APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.', 'ИНТ-ЭКСТ.'];
                 APP.intExtMode = 'switch';
+                APP.locMode = 'list';
+                APP.customScales = [];
+                APP.customMontages = [];
                 document.getElementById('projectTitle').textContent = 'МОЙ ПРОЕКТ';
                 document.getElementById('scriptCanvas').innerHTML = '';
                 document.getElementById('scriptCanvas').style.display = 'none';
@@ -7274,8 +7813,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             APP.locations = data.locations || ['СТАНЦИЯ', 'КУХНЯ', 'КОМНАТА', 'КРЫША', 'ПРИРОДА'];
             APP.times = data.times || ['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ', 'ГЛУБОКАЯ НОЧЬ'];
             APP.timeMode = data.timeMode || 'switch';
-            APP.intExts = data.intExts || ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
+            APP.intExts = data.intExts || ['ИНТ.', 'ЭКСТ.', 'НАТ.', 'ИНТ-ЭКСТ.'];
             APP.intExtMode = data.intExtMode || 'switch';
+            APP.locMode = data.locMode || 'list';
+            APP.customScales = Array.isArray(data.customScales) ? data.customScales.slice() : [];
+            APP.customMontages = Array.isArray(data.customMontages) ? data.customMontages.slice() : [];
 
             if (data.columns) data.columns.forEach(dc => { const c = COLUMNS.find(c => c.id === dc.id); if (c) { c
                         .visible = dc.visible;
@@ -7384,12 +7926,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         APP.locations = ['СТАНЦИЯ', 'КУХНЯ', 'КОМНАТА', 'КРЫША', 'ПРИРОДА'];
         APP.times = ['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ', 'ГЛУБОКАЯ НОЧЬ'];
         APP.timeMode = 'switch';
-        APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.'];
+        APP.intExts = ['ИНТ.', 'ЭКСТ.', 'НАТ.', 'ИНТ-ЭКСТ.'];
         APP.intExtMode = 'switch';
         syncRenumberCheckbox();
         (function() {
             const btn = document.getElementById('themeBtn');
-            if (btn) btn.innerHTML = SUN_SVG;
+            if (btn) btn.innerHTML = (APP.theme === 'light') ? MOON_SVG : SUN_SVG;
         })();
 
         // ================================================================
