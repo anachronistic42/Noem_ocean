@@ -6,6 +6,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#f5f5f7" />
     <title>Noem.ocean</title>
+    <!-- Noem.ocean v2.9 (opened file stays the save target + effects off by default) -->
+    <!-- Noem.ocean v2.8 (save overwrites one file + save as)
+    <!-- Noem.ocean v2.7 (autosave & restore of current project + version in settings) -->
     <!-- Noem.ocean v2.6 (export menu reorder + animatic export XMEML) -->
     <!-- Noem.ocean v2.2 (Android fixes + scene stats + note controls + 3D icon) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1723,8 +1726,9 @@
                 </div>
             </div>
             <button class="tbtn" onclick="newProject()">НОВЫЙ</button>
-            <button class="tbtn" onclick="document.getElementById('openProjectInput').click()">ОТКРЫТЬ</button>
+            <button class="tbtn" onclick="openProjectDialog()">ОТКРЫТЬ</button>
             <button class="tbtn" onclick="saveProject()">СОХРАНИТЬ</button>
+            <button class="tbtn" onclick="saveProjectAs()">СОХРАНИТЬ КАК</button>
             <button class="tbtn" id="settingsBtn" onclick="toggleSettings()">⚙ НАСТРОЙКИ</button>
         </div>
     </div>
@@ -1761,7 +1765,7 @@
         <button class="sp-popup-btn" onclick="resetAllZoom()">Сбросить масштаб</button>
         <div class="sp-divider"></div>
         <div class="sp-row">
-            <label><input type="checkbox" id="effectsToggle" checked onchange="toggleEffects(this.checked)"> Эффекты (зерно, виньетка)</label>
+            <label><input type="checkbox" id="effectsToggle" onchange="toggleEffects(this.checked)"> Эффекты (зерно, виньетка)</label>
         </div>
         <div class="sp-divider"></div>
         <div class="sp-row">
@@ -1787,6 +1791,8 @@
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
         <button class="sp-popup-btn" onclick="exportJson()">Экспорт JSON</button>
+        <div class="sp-divider"></div>
+        <div class="sp-hint" id="appVersionLabel" style="text-align:center;margin:0;">Noem.ocean v2.9</div>
     </div>
 
     <div id="passwordModal">
@@ -2168,7 +2174,7 @@
             mode: 'editor',
             projectPassword: '',
             pendingOpenData: null,
-            effectsOn: true,
+            effectsOn: false,
             theme: 'light',
             showRenumberConfirm: true,
             scriptZoom: 1,
@@ -2303,6 +2309,7 @@
 
             historyIndex = historyStack.length - 1;
             updateHistoryUI();
+            if (typeof scheduleAutosave === 'function') scheduleAutosave();
         }
 
         function scheduleHistory(label) {
@@ -3583,6 +3590,108 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 svg: '<path d="M 0 78 L 30 30 L 60 78 M 40 50 L 80 15 L 140 78 M 100 35 L 140 10 L 140 78" stroke-width="1.5" /><path d="M 30 30 L 20 40 M 30 30 L 45 38 M 80 15 L 70 30 M 80 15 L 95 25" stroke-width="1" opacity="0.6"/><path d="M 70 78 Q 50 65 60 55 T 45 45" stroke-width="1" /><circle cx="45" cy="42" r="1.5" fill="var(--paper)" stroke="none"/><path d="M 45 44 L 45 48 M 45 48 L 43 51 M 45 48 L 47 51" stroke-width="1"/>' }
         ];
 
+        // =====================================================================
+        // v2.7 — АВТОСОХРАНЕНИЕ И ВОССТАНОВЛЕНИЕ ТЕКУЩЕГО ПРОЕКТА (IndexedDB)
+        // =====================================================================
+        const APP_VERSION = '2.9';
+        const AUTOSAVE = {
+            DB: 'noemOceanAutosave', STORE: 'kv', KEY: 'currentProject',
+            ready: false, dirty: false, timer: null, db: null
+        };
+
+        function autosaveOpenDB() {
+            return new Promise((resolve, reject) => {
+                if (AUTOSAVE.db) return resolve(AUTOSAVE.db);
+                if (!window.indexedDB) return reject(new Error('no indexedDB'));
+                const req = indexedDB.open(AUTOSAVE.DB, 1);
+                req.onupgradeneeded = () => req.result.createObjectStore(AUTOSAVE.STORE);
+                req.onsuccess = () => {
+                    AUTOSAVE.db = req.result;
+                    AUTOSAVE.db.onclose = () => { AUTOSAVE.db = null; };
+                    resolve(AUTOSAVE.db);
+                };
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function autosaveGet(key) {
+            return autosaveOpenDB().then(db => new Promise((resolve, reject) => {
+                const r = db.transaction(AUTOSAVE.STORE, 'readonly').objectStore(AUTOSAVE.STORE).get(key || AUTOSAVE.KEY);
+                r.onsuccess = () => resolve(r.result || null);
+                r.onerror = () => reject(r.error);
+            }));
+        }
+
+        function autosavePut(value, key) {
+            return autosaveOpenDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction(AUTOSAVE.STORE, 'readwrite');
+                tx.objectStore(AUTOSAVE.STORE).put(value, key || AUTOSAVE.KEY);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(tx.error);
+            }));
+        }
+
+        function autosaveDel(key) {
+            return autosaveOpenDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction(AUTOSAVE.STORE, 'readwrite');
+                tx.objectStore(AUTOSAVE.STORE).delete(key);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            }));
+        }
+
+        function scheduleAutosave() {
+            if (!AUTOSAVE.ready) return;
+            AUTOSAVE.dirty = true;
+            if (AUTOSAVE.timer) clearTimeout(AUTOSAVE.timer);
+            AUTOSAVE.timer = setTimeout(autosaveNow, 1200);
+        }
+
+        function autosaveNow() {
+            if (AUTOSAVE.timer) { clearTimeout(AUTOSAVE.timer); AUTOSAVE.timer = null; }
+            if (!AUTOSAVE.ready || !AUTOSAVE.dirty) return;
+            AUTOSAVE.dirty = false;
+            try {
+                const data = buildProjectData();
+                autosavePut({ savedAt: Date.now(), appVersion: APP_VERSION, data })
+                    .catch(err => { AUTOSAVE.dirty = true; console.warn('Autosave failed:', err); });
+            } catch (err) { AUTOSAVE.dirty = true; console.warn('Autosave failed:', err); }
+        }
+
+        async function restoreAutosave() {
+            try {
+                const rec = await autosaveGet();
+                if (rec && rec.data && typeof rec.data === 'object') {
+                    const data = rec.data;
+                    if (data.password) {
+                        APP.pendingOpenData = data;
+                        document.getElementById('passwordModal').classList.add('show');
+                        document.getElementById('passwordModalInput').value = '';
+                        document.getElementById('pmError').style.display = 'none';
+                    } else {
+                        window.__restoringAutosave = true;
+                        try { loadProjectData(data); } finally { window.__restoringAutosave = false; }
+                        notify('Проект восстановлен из автосохранения');
+                    }
+                }
+            } catch (err) {
+                console.warn('Restore failed:', err);
+            }
+            // Если ждём пароль для восстановления — автосохранение включится после входа/открытия/нового проекта,
+            // чтобы не затереть защищённый проект пустым состоянием.
+            if (!APP.pendingOpenData) { AUTOSAVE.ready = true; AUTOSAVE.dirty = true; scheduleAutosave(); }
+            try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+        }
+
+        window.addEventListener('pagehide', autosaveNow);
+        window.addEventListener('beforeunload', autosaveNow);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') { AUTOSAVE.dirty = true; autosaveNow(); }
+        });
+        // Страховка для изменений, которые не попадают в историю (заголовок, масштаб, панели)
+        setInterval(() => { if (AUTOSAVE.ready) { AUTOSAVE.dirty = true; autosaveNow(); } }, 20000);
+
         window.addEventListener('DOMContentLoaded', () => {
             buildTableHead();
             updateTableBody();
@@ -3641,6 +3750,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             setMode('editor');
 
             initTouchSupport();
+
+            restoreAutosave();
         });
 
         let confirmCallback = null;
@@ -7221,6 +7332,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (v && v >= 0.6 && v <= 1.6) APP.uiScale = v;
             } catch (e) {}
             if (!APP.uiScale) APP.uiScale = defaultUiScale();
+            let fx = false;
+            try { fx = localStorage.getItem('noemEffects') === '1'; } catch (e) {}
+            APP.effectsOn = fx;
+            const fxEl = document.getElementById('effectsToggle');
+            if (fxEl) fxEl.checked = fx;
+            toggleEffects(fx);
             document.documentElement.style.setProperty('--ui-scale', APP.uiScale);
             syncZoomUI();
             applyLayout();
@@ -7264,6 +7381,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (settingsOpen) { syncRenumberCheckbox(); syncZoomUI(); } }
 
         function toggleEffects(on) { APP.effectsOn = on;
+            try { localStorage.setItem('noemEffects', on ? '1' : '0'); } catch (e) {}
             document.querySelector('.grain').style.display = on ? 'block' : 'none';
             document.querySelector('.vignette').style.display = on ? 'block' : 'none';
             document.querySelector('.bg-stagnation').style.animation = on ? 'stagnationFlow 24s ease-in-out infinite alternate' :
@@ -7294,7 +7412,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 APP.pendingOpenData = null; } else { document.getElementById('pmError').style.display = 'block';
                 inp.value = ''; } }
 
-        function cancelPasswordModal() { document.getElementById('passwordModal').classList.remove('show');
+        function cancelPasswordModal() { pendingOpenHandle = null; document.getElementById('passwordModal').classList.remove('show');
             APP.pendingOpenData = null; }
 
         function initSettingsDrag() { const handle = document.getElementById('spDragHandle'); const popup = document
@@ -7723,17 +7841,157 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             };
         }
 
-        function saveProject() { const data = buildProjectData(); const json = JSON.stringify(data, null, 2); const blob =
-                new Blob([json], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document
-                .createElement('a');
-            a.href = url; const title = document.getElementById('projectTitle').textContent || 'noem_ocean';
-            a.download = title.replace(/\s+/g, '_') + '.noemocean';
+        // =====================================================================
+        // v2.8 — «СОХРАНИТЬ» перезаписывает один файл, «СОХРАНИТЬ КАК» — новый файл
+        // (File System Access API: Chrome / Edge / Opera на компьютере; в остальных
+        //  браузерах работает как раньше — скачивание файла)
+        // =====================================================================
+        const FILE_HANDLE_KEY = 'saveFileHandle';
+        let saveFileHandle = null;
+        let pendingOpenHandle = null; // файл, открытый через «Открыть»/drag&drop — станет целью «Сохранить»
+
+        function parseAndOpenProjectText(text) {
+            try {
+                const data = JSON.parse(text);
+                if (data.password) {
+                    APP.pendingOpenData = data;
+                    document.getElementById('passwordModal').classList.add('show');
+                    document.getElementById('passwordModalInput').value = '';
+                    document.getElementById('pmError').style.display = 'none';
+                } else {
+                    loadProjectData(data);
+                }
+            } catch (err) {
+                pendingOpenHandle = null;
+                notify('Ошибка открытия файла');
+            }
+        }
+
+        async function openProjectDialog() {
+            const fallback = () => document.getElementById('openProjectInput').click();
+            if (typeof window.showOpenFilePicker !== 'function' || !window.isSecureContext) return fallback();
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    multiple: false,
+                    types: [{ description: 'Проект Noem.ocean', accept: { 'application/json': ['.noemocean', '.noemotion'] } }],
+                    excludeAcceptAllOption: false
+                });
+                const file = await handle.getFile();
+                pendingOpenHandle = handle;
+                parseAndOpenProjectText(await file.text());
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+                console.warn('Open picker failed, fallback:', err);
+                fallback();
+            }
+        }
+
+        function canUseFilePicker() {
+            return typeof window.showSaveFilePicker === 'function' && window.isSecureContext;
+        }
+
+        function setSaveHandle(h) {
+            saveFileHandle = h || null;
+            if (h) autosavePut(h, FILE_HANDLE_KEY).catch(() => {});
+            else autosaveDel(FILE_HANDLE_KEY).catch(() => {});
+        }
+
+        function projectFileName() {
+            const title = document.getElementById('projectTitle').textContent || 'noem_ocean';
+            return title.trim().replace(/\s+/g, '_').replace(/[\\/:*?"<>|]/g, '') + '.noemocean';
+        }
+
+        function downloadProjectFile(json) {
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = projectFileName();
             a.click();
             URL.revokeObjectURL(url);
-            notify('Проект сохранён'); }
+        }
+
+        async function writeToHandle(handle, json) {
+            const w = await handle.createWritable();
+            try { await w.write(json); await w.close(); }
+            catch (e) { try { await w.abort(); } catch (_) {} throw e; }
+        }
+
+        async function pickSaveHandle() {
+            return await window.showSaveFilePicker({
+                suggestedName: projectFileName(),
+                types: [{ description: 'Проект Noem.ocean', accept: { 'application/json': ['.noemocean'] } }]
+            });
+        }
+
+        async function ensureHandlePermission(handle) {
+            const opts = { mode: 'readwrite' };
+            if ((await handle.queryPermission(opts)) === 'granted') return true;
+            return (await handle.requestPermission(opts)) === 'granted';
+        }
+
+        async function saveProjectImpl(forceNew) {
+            const json = JSON.stringify(buildProjectData(), null, 2);
+            if (!canUseFilePicker()) {
+                downloadProjectFile(json);
+                notifySaved();
+                return;
+            }
+            try {
+                let handle = forceNew ? null : saveFileHandle;
+                if (handle) {
+                    let ok = false;
+                    try { ok = await ensureHandlePermission(handle); } catch (_) { ok = false; }
+                    if (ok) {
+                        try { await writeToHandle(handle, json); }
+                        catch (_) { ok = false; }
+                    }
+                    if (!ok) handle = null; // файл удалён/нет доступа — спросим заново
+                    else { notifySaved(); return; }
+                }
+                handle = await pickSaveHandle();
+                await writeToHandle(handle, json);
+                setSaveHandle(handle);
+                notifySaved();
+            } catch (err) {
+                if (err && err.name === 'AbortError') return; // отмена диалога
+                console.warn('Save failed, fallback to download:', err);
+                downloadProjectFile(json);
+                notifySaved();
+            }
+        }
+
+        // Всплывашка при каждом сохранении: перезапускаем показ, чтобы её было видно и при повторных нажатиях
+        function notifySaved() {
+            const el = document.getElementById('notify');
+            el.classList.remove('show');
+            void el.offsetWidth;
+            notify('✓ Проект сохранён');
+        }
+
+        function saveProject() { return saveProjectImpl(false); }
+        function saveProjectAs() { return saveProjectImpl(true); }
+
+        // После перезагрузки страницы вспоминаем файл, в который сохраняли
+        (async function restoreSaveHandle() {
+            try {
+                if (!canUseFilePicker()) return;
+                const h = await autosaveGet(FILE_HANDLE_KEY);
+                if (h && h.kind === 'file') saveFileHandle = h;
+            } catch (_) {}
+        })();
+
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы')) {
+                e.preventDefault();
+                if (e.shiftKey) saveProjectAs(); else saveProject();
+            }
+        });
 
         function newProject() {
             customConfirm('Создать новый проект? Несохранённые данные будут потеряны.', 'СОЗДАТЬ', () => {
+                AUTOSAVE.ready = true;
+                setSaveHandle(null);
                 APP.scriptBlocks = [];
                 APP.dirRows = [];
                 APP.noeticElements = [];
@@ -7780,6 +8038,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         document.getElementById('openProjectInput').addEventListener('change', e => {
             const f = e.target.files[0];
             if (!f) return;
+            pendingOpenHandle = null;
             const rd = new FileReader();
             rd.onload = ev => { try { const data = JSON.parse(ev.target.result); if (data.password) { APP
                             .pendingOpenData = data;
@@ -7792,6 +8051,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         });
 
         function loadProjectData(data) {
+            AUTOSAVE.ready = true;
+            if (!window.__restoringAutosave) { setSaveHandle(pendingOpenHandle); pendingOpenHandle = null; }
             APP.scriptBlocks = data.scriptBlocks || [];
             APP.dirRows = data.dirRows || [];
             APP.noeticElements = data.noeticElements || [];
@@ -7807,7 +8068,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             APP.scaleSystem = data.scaleSystem || 'ru';
             APP.montageSystem = data.montageSystem || 'en';
             APP.projectPassword = data.password || '';
-            APP.effectsOn = data.effectsOn !== undefined ? data.effectsOn : true;
+            // эффекты — настройка пользователя (по умолчанию выключены), файл проекта её не переопределяет
             APP.showRenumberConfirm = data.showRenumberConfirm !== undefined ? data.showRenumberConfirm : true;
             if (data.theme) applyTheme(data.theme);
             APP.locations = data.locations || ['СТАНЦИЯ', 'КУХНЯ', 'КОМНАТА', 'КРЫША', 'ПРИРОДА'];
@@ -7896,6 +8157,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (file.name.endsWith('.noemocean') || file.name.endsWith('.noem.ocean') || file.name.endsWith('.noemotion')) {
                     e.preventDefault();
                     e.stopPropagation();
+                    let dropHandlePromise = null;
+                    try {
+                        const it = e.dataTransfer.items && e.dataTransfer.items[0];
+                        if (it && typeof it.getAsFileSystemHandle === 'function') dropHandlePromise = it.getAsFileSystemHandle();
+                    } catch (_) { dropHandlePromise = null; }
 
                     customConfirm(`Уверены, что хотите загрузить проект "${file.name.replace(/\.(noemocean|noem\.ocean|noemotion)$/i, '')}", несохранённые данные удалятся?`, 'ЗАГРУЗИТЬ', () => {
                         const rd = new FileReader();
@@ -7914,7 +8180,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                                 notify('Ошибка открытия файла проекта');
                             }
                         };
-                        rd.readAsText(file);
+                        (async () => {
+                            let h = null;
+                            try { h = dropHandlePromise ? await dropHandlePromise : null; } catch (_) { h = null; }
+                            pendingOpenHandle = (h && h.kind === 'file') ? h : null;
+                            rd.readAsText(file);
+                        })();
                     });
                 }
             }
