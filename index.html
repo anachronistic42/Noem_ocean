@@ -6,6 +6,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#f5f5f7" />
     <title>Noem.ocean</title>
+    <!-- Noem.ocean v3.0 (title ellipsis, save toast near button, touch long-press drag, pinch zoom, textarea resync) -->
     <!-- Noem.ocean v2.9 (opened file stays the save target + effects off by default) -->
     <!-- Noem.ocean v2.8 (save overwrites one file + save as)
     <!-- Noem.ocean v2.7 (autosave & restore of current project + version in settings) -->
@@ -1623,6 +1624,35 @@
         body.touch-device .noetic-viewport,
         body.touch-device .script-container { -webkit-touch-callout: none; }
     </style>
+    <style id="v30-styles">
+        /* v3.0 — длинное название проекта обрезается с «…» и не наезжает на соседние элементы */
+        .topbar { grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr); }
+        .topbar-left { min-width: 0; max-width: 100%; }
+        .topbar-left .app-name { flex-shrink: 0; }
+        .logo { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .logo:focus { text-overflow: clip; }
+        #logoTip {
+            position: fixed; z-index: 3600; display: none; pointer-events: none;
+            max-width: min(520px, calc(100vw - 16px)); padding: 6px 10px; border-radius: 6px;
+            background: var(--dropdown-bg); border: 1px solid var(--accent); color: var(--text);
+            font-family: 'Times New Roman', serif; font-weight: 700; letter-spacing: 1px; font-size: 14px;
+            white-space: normal; overflow-wrap: anywhere; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+        }
+        #logoTip.show { display: block; }
+
+        /* v3.0 — всплывашка «Проект сохранён» под кнопкой сохранения */
+        #saveToast {
+            position: fixed; z-index: 3500; opacity: 0; pointer-events: none; transition: opacity .25s;
+            background: var(--dropdown-bg); border: 1px solid var(--accent); color: var(--text);
+            border-radius: 6px; padding: 7px 14px; white-space: nowrap;
+            font-family: 'Courier New', monospace; font-size: 12px; box-shadow: 0 6px 18px rgba(0,0,0,.3);
+        }
+        #saveToast.show { opacity: 1; }
+        body.touch-device #saveToast { font-size: 14px; padding: 10px 18px; }
+
+        /* v3.0 — абзац лит. сценария, «взятый» долгим нажатием */
+        .script-block.touch-grabbed { outline: 2px dashed var(--accent); background: rgba(200, 162, 74, .18); }
+    </style>
 </head>
 <body class="light-theme">
     <div class="bg-layer bg-stagnation"></div>
@@ -1640,7 +1670,7 @@
     <div class="topbar">
         <div class="topbar-left">
     <span class="app-name">NOEM.OCEAN</span>
-    <div contenteditable="true" spellcheck="false" id="projectTitle" class="logo" title="Название проекта">МОЙ ПРОЕКТ</div>
+    <div contenteditable="true" spellcheck="false" id="projectTitle" class="logo">МОЙ ПРОЕКТ</div>
 </div>
         <div class="topbar-center">
             <div class="mode-toggle">
@@ -1727,8 +1757,8 @@
             </div>
             <button class="tbtn" onclick="newProject()">НОВЫЙ</button>
             <button class="tbtn" onclick="openProjectDialog()">ОТКРЫТЬ</button>
-            <button class="tbtn" onclick="saveProject()">СОХРАНИТЬ</button>
-            <button class="tbtn" onclick="saveProjectAs()">СОХРАНИТЬ КАК</button>
+            <button class="tbtn" id="saveBtn" onclick="saveProject()">СОХРАНИТЬ</button>
+            <button class="tbtn" id="saveAsBtn" onclick="saveProjectAs()">СОХРАНИТЬ КАК</button>
             <button class="tbtn" id="settingsBtn" onclick="toggleSettings()">⚙ НАСТРОЙКИ</button>
         </div>
     </div>
@@ -1792,7 +1822,7 @@
         <div class="sp-divider"></div>
         <button class="sp-popup-btn" onclick="exportJson()">Экспорт JSON</button>
         <div class="sp-divider"></div>
-        <div class="sp-hint" id="appVersionLabel" style="text-align:center;margin:0;">Noem.ocean v2.9</div>
+        <div class="sp-hint" id="appVersionLabel" style="text-align:center;margin:0;">Noem.ocean v3.0</div>
     </div>
 
     <div id="passwordModal">
@@ -3593,7 +3623,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         // =====================================================================
         // v2.7 — АВТОСОХРАНЕНИЕ И ВОССТАНОВЛЕНИЕ ТЕКУЩЕГО ПРОЕКТА (IndexedDB)
         // =====================================================================
-        const APP_VERSION = '2.9';
+        const APP_VERSION = '3.0';
         const AUTOSAVE = {
             DB: 'noemOceanAutosave', STORE: 'kv', KEY: 'currentProject',
             ready: false, dirty: false, timer: null, db: null
@@ -4300,9 +4330,14 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         document.addEventListener('mouseup', e => {
             if (!draggingScriptBlock) return;
+            finishScriptBlockDrop(e.clientX, e.clientY);
+        });
+
+        function finishScriptBlockDrop(clientX, clientY) {
+            if (!draggingScriptBlock) return;
             document.getElementById('dragGhost').style.display = 'none';
             document.querySelectorAll('.drop-target-cell').forEach(c => c.classList.remove('drop-target-cell'));
-            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const el = document.elementFromPoint(clientX, clientY);
             let dropped = false;
 
             if (el) {
@@ -4333,8 +4368,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const nv = el.closest('#noeticViewport');
                 if (nv) {
                     const rect = nv.getBoundingClientRect();
-                    const wx = (e.clientX - rect.left - APP.noeticOffsetX) / APP.noeticZoom;
-                    const wy = (e.clientY - rect.top - APP.noeticOffsetY) / APP.noeticZoom;
+                    const wx = (clientX - rect.left - APP.noeticOffsetX) / APP.noeticZoom;
+                    const wy = (clientY - rect.top - APP.noeticOffsetY) / APP.noeticZoom;
                     addNoeticElAt('text', wx, wy, { text: neEscapeHtml(draggingScriptBlock.text) });
                     dropped = true;
                 }
@@ -4377,7 +4412,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
 
             draggingScriptBlock = null;
-        });
+        }
 
         document.addEventListener('mousedown', e => {
             if (e.target.closest('.dir-table') || e.target.closest('.add-row-btn') || e.target.closest(
@@ -5388,7 +5423,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function autoResizeTA(ta) {
             ta.style.height = '1px';
-            ta.style.height = Math.max(40, ta.scrollHeight) + 'px';
+            ta.style.height = Math.max(40, ta.scrollHeight + 1) + 'px';
         }
 
         function handleTextareaDragStart(e, row, field) {
@@ -7261,6 +7296,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const t = document.getElementById('dirTable');
             if (t) t.style.zoom = dirZoom;
             syncZoomUI();
+            if (typeof scheduleTextareaResync === 'function') scheduleTextareaResync();
         }
 
         function syncZoomUI() {
@@ -7934,7 +7970,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const json = JSON.stringify(buildProjectData(), null, 2);
             if (!canUseFilePicker()) {
                 downloadProjectFile(json);
-                notifySaved();
+                notifySaved(forceNew ? 'saveAsBtn' : 'saveBtn');
                 return;
             }
             try {
@@ -7947,26 +7983,43 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         catch (_) { ok = false; }
                     }
                     if (!ok) handle = null; // файл удалён/нет доступа — спросим заново
-                    else { notifySaved(); return; }
+                    else { notifySaved(forceNew ? 'saveAsBtn' : 'saveBtn'); return; }
                 }
                 handle = await pickSaveHandle();
                 await writeToHandle(handle, json);
                 setSaveHandle(handle);
-                notifySaved();
+                notifySaved(forceNew ? 'saveAsBtn' : 'saveBtn');
             } catch (err) {
                 if (err && err.name === 'AbortError') return; // отмена диалога
                 console.warn('Save failed, fallback to download:', err);
                 downloadProjectFile(json);
-                notifySaved();
+                notifySaved(forceNew ? 'saveAsBtn' : 'saveBtn');
             }
         }
 
-        // Всплывашка при каждом сохранении: перезапускаем показ, чтобы её было видно и при повторных нажатиях
-        function notifySaved() {
-            const el = document.getElementById('notify');
+        // Всплывашка при каждом сохранении — рядом с кнопкой (ниже неё), перезапускается при повторных нажатиях
+        let saveToastTimer = null;
+        function notifySaved(anchorId) {
+            let el = document.getElementById('saveToast');
+            if (!el) { el = document.createElement('div'); el.id = 'saveToast'; document.body.appendChild(el); }
+            el.textContent = '✓ Проект сохранён';
+            const anchor = document.getElementById(anchorId || 'saveBtn');
+            el.style.left = '0px'; el.style.top = '0px';
             el.classList.remove('show');
             void el.offsetWidth;
-            notify('✓ Проект сохранён');
+            const w = el.offsetWidth;
+            let x = (window.innerWidth - w) / 2, y = 60;
+            if (anchor) {
+                const r = anchor.getBoundingClientRect();
+                x = r.left + r.width / 2 - w / 2;
+                y = r.bottom + 8;
+            }
+            x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+            el.style.left = Math.round(x) + 'px';
+            el.style.top = Math.round(y) + 'px';
+            el.classList.add('show');
+            if (saveToastTimer) clearTimeout(saveToastTimer);
+            saveToastTimer = setTimeout(() => el.classList.remove('show'), 2200);
         }
 
         function saveProject() { return saveProjectImpl(false); }
@@ -8247,7 +8300,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     setOffset: (x, y) => { APP.scriptOffsetX = x; APP.scriptOffsetY = y; },
                     minZoom: 0.3, maxZoom: 3,
                     applyFn: applyScriptTransform,
-                    skipSelector: '.script-block[contenteditable="true"], input, textarea'
+                    skipSelector: '.script-block[contenteditable="true"], input, textarea',
+                    isBlocked: () => !!window.__scriptTouchDragActive
                 });
 
                 attachTouchPanZoom(document.getElementById('noeticViewport'), {
@@ -8263,6 +8317,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const dsi = document.getElementById('dirScriptInner');
                 if (dsi) dsi.style.webkitOverflowScrolling = 'touch';
 
+                if (typeof initTouchScriptBlockDrag === 'function') initTouchScriptBlockDrag();
+                if (typeof initTouchPinchZoom === 'function') initTouchPinchZoom();
                 initTouchNoeticDrag();
                 initTouchNoeticLongPress();
                 initTouchDoubleTap();
@@ -8315,6 +8371,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }, { passive: true });
 
             container.addEventListener('touchmove', e => {
+                if (opts.isBlocked && opts.isBlocked()) return;
                 if (!startTouches) return;
                 if (e.touches.length === 1 && panning) {
                     const t = e.touches[0];
@@ -8820,6 +8877,289 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 });
             });
         })();
+    </script>
+    <script>
+        // ================================================================
+        // v3.0 — название проекта, жесты на Android, пересчёт высоты ячеек
+        // ================================================================
+
+        // ---------- Название проекта: подсказка с полным названием ниже курсора ----------
+        (function initLogoTip() {
+            const logo = document.getElementById('projectTitle');
+            if (!logo) return;
+            const tip = document.createElement('div');
+            tip.id = 'logoTip';
+            document.body.appendChild(tip);
+            const isCut = () => logo.scrollWidth > logo.clientWidth + 1;
+            const hide = () => tip.classList.remove('show');
+            function place(e) {
+                const pad = 8;
+                const w = tip.offsetWidth, h = tip.offsetHeight;
+                let x = e.clientX + 4, y = e.clientY + 22;
+                x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
+                y = Math.max(pad, Math.min(y, window.innerHeight - h - pad));
+                tip.style.left = x + 'px';
+                tip.style.top = y + 'px';
+            }
+            logo.addEventListener('mouseenter', e => {
+                if (document.activeElement === logo || !isCut()) return;
+                tip.textContent = logo.textContent.trim();
+                tip.classList.add('show');
+                place(e);
+            });
+            logo.addEventListener('mousemove', e => { if (tip.classList.contains('show')) place(e); });
+            logo.addEventListener('mouseleave', hide);
+            logo.addEventListener('mousedown', hide);
+            logo.addEventListener('focus', hide);
+        })();
+
+        // ---------- Высота текстовых ячеек таблицы: пересчёт при смене масштаба/ширины ----------
+        let __taResyncTimer = null;
+        function resyncTextareas() {
+            __taResyncTimer = null;
+            const list = Array.from(document.querySelectorAll('#dirTableBody textarea')).filter(t => t.offsetParent !== null);
+            if (!list.length) return;
+            const inner = document.getElementById('dirScriptInner');
+            const sl = inner ? inner.scrollLeft : 0, st = inner ? inner.scrollTop : 0;
+            list.forEach(t => { t.style.height = '1px'; });
+            const hs = list.map(t => Math.max(40, t.scrollHeight + 1));
+            list.forEach((t, i) => { t.style.height = hs[i] + 'px'; });
+            if (inner) { inner.scrollLeft = sl; inner.scrollTop = st; }
+        }
+        function scheduleTextareaResync(delay) {
+            if (__taResyncTimer) clearTimeout(__taResyncTimer);
+            __taResyncTimer = setTimeout(() => requestAnimationFrame(resyncTextareas), delay == null ? 50 : delay);
+        }
+        (function initTextareaResync() {
+            const _utb = updateTableBody;
+            updateTableBody = function () {
+                const r = _utb.apply(this, arguments);
+                scheduleTextareaResync(30);
+                return r;
+            };
+            const _sm = setMode;
+            setMode = function () {
+                const r = _sm.apply(this, arguments);
+                scheduleTextareaResync(80);
+                return r;
+            };
+            if ('ResizeObserver' in window) {
+                const lastW = new WeakMap();
+                const ro = new ResizeObserver(entries => {
+                    let changed = false;
+                    entries.forEach(en => {
+                        const w = Math.round(en.contentRect.width);
+                        if (lastW.get(en.target) !== w) { lastW.set(en.target, w); changed = true; }
+                    });
+                    if (changed) scheduleTextareaResync(60);
+                });
+                ['dirScriptInner', 'dirTable'].forEach(id => { const el = document.getElementById(id); if (el) ro.observe(el); });
+            }
+            window.addEventListener('resize', () => scheduleTextareaResync(100));
+            window.addEventListener('load', () => scheduleTextareaResync(100));
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') scheduleTextareaResync(100); });
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => scheduleTextareaResync(50));
+        })();
+
+        // ---------- Android: долгое нажатие на абзац лит. сценария = «взять» его как Alt + мышь ----------
+        window.__scriptTouchDragActive = false;
+        function initTouchScriptBlockDrag() {
+            const cont = document.getElementById('scriptContainer');
+            if (!cont) return;
+            let timer = null, startX = 0, startY = 0, blockEl = null, touchId = null;
+
+            const clearTimer = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            const clearHighlights = () => document.querySelectorAll('.drop-target-cell').forEach(c => c.classList.remove('drop-target-cell'));
+            function cleanup() {
+                clearTimer();
+                window.__scriptTouchDragActive = false;
+                if (blockEl) blockEl.classList.remove('touch-grabbed');
+                blockEl = null; touchId = null;
+                const ghost = document.getElementById('dragGhost');
+                if (ghost) ghost.style.display = 'none';
+                clearHighlights();
+            }
+            const findTouch = (list) => {
+                for (const t of list) if (t.identifier === touchId) return t;
+                return null;
+            };
+
+            cont.addEventListener('touchstart', e => {
+                clearTimer();
+                if (window.__scriptTouchDragActive) return;
+                if (APP.mode !== 'editor' || e.touches.length !== 1) return;
+                const b = e.target.closest && e.target.closest('.script-block');
+                if (!b || b.isContentEditable) return;
+                const t = e.touches[0];
+                startX = t.clientX; startY = t.clientY; blockEl = b; touchId = t.identifier;
+                timer = setTimeout(() => {
+                    timer = null;
+                    if (!blockEl || window.__pinchActive) return;
+                    const text = blockEl.textContent;
+                    if (!text) return;
+                    window.__scriptTouchDragActive = true;
+                    draggingScriptBlock = { type: 'paragraph', text: text, charName: '' };
+                    blockEl.classList.add('touch-grabbed');
+                    try { window.getSelection().removeAllRanges(); } catch (_) {}
+                    showDragGhost({ clientX: startX, clientY: startY }, text);
+                    if (navigator.vibrate) { try { navigator.vibrate(30); } catch (_) {} }
+                }, 450);
+            }, { passive: true });
+
+            cont.addEventListener('touchmove', e => {
+                if (!timer) return;
+                const t = findTouch(e.touches);
+                if (!t || Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) clearTimer();
+            }, { passive: true });
+
+            // запрещаем системное меню долгого нажатия на абзацах
+            cont.addEventListener('contextmenu', e => {
+                const b = e.target.closest && e.target.closest('.script-block');
+                if (b && !b.isContentEditable) e.preventDefault();
+            });
+
+            document.addEventListener('touchmove', e => {
+                if (!window.__scriptTouchDragActive) return;
+                const t = findTouch(e.touches) || e.touches[0];
+                if (!t) return;
+                if (e.cancelable) e.preventDefault();
+                const ghost = document.getElementById('dragGhost');
+                if (ghost) { ghost.style.left = (t.clientX + 12) + 'px'; ghost.style.top = (t.clientY - 56) + 'px'; }
+                clearHighlights();
+                const el = document.elementFromPoint(t.clientX, t.clientY);
+                if (el) { const td = el.closest('td[data-drop]'); if (td) td.classList.add('drop-target-cell'); }
+            }, { passive: false });
+
+            document.addEventListener('touchend', e => {
+                clearTimer();
+                if (!window.__scriptTouchDragActive) { blockEl = null; return; }
+                const t = findTouch(e.changedTouches);
+                if (!t) return;
+                const x = t.clientX, y = t.clientY;
+                const ghost = document.getElementById('dragGhost');
+                if (ghost) ghost.style.display = 'none';
+                clearHighlights();
+                try { finishScriptBlockDrop(x, y); } catch (err) { console.warn(err); draggingScriptBlock = null; }
+                cleanup();
+            }, { passive: true });
+
+            document.addEventListener('touchcancel', () => {
+                if (window.__scriptTouchDragActive) draggingScriptBlock = null;
+                cleanup();
+            }, { passive: true });
+        }
+
+        // ---------- Android: масштаб трёх блоков двумя пальцами ----------
+        window.__pinchActive = false;
+        function initTouchPinchZoom() {
+            const dist = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+            const mid = (a, b) => ({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+
+            // общая «обвязка»: ловим два пальца на контейнере в фазе capture, чтобы
+            // жест работал поверх текста, элементов и ячеек
+            function attach(container, h) {
+                if (!container) return;
+                let active = false, suppress = false;
+                const local = e => Array.from(e.touches).filter(t => container.contains(t.target));
+
+                container.addEventListener('touchstart', e => {
+                    const l = local(e);
+                    if (active) { e.stopPropagation(); if (e.cancelable) e.preventDefault(); return; }
+                    if (l.length === 2 && !(h.blocked && h.blocked())) {
+                        active = true; suppress = false;
+                        window.__pinchActive = true;
+                        h.start(l[0], l[1]);
+                        e.stopPropagation();
+                        if (e.cancelable) e.preventDefault();
+                    }
+                }, { capture: true, passive: false });
+
+                container.addEventListener('touchmove', e => {
+                    if (active) {
+                        const l = local(e);
+                        if (l.length >= 2) h.move(l[0], l[1]);
+                        if (e.cancelable) e.preventDefault();
+                        e.stopPropagation();
+                    } else if (suppress) {
+                        if (e.cancelable) e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }, { capture: true, passive: false });
+
+                const finish = e => {
+                    if (!active && !suppress) return;
+                    const n = local(e).length;
+                    if (active && n < 2) { active = false; window.__pinchActive = false; h.end(); suppress = n > 0; }
+                    if (n > 0) e.stopPropagation(); else suppress = false;
+                };
+                container.addEventListener('touchend', finish, { capture: true, passive: false });
+                container.addEventListener('touchcancel', () => {
+                    if (active) { active = false; window.__pinchActive = false; h.end(); }
+                    suppress = false;
+                }, { capture: true, passive: true });
+            }
+
+            // --- лит. сценарий и ноэтический блок (масштаб + сдвиг через offset) ---
+            function offsetPinch(container, o) {
+                const s = {};
+                attach(container, {
+                    blocked: o.blocked,
+                    start(a, b) { s.zoom = o.getZoom(); s.off = o.getOffset(); s.d = dist(a, b) || 1; s.mid = mid(a, b); },
+                    move(a, b) {
+                        const d = dist(a, b), m = mid(a, b);
+                        const z = Math.max(o.min, Math.min(o.max, s.zoom * (d / s.d)));
+                        const r = container.getBoundingClientRect();
+                        const lx = s.mid.x - r.left, ly = s.mid.y - r.top, k = z / s.zoom;
+                        o.setZoom(z);
+                        o.setOffset(lx - (lx - s.off.x) * k + (m.x - s.mid.x), ly - (ly - s.off.y) * k + (m.y - s.mid.y));
+                        o.apply();
+                    },
+                    end() { if (o.done) o.done(); }
+                });
+            }
+            offsetPinch(document.getElementById('scriptContainer'), {
+                min: 0.3, max: 3,
+                blocked: () => !!window.__scriptTouchDragActive,
+                getZoom: () => APP.scriptZoom, setZoom: z => { APP.scriptZoom = z; },
+                getOffset: () => ({ x: APP.scriptOffsetX, y: APP.scriptOffsetY }),
+                setOffset: (x, y) => { APP.scriptOffsetX = x; APP.scriptOffsetY = y; },
+                apply: applyScriptTransform
+            });
+            offsetPinch(document.getElementById('noeticViewport'), {
+                min: 0.15, max: 4,
+                getZoom: () => APP.noeticZoom, setZoom: z => { APP.noeticZoom = z; },
+                getOffset: () => ({ x: APP.noeticOffsetX, y: APP.noeticOffsetY }),
+                setOffset: (x, y) => { APP.noeticOffsetX = x; APP.noeticOffsetY = y; },
+                apply: applyNoeticTransform
+            });
+
+            // --- режиссёрский сценарий: масштаб таблицы + прокрутка вокруг точки между пальцами ---
+            const inner = document.getElementById('dirScriptInner');
+            if (inner) {
+                const s = {};
+                attach(inner, {
+                    start(a, b) {
+                        s.z = dirZoom; s.d = dist(a, b) || 1; s.mid = mid(a, b);
+                        s.sl = inner.scrollLeft; s.st = inner.scrollTop;
+                        s.rect = inner.getBoundingClientRect();
+                        s.ov = inner.style.overflow;
+                        inner.style.overflow = 'hidden'; // пока масштабируем — системная прокрутка не мешает
+                    },
+                    move(a, b) {
+                        const d = dist(a, b), m = mid(a, b);
+                        setDirZoom(s.z * (d / s.d));
+                        const lx = s.mid.x - s.rect.left, ly = s.mid.y - s.rect.top;
+                        const ux = (s.sl + lx) / s.z, uy = (s.st + ly) / s.z;
+                        inner.scrollLeft = ux * dirZoom - (lx + (m.x - s.mid.x));
+                        inner.scrollTop = uy * dirZoom - (ly + (m.y - s.mid.y));
+                    },
+                    end() {
+                        inner.style.overflow = s.ov || '';
+                        scheduleTextareaResync(60);
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
