@@ -6,6 +6,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#f5f5f7" />
     <title>Noem.ocean</title>
+    <!-- Noem.ocean v3.7 (timecode box no longer stretched by textarea resync, opaque hover on variant squares; v3.6: flicker-free table rebuild, opaque selected variant square in light theme, tidy placeholder, timecode box fix; v3.5: fold dashed line in light theme, light storyboard controls in light theme, sub-second format "00:01 и 0,5 сек", whole-second intra-frame split) -->
+    <!-- Noem.ocean v3.4 (scene fold/unfold, eye hide for scenes/frames/notes, intra-frame durations, storyboard variants, sub-second durations) -->
+    <!-- Noem.ocean v3.3 (fixes: autosave after password cancel, scene-title parser formats, exact media registry, 3D viewer memory/cleanup, touch pinch vs drag, dir-row drag reset) -->
     <!-- Noem.ocean v3.2 (all imported images converted to JPG/PNG: storyboard = JPG only, noetic block = JPG or PNG; webp fixed in Word export) -->
     <!-- Noem.ocean v3.1 (hidden JSON export, video as card, 3D view modes, toolbar on dblclick, 16:9 text, title tooltips) -->
     <!-- Noem.ocean v3.0 (title ellipsis, save toast near button, touch long-press drag, pinch zoom, textarea resync) -->
@@ -480,6 +483,66 @@
         }
         .storyboard-img-wrap:hover .storyboard-reorder-badge { opacity: 1; }
 
+        /* ===== v3.4: сворачивание сцен, скрытие (глазик), варианты раскадровки, хрон внутрикадра ===== */
+        .scene-fold-btn {
+            background: none; border: 1px solid var(--border); color: var(--accent); border-radius: 3px;
+            width: 22px; height: 22px; cursor: pointer; font-size: 13px; line-height: 1; padding: 0;
+            flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .scene-fold-btn:hover { background: rgba(200, 162, 74, .18); }
+        tr.scene-row[data-folded="1"] td { border-bottom: 2px dashed var(--accent) !important; }
+        tr.scene-row[data-folded="1"] .scene-fold-btn { background: var(--accent); color: #111; }
+        .scene-folded-tag {
+            display: inline-block; margin-left: 8px; padding: 0 6px; border: 1px solid var(--accent);
+            border-radius: 3px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+        }
+        .row-eye-btn { display: flex; align-items: center; justify-content: center; }
+        .row-eye-btn.is-off { color: var(--accent2); }
+        tr[data-hid="1"] > td:not(:first-child) > *, tr[data-hid="2"] > td:not(:first-child) > * {
+            opacity: .35; filter: grayscale(1);
+        }
+        tr[data-hid="1"] > td:not(:first-child), tr[data-hid="2"] > td:not(:first-child) {
+            background-image: repeating-linear-gradient(135deg, rgba(128, 128, 128, .10) 0 6px, transparent 6px 12px);
+        }
+        .timecode-input { resize: none; overflow: hidden; white-space: pre; line-height: 1.3; padding: 0; display: block; box-sizing: content-box; min-height: 0; }
+        .timecode-input.sub { width: 74px; font-size: 11px; }
+        .timecode-input.tc-short {
+            color: #ff5a5a; background: rgba(255, 60, 60, .16); border-radius: 3px;
+            outline: 1px solid #ff5a5a; font-weight: 700;
+        }
+        .sb-time-block {
+            margin-top: 4px; padding-top: 3px; border-top: 1px dashed var(--border);
+            display: flex; flex-direction: column; gap: 3px;
+        }
+        .sb-time-title { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .sb-time-auto {
+            font-size: 10px; padding: 0 4px; border: 1px solid var(--border); background: none;
+            color: var(--accent); border-radius: 3px; cursor: pointer;
+        }
+        .sb-time-row { display: flex; flex-direction: column; }
+        .sb-time-label { font-size: 10px; color: var(--muted); }
+        .sb-var-bar {
+            position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 3px; opacity: 0; transition: opacity .2s; z-index: 3;
+        }
+        .storyboard-img-wrap:hover .sb-var-bar, .sb-var-bar:focus-within { opacity: 1; }
+        body.touch-device .sb-var-bar { opacity: 1; }
+        .sb-var-sq {
+            min-width: 18px; height: 18px; padding: 0 3px; font-size: 10px; font-family: 'Courier New', monospace;
+            border: 1px solid var(--border); background: rgba(13, 10, 6, .75); color: #eee; border-radius: 3px;
+            cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center;
+        }
+        .sb-var-sq:hover { border-color: var(--accent); background: #1a140b; }
+        .sb-var-sq.sel { background: var(--accent); color: #111; border-color: var(--accent); }
+        .sb-var-sq.plus { color: var(--accent); font-size: 13px; }
+        .sb-var-dropdown {
+            position: fixed; z-index: 600; background: var(--panel-bg3); border: 1px solid var(--border);
+            border-radius: 4px; max-height: 220px; overflow-y: auto; min-width: 110px; box-shadow: 0 4px 14px rgba(0, 0, 0, .4);
+        }
+        .sb-var-dropdown div { padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text); }
+        .sb-var-dropdown div:hover { background: rgba(200, 162, 74, .2); }
+        .sb-var-dropdown div.sel { color: var(--accent); font-weight: 700; }
+
         .storyboard-add {
             background: var(--panel-bg3); border: 1px dashed var(--border); color: var(--muted);
             width: 100%; height: 26px; border-radius: 2px; cursor: pointer;
@@ -505,6 +568,7 @@
             position: relative; z-index: 2;
         }
         .custom-select-display:hover { border-color: var(--accent); }
+        .custom-select-display.ph { white-space: nowrap; overflow: hidden; font-size: 10px; letter-spacing: -1.5px; }
         .custom-select-display.empty-val { opacity: 0.6; }
         .custom-select-caret {
             position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
@@ -1379,7 +1443,22 @@
         body.light-theme .storyboard-add.drag-over { background: var(--accent-soft2); box-shadow: none; }
         body.light-theme .storyboard-img-wrap.drag-over-img .storyboard-img { box-shadow: 0 0 0 2px var(--accent); }
         body.light-theme .storyboard-del-btn { background: var(--warm); }
-        body.light-theme .storyboard-reorder-badge { background: rgba(38, 38, 43, .8); }
+        body.light-theme .storyboard-reorder-badge {
+            background: rgba(255, 255, 255, .92); color: var(--accent); border: 1px solid var(--border);
+        }
+        body.light-theme .sb-var-sq {
+            background: rgba(255, 255, 255, .94); color: var(--text); border-color: var(--border);
+        }
+        body.light-theme .sb-var-sq:hover { background: #e4e1f8; border-color: var(--accent); }
+        body.light-theme .sb-var-sq.sel { background: #e4e1f8; color: var(--accent); border-color: var(--accent); font-weight: 700; }
+        body.light-theme .sb-var-sq.plus { color: var(--accent); }
+        body.light-theme .sb-var-dropdown { background: var(--panel-bg); box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
+        body.light-theme .sb-var-dropdown div:hover { background: var(--accent-soft2); }
+        body.light-theme .sb-time-auto { background: var(--panel-bg); }
+        body.light-theme .scene-fold-btn:hover { background: var(--accent-soft2); }
+        body.light-theme tr.scene-row[data-folded="1"] .scene-fold-btn { background: var(--accent-soft2); color: var(--accent); border-color: var(--accent); }
+        /* v3.5: пунктир свёрнутой сцены в светлой теме (перебивает сплошную рамку сцены) */
+        body.light-theme tr.scene-row[data-folded="1"] td { border-bottom: 2px dashed var(--accent) !important; }
 
         body.light-theme .shot-card { box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
         body.light-theme .shot-card:hover { background: var(--cell-hover); box-shadow: 0 4px 12px rgba(0, 0, 0, .08); }
@@ -1481,6 +1560,7 @@
         body.touch-device .frame-freeze-btn { padding: 4px 7px; font-size: 14px; }
         body.touch-device .frame-num-input,
         body.touch-device .timecode-input { font-size: 15px; width: 58px; padding: 4px 0; }
+        body.touch-device .timecode-input.sub { font-size: 12px; width: 86px; }
         body.touch-device .cell-textarea,
         body.touch-device .note-textarea { font-size: 13px; min-height: 48px; }
         body.touch-device .custom-select-display {
@@ -1690,6 +1770,7 @@
 
     <input type="file" id="scriptFileInput" class="hidden-input" accept=".pdf,.docx,.doc" />
     <input type="file" id="storyboardImgInput" class="hidden-input" accept="image/*" multiple />
+    <input type="file" id="sbVariantInput" class="hidden-input" accept="image/*" multiple />
     <input type="file" id="noeticImgInput" class="hidden-input" accept="image/*" />
     <input type="file" id="noeticVideoInput" class="hidden-input" accept="video/*" />
     <input type="file" id="noeticAudioInput" class="hidden-input" accept="audio/*" />
@@ -1850,7 +1931,7 @@
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
         <div id="appVersionLabel">
-            <span class="sp-version">Noem.ocean v3.2</span>
+            <span class="sp-version">Noem.ocean v3.7</span>
             <span class="sp-dev">Разработчик Noem.ocean - Александр Тумали</span>
         </div>
     </div>
@@ -2112,27 +2193,19 @@
 
         const MEDIA = {
             byId: new Map(),
-            byHash: new Map(),
+            // v3.3: ключ — сама строка data-URL (а не 32-битный хэш). Это исключает путаницу разных видео/картинок,
+            // а повторные вызовы быстры: движок кэширует хэш строки, а сравнение одной и той же строки — по ссылке.
+            byStr: new Map(),
             counter: 1,
-            hashStr(s) {
-                let h = 2166136261 >>> 0;
-                for (let i = 0; i < s.length; i++) {
-                    h ^= s.charCodeAt(i);
-                    h = Math.imul(h, 16777619) >>> 0;
-                }
-                return h.toString(36) + ':' + s.length.toString(36);
-            },
             register(dataURL) {
                 if (typeof dataURL !== 'string') return dataURL;
                 if (!dataURL.startsWith('data:')) return dataURL;
                 if (dataURL.length < 2048) return dataURL;
-                const h = this.hashStr(dataURL);
-                if (this.byHash.has(h)) {
-                    return MEDIA_PREFIX + this.byHash.get(h);
-                }
+                const known = this.byStr.get(dataURL);
+                if (known) return MEDIA_PREFIX + known;
                 const id = 'm' + (this.counter++).toString(36);
                 this.byId.set(id, dataURL);
-                this.byHash.set(h, id);
+                this.byStr.set(dataURL, id);
                 return MEDIA_PREFIX + id;
             },
             resolve(ref) {
@@ -2142,7 +2215,7 @@
             },
             clear() {
                 this.byId.clear();
-                this.byHash.clear();
+                this.byStr.clear();
             },
             totalBytes() {
                 let total = 0;
@@ -2163,6 +2236,234 @@
                 return MEDIA.resolve(value);
             }
             return value;
+        }
+
+        // =====================================================================
+        // v3.4 — ХЕЛПЕРЫ: хрон (доли секунды), варианты раскадровки, скрытие, сворачивание
+        // =====================================================================
+        const SB_FPS = 25;
+        const SB_SUB_LABELS = ['1 frame', '0,1 сек', '0,2 сек', '0,3 сек', '0,4 сек', '0,5 сек',
+            '0,6 сек', '0,7 сек', '0,8 сек', '0,9 сек'];
+        const SB_SUB_SECS = [1 / SB_FPS, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+        const SB_BLACK_TEXT = 'Этот пустой кадр добавлен, потому что указанный хрон кадра не совпадает с добавленными раскадровками';
+        const SB_EYE_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const SB_EYE_OFF_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>' +
+            '<line x1="3" y1="3" x2="21" y2="21"/></svg>';
+
+        // строка хрона -> секунды (NaN, если не распознано)
+        function parseTcToSec(val) {
+            if (val == null) return NaN;
+            const s = String(val).replace(/\s+/g, ' ').trim().toLowerCase();
+            if (!s) return NaN;
+            if (/^1\s*(frame|фрейм|кадр)/.test(s)) return 1 / SB_FPS;
+            let m = /^(\d+):(\d+)\s*и\s*(\d+)(?:[.,](\d+))?/.exec(s);
+            if (m) return (+m[1]) * 60 + (+m[2]) + parseFloat(m[3] + '.' + (m[4] || '0'));
+            m = /^(\d+):(\d+)(?:[.,](\d+))?/.exec(s);
+            if (m) return (+m[1]) * 60 + (+m[2]) + (m[3] ? parseFloat('0.' + m[3]) : 0);
+            m = /^(\d+)(?:[.,](\d+))?/.exec(s);
+            if (m) return (+m[1]) + (m[2] ? parseFloat('0.' + m[2]) : 0);
+            return NaN;
+        }
+        function tcToSec(tc) { const v = parseTcToSec(tc); return isNaN(v) ? 0 : Math.max(0, v); }
+        function sbPad2(n) { return String(n).padStart(2, '0'); }
+        // доли секунды (мс) -> «0,5»
+        function sbFracStr(rem) { return '0,' + String(rem).padStart(3, '0').replace(/0+$/, ''); }
+        // секунды -> «мм:сс» или «мм:сс и 0,5 сек»
+        function secToClock(sec) {
+            const ms = Math.round(Math.max(0, +sec || 0) * 1000);
+            const total = Math.floor(ms / 1000), rem = ms % 1000;
+            let out = sbPad2(Math.floor(total / 60)) + ':' + sbPad2(total % 60);
+            if (rem) out += ' и ' + sbFracStr(rem) + ' сек';
+            return out;
+        }
+        // секунды -> каноническая строка хрона («1 frame», «0,5 секунды», «00:03»...)
+        function secToTc(sec) {
+            sec = Math.max(0, +sec || 0);
+            if (Math.abs(sec - 1 / SB_FPS) < 1e-6) return SB_SUB_LABELS[0];
+            if (sec > 0 && sec < 1) {
+                const ms = Math.round(sec * 1000);
+                if (ms > 0 && ms < 1000) return sbFracStr(ms) + ' сек';
+            }
+            return secToClock(sec);
+        }
+        // привести любую запись хрона (старые «00:01,5», «0,5 секунды») к текущему формату
+        function tcNorm(v) {
+            if (typeof v !== 'string') return v;
+            const sec = parseTcToSec(v);
+            return isNaN(sec) ? v : secToTc(Math.max(0, sec));
+        }
+        // шаг стрелками: ... 00:02, 00:01, 00:00, 0,9 секунды ... 0,1 секунды, 1 frame
+        function stepTc(tc, delta) {
+            const sec = tcToSec(tc);
+            if (sec > 0 && sec < 1) {
+                let idx = 0, best = 1e9;
+                SB_SUB_SECS.forEach((v, i) => { const d = Math.abs(v - sec); if (d < best) { best = d; idx = i; } });
+                if (delta > 0) return idx >= SB_SUB_SECS.length - 1 ? '00:00' : SB_SUB_LABELS[idx + 1];
+                return SB_SUB_LABELS[Math.max(0, idx - 1)];
+            }
+            if (sec === 0) return delta > 0 ? '00:01' : SB_SUB_LABELS[SB_SUB_SECS.length - 1];
+            const isInt = Math.abs(sec - Math.round(sec)) < 1e-6;
+            let next;
+            if (delta > 0) next = isInt ? Math.round(sec) + 1 : Math.ceil(sec);
+            else next = isInt ? Math.round(sec) - 1 : Math.floor(sec);
+            if (next <= 0) return '00:00';
+            return secToClock(next);
+        }
+
+        // ---- скрытие (глазик) ----
+        let SB_HID = {};
+        function sbHiddenMap() {
+            const m = {};
+            let sceneHidden = false;
+            APP.dirRows.forEach(r => {
+                if (r.type === 'scene') { sceneHidden = !!r.hidden; if (r.hidden) m[r.id] = 1; }
+                else if (r.hidden) m[r.id] = 1;
+                else if (sceneHidden) m[r.id] = 2;
+            });
+            return m;
+        }
+
+        // ---- раскадровка: слоты (изображения кадра) и варианты каждого слота ----
+        function sbEnsure(row) {
+            if (!row || row.type === 'scene' || row.type === 'note') return;
+            if (!Array.isArray(row.sbVars)) {
+                row.sbVars = Array.isArray(row.storyboard) ? row.storyboard.filter(Boolean).map(s => [s]) : [];
+            }
+            if (row.storyboard !== undefined) delete row.storyboard;
+            row.sbVars = row.sbVars.map(v => Array.isArray(v) ? v.filter(Boolean) : (v ? [v] : [])).filter(v => v.length);
+            if (!Array.isArray(row.sbSel)) row.sbSel = [];
+            while (row.sbSel.length < row.sbVars.length) row.sbSel.push(0);
+            row.sbSel.length = row.sbVars.length;
+            row.sbSel = row.sbSel.map((s, i) => Math.max(0, Math.min(+s || 0, row.sbVars[i].length - 1)));
+            if (!Array.isArray(row.sbTimes)) row.sbTimes = [];
+            const n = row.sbVars.length;
+            if (n <= 1) { row.sbManual = false; row.sbTimes = []; }
+            else if (row.sbManual) {
+                while (row.sbTimes.length < n) row.sbTimes.push('00:00');
+                row.sbTimes.length = n;
+                row.sbTimes = row.sbTimes.map(tcNorm);
+            }
+            if (!row.timecode) row.timecode = '00:00';
+            row.timecode = tcNorm(row.timecode);
+        }
+        function sbEnsureAll() { APP.dirRows.forEach(sbEnsure); }
+        function sbCount(row) { return Array.isArray(row.sbVars) ? row.sbVars.length : 0; }
+        function sbSelected(row) {
+            sbEnsure(row);
+            return row.sbVars.map((v, i) => v[Math.min(row.sbSel[i] || 0, v.length - 1)]).filter(Boolean);
+        }
+        function sbAddSlot(row, src) {
+            sbEnsure(row);
+            row.sbVars.push([src]);
+            row.sbSel.push(0);
+            if (row.sbManual) { row.sbManual = false; row.sbTimes = []; }
+        }
+        async function sbAddVariants(row, slotIdx, files) {
+            sbEnsure(row);
+            if (!row.sbVars[slotIdx]) return;
+            let added = 0;
+            for (const f of files) {
+                if (!f.type || !f.type.startsWith('image/')) continue;
+                try {
+                    const raw = await fileToDataURL(f);
+                    const compressed = await compressImage(raw, 2000, 0.85);
+                    row.sbVars[slotIdx].push(compressed);
+                    row.sbSel[slotIdx] = row.sbVars[slotIdx].length - 1;
+                    added++;
+                } catch (err) { /* пропуск */ }
+            }
+            if (!added) return;
+            updateTableBody();
+            syncNoeticZones();
+            notify('Добавлен вариант раскадровки');
+            pushHistory('Вариант раскадровки');
+        }
+        function sbRemoveSelected(row, slotIdx) {
+            const vars = row.sbVars[slotIdx];
+            if (!vars) return;
+            const sel = row.sbSel[slotIdx] || 0;
+            vars.splice(sel, 1);
+            if (!vars.length) {
+                row.sbVars.splice(slotIdx, 1);
+                row.sbSel.splice(slotIdx, 1);
+                if (row.sbManual && Array.isArray(row.sbTimes)) row.sbTimes.splice(slotIdx, 1);
+            } else {
+                row.sbSel[slotIdx] = Math.max(0, sel - 1);
+            }
+            sbEnsure(row);
+        }
+
+        // ---- хрон внутрикадра ----
+        // деление хрона кадра поровну между n изображениями:
+        // целые секунды -> целыми секундами (3 сек / 2 = 2 + 1); дробный хрон -> долями секунды
+        function sbSplitSecs(total, n) {
+            total = Math.max(0, +total || 0);
+            if (n < 1) return [];
+            const spread = (units, div) => {
+                const base = Math.floor(units / n), rem = units - base * n;
+                return Array.from({ length: n }, (_, i) => (base + (i < rem ? 1 : 0)) / div);
+            };
+            const whole = Math.round(total);
+            if (Math.abs(total - whole) < 1e-6 && whole >= n) return spread(whole, 1);
+            const tenths = Math.round(total * 10);
+            if (Math.abs(total * 10 - tenths) < 1e-6 && tenths >= n) return spread(tenths, 10).map(v => Math.round(v * 10) / 10 || v);
+            return spread(Math.round(total * SB_FPS), SB_FPS);
+        }
+        function sbAutoSecs(row) {
+            return sbSplitSecs(tcToSec(row.timecode), sbCount(row));
+        }
+        function sbSlotSecs(row) {
+            const n = sbCount(row);
+            if (row.sbManual && Array.isArray(row.sbTimes) && row.sbTimes.length === n) return row.sbTimes.map(tcToSec);
+            return sbAutoSecs(row);
+        }
+        function sbSumFrames(row) { return Math.round(sbSlotSecs(row).reduce((a, t) => a + t, 0) * SB_FPS); }
+        function sbIsShort(row) {
+            return sbCount(row) > 1 && !!row.sbManual && sbSumFrames(row) < Math.round(tcToSec(row.timecode) * SB_FPS);
+        }
+
+        // ---- кнопки строки ----
+        function sbEyeBtn(row) {
+            const st = SB_HID[row.id] || 0;
+            const b = document.createElement('button');
+            b.className = 'row-btn row-eye-btn' + (st ? ' is-off' : '');
+            b.innerHTML = st ? SB_EYE_OFF_SVG : SB_EYE_SVG;
+            b.title = st === 2 ? 'Скрыто вместе со сценой' : (st ? 'Показать (вернуть в просмотр и экспорт)' : 'Скрыть из просмотра и экспорта');
+            b.onclick = (e) => {
+                e.stopPropagation();
+                const newVal = !row.hidden;
+                const sel = APP.dirRows.filter(r => r.multiSelected);
+                const targets = (row.multiSelected && sel.length > 1) ? sel : [row];
+                targets.forEach(r => { r.hidden = newVal; });
+                updateTableBody();
+                pushHistory(newVal ? 'Скрытие' : 'Показ');
+            };
+            return b;
+        }
+        function sbFoldBtn(row) {
+            const b = document.createElement('button');
+            b.className = 'scene-fold-btn';
+            b.textContent = row.folded ? '▸' : '▾';
+            b.title = row.folded ? 'Развернуть сцену' : 'Свернуть сцену';
+            b.onclick = (e) => {
+                e.stopPropagation();
+                row.folded = !row.folded;
+                updateTableBody();
+                if (typeof scheduleAutosave === 'function') scheduleAutosave();
+            };
+            return b;
+        }
+
+        async function amBlackPng(w, h) {
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+            const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+            return new Uint8Array(await blob.arrayBuffer());
         }
 
         function fileToDataURL(file) {
@@ -2326,7 +2627,10 @@
 
         function restoreState(state) {
             const resolved = JSON.parse(JSON.stringify(state), mediaReviver);
+            const sbFoldMap = {};
+            APP.dirRows.forEach(r => { if (r.type === 'scene') sbFoldMap[r.id] = !!r.folded; });
             APP.dirRows = resolved.dirRows || [];
+            APP.dirRows.forEach(r => { if (r.type === 'scene' && sbFoldMap[r.id] !== undefined) r.folded = sbFoldMap[r.id]; });
             APP.noeticElements = resolved.noeticElements || [];
             APP.scriptBlocks = resolved.scriptBlocks || [];
             APP.locations = (resolved.locations || []).slice();
@@ -2592,8 +2896,10 @@
             let folder = null;
             const pad = (n, w) => String(n).padStart(w, '0');
             const ensureNoScene = () => { if (!folder) folder = zip.folder('00_Без сцены'); };
+            const hid = sbHiddenMap();
 
             for (const row of APP.dirRows) {
+                if (hid[row.id]) continue;
                 if (row.type === 'scene') {
                     sceneIdx++;
                     const name = sbSafeName(exportSceneText(row), 90) || ('Сцена ' + sceneIdx);
@@ -2601,7 +2907,7 @@
                     continue;
                 }
                 if (row.type === 'note') continue;
-                const imgs = row.storyboard || [];
+                const imgs = sbSelected(row);
                 if (!imgs.length) continue;
                 const numPart = sbSafeName(row.numDisplay || String(row.num).padStart(4, '0')) || pad(row.num || 0, 4);
                 for (const src0 of imgs) {
@@ -2638,9 +2944,7 @@
         // над первыми кадрами новых сцен.
         // ============================================================
         function amTimecodeToSec(tc) {
-            if (!tc) return 0;
-            const p = String(tc).split(':').map(Number);
-            return (p[0] || 0) * 60 + (p[1] || 0);
+            return tcToSec(tc);
         }
         function amSrtTime(fr, fps) {
             const ms = Math.round(fr / fps * 1000);
@@ -2676,17 +2980,22 @@
             let order = 0;
             let pendingScene = null;
 
+            const hid = sbHiddenMap();
+            let blackBytes = null, blackCount = 0;
+
             for (const row of APP.dirRows) {
-                if (row.type === 'scene') { pendingScene = exportSceneText(row); continue; }
+                if (row.type === 'scene') { pendingScene = hid[row.id] ? null : exportSceneText(row); continue; }
+                if (hid[row.id]) continue;
                 if (row.type === 'note') continue;
 
-                let sec = amTimecodeToSec(row.timecode);
+                const zeroFrame = tcToSec(row.timecode) <= 0;
+                let sec = tcToSec(row.timecode);
                 if (sec <= 0) sec = 1;
-                let len = sec * FPS;
+                let len = Math.max(1, Math.round(sec * FPS));
 
-                // загрузка изображений кадра
+                // загрузка изображений кадра (только выбранные варианты)
                 const loaded = [];
-                for (const src0 of (row.storyboard || [])) {
+                for (const src0 of sbSelected(row)) {
                     const src = await ensureExportableImage(src0, 'jpg');
                     let bytes = null, ext = 'jpg', mime = 'image/jpeg';
                     if (typeof src === 'string' && src.startsWith('data:')) {
@@ -2704,15 +3013,38 @@
                     if (bytes) loaded.push({ bytes, ext, mime });
                 }
 
-                // несколько изображений в кадре делят хронометраж поровну
-                if (loaded.length > len) len = loaded.length;
+                // длительности изображений кадра (в кадрах fps)
+                const nImg = loaded.length;
+                let lens = [];
+                let gap = 0;
+                if (nImg > 1) {
+                    if (row.sbManual && (row.sbTimes || []).length === nImg) {
+                        lens = row.sbTimes.map(t => Math.max(1, Math.round(tcToSec(t) * FPS)));
+                        const sumM = lens.reduce((x, y) => x + y, 0);
+                        if (zeroFrame || sumM > len) len = sumM;
+                        else gap = len - sumM;
+                    } else {
+                        if (len < nImg) len = nImg;
+                        const parts = sbSplitSecs(len / FPS, nImg);
+                        let acc = 0, prev = 0;
+                        lens = parts.map((ps, i) => {
+                            acc += ps * FPS;
+                            const edge = i === nImg - 1 ? len : Math.round(acc);
+                            const l = Math.max(1, edge - prev);
+                            prev += l;
+                            return l;
+                        });
+                    }
+                } else if (nImg === 1) {
+                    lens = [len];
+                }
+
                 const numPart = sbSafeName(row.numDisplay || String(row.num).padStart(4, '0'))
                     .replace(/[^A-Za-z0-9_\-]/g, '') || pad(row.num || 0, 4);
-                const base = Math.floor(len / Math.max(1, loaded.length));
                 let t = cursor;
-                for (let i = 0; i < loaded.length; i++) {
+                for (let i = 0; i < nImg; i++) {
                     order++;
-                    const l = (i === loaded.length - 1) ? (cursor + len - t) : base;
+                    const l = lens[i];
                     const fname = pad(order, 5) + '_' + numPart + '.' + loaded[i].ext;
                     imgFolder.file(fname, loaded[i].bytes);
                     const dim = await amBytesDims(loaded[i].bytes, loaded[i].mime);
@@ -2722,9 +3054,18 @@
 
                 // субтитр сцены — над первым кадром новой сцены
                 if (pendingScene !== null) {
-                    const first = loaded.length ? base : len;
+                    const first = nImg ? lens[0] : len;
                     subs.push({ text: pendingScene, start: cursor, end: cursor + first });
                     pendingScene = null;
+                }
+
+                // хрон кадра больше суммы хронов изображений — добавляем чёрный кадр
+                if (gap > 0) {
+                    if (!blackBytes) blackBytes = await amBlackPng(SEQ_W, SEQ_H);
+                    imgFolder.file('black.png', blackBytes);
+                    v1.push({ name: 'black.png', path: 'storyboard/black.png', w: SEQ_W, h: SEQ_H, start: t, end: t + gap });
+                    subs.push({ text: SB_BLACK_TEXT, start: t, end: t + gap });
+                    blackCount++;
                 }
                 cursor += len;
             }
@@ -2802,7 +3143,7 @@
             zip.file(base + '_scenes.srt', '\ufeff' + srt);
             const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
             downloadBlob(blob, base + '_аниматик.zip');
-            notify('Аниматик экспортирован: ' + v1.length + ' кадр., ' + subs.length + ' сцен');
+            notify('Аниматик экспортирован: ' + v1.length + ' кадр., ' + (subs.length - blackCount) + ' сцен' + (blackCount ? ', пустых кадров: ' + blackCount : ''));
         }
 
         function colLetter(n) {
@@ -2826,7 +3167,10 @@
         function collectExportData() {
             const cols = COLUMNS.filter(c => c.visible);
             const items = [];
+            sbEnsureAll();
+            const hid = sbHiddenMap();
             APP.dirRows.forEach(row => {
+                if (hid[row.id]) return;
                 if (row.type === 'scene') {
                     const stats = calcSceneStatsForRow(row.id);
                     items.push({ kind: 'scene', text: exportSceneText(row), sceneStats: stats });
@@ -2846,10 +3190,10 @@
                                 (row.numExtra ? '\n' + row.numExtra : '');
                             break;
                         case 'time':
-                            v = (row.timecode || '') + (row.timeExtra ? '\n' + row.timeExtra : '');
+                            v = String(row.timecode || '').replace(' и ', '\nи ') + (row.timeExtra ? '\n' + row.timeExtra : '');
                             break;
                         case 'board':
-                            imgs = (row.storyboard || []).slice();
+                            imgs = sbSelected(row).slice();
                             break;
                         case 'scale': {
                             const parts = [];
@@ -2886,18 +3230,16 @@
 
         function computeExportTotals() {
             let frames = 0, scenes = 0, totalSec = 0;
+            const hid = sbHiddenMap();
             APP.dirRows.forEach(r => {
+                if (hid[r.id]) return;
                 if (r.type === 'scene') scenes++;
                 else if (r.type !== 'note') {
                     frames++;
-                    if (r.timecode) {
-                        const p = r.timecode.split(':').map(Number);
-                        totalSec += (p[0] || 0) * 60 + (p[1] || 0);
-                    }
+                    totalSec += tcToSec(r.timecode);
                 }
             });
-            const m = Math.floor(totalSec / 60), s = totalSec % 60;
-            return { frames, scenes, duration: String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0') };
+            return { frames, scenes, duration: secToClock(totalSec) };
         }
 
         function projectFileBase() {
@@ -3587,6 +3929,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         let ctrlHeld = false,
             altHeld = false;
         let dirDragRowIds = [];
+        // v3.3: страховка — любое завершение перетаскивания (в т.ч. неудачный drop вне таблицы) очищает список
+        document.addEventListener('dragend', () => { dirDragRowIds = []; });
         let colManagerOpen = false;
         let pendingStoryboardRow = null;
         let pendingNoeticType = null;
@@ -3614,7 +3958,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         let COLUMNS = [
             { id: 'num', label: '№ Кадр', visible: true, width: 80 },
-            { id: 'time', label: 'Хрон', visible: true, width: 90 },
+            { id: 'time', label: 'Хрон', visible: true, width: 100 },
             { id: 'board', label: 'Раскадровка', visible: true, width: 240 },
             { id: 'scale', label: 'Крупность', visible: true, width: 120 },
             { id: 'montage', label: 'Монтаж', visible: true, width: 120 },
@@ -3687,10 +4031,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         // =====================================================================
         // v2.7 — АВТОСОХРАНЕНИЕ И ВОССТАНОВЛЕНИЕ ТЕКУЩЕГО ПРОЕКТА (IndexedDB)
         // =====================================================================
-        const APP_VERSION = '3.2';
+        const APP_VERSION = '3.7';
         const AUTOSAVE = {
             DB: 'noemOceanAutosave', STORE: 'kv', KEY: 'currentProject',
-            ready: false, dirty: false, timer: null, db: null
+            ready: false, dirty: false, timer: null, db: null,
+            hold: false // v3.3: после отмены пароля при восстановлении не затираем защищённое автосохранение, пока нет первой правки
         };
 
         function autosaveOpenDB() {
@@ -3737,6 +4082,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function scheduleAutosave() {
             if (!AUTOSAVE.ready) return;
+            AUTOSAVE.hold = false; // реальная правка пользователя — защита от затирания больше не нужна
             AUTOSAVE.dirty = true;
             if (AUTOSAVE.timer) clearTimeout(AUTOSAVE.timer);
             AUTOSAVE.timer = setTimeout(autosaveNow, 1200);
@@ -3744,7 +4090,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function autosaveNow() {
             if (AUTOSAVE.timer) { clearTimeout(AUTOSAVE.timer); AUTOSAVE.timer = null; }
-            if (!AUTOSAVE.ready || !AUTOSAVE.dirty) return;
+            if (!AUTOSAVE.ready || !AUTOSAVE.dirty || AUTOSAVE.hold) return;
             AUTOSAVE.dirty = false;
             try {
                 const data = buildProjectData();
@@ -3760,6 +4106,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     const data = rec.data;
                     if (data.password) {
                         APP.pendingOpenData = data;
+                        APP.pendingFromAutosave = true;
                         document.getElementById('passwordModal').classList.add('show');
                         document.getElementById('passwordModalInput').value = '';
                         document.getElementById('pmError').style.display = 'none';
@@ -3821,18 +4168,29 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (!files.length || !pendingStoryboardRow) return;
                 const row = APP.dirRows.find(r => r.id === pendingStoryboardRow);
                 if (!row) return;
-                row.storyboard = row.storyboard || [];
+                sbEnsure(row);
                 for (const f of files) {
                     if (!f.type.startsWith('image/')) continue;
                     try {
                         const raw = await fileToDataURL(f);
                         const compressed = await compressImage(raw, 2000, 0.85);
-                        row.storyboard.push(compressed);
+                        sbAddSlot(row, compressed);
                     } catch (err) { /* skip */ }
                 }
                 updateTableBody();
                 syncNoeticZones();
                 pushHistory('Добавление раскадровки');
+            });
+
+            document.getElementById('sbVariantInput').addEventListener('change', async e => {
+                const files = Array.from(e.target.files);
+                e.target.value = '';
+                const pv = window._sbPendingVariant;
+                window._sbPendingVariant = null;
+                if (!files.length || !pv) return;
+                const row = APP.dirRows.find(r => r.id === pv.rowId);
+                if (!row) return;
+                await sbAddVariants(row, pv.idx, files);
             });
 
             historyStack = [];
@@ -4528,7 +4886,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 num: 0,
                 numDisplay: '',
                 timecode: '00:00',
-                storyboard: [],
+                sbVars: [],
+                sbSel: [],
+                sbTimes: [],
+                sbManual: false,
+                hidden: false,
                 scale: '',
                 scaleExtra: '',
                 extraScales: [],
@@ -4595,6 +4957,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         function renumberRows() {
+            sbEnsureAll();
             let counter = 1;
 
             APP.dirRows.forEach(row => {
@@ -4646,12 +5009,29 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function updateTableBody() {
             renumberRows();
             const tbody = document.getElementById('dirTableBody');
-            tbody.innerHTML = '';
+            // --- без мерцания: запоминаем прокрутку и уже загруженные картинки, строим строки вне страницы ---
+            const _scr = [];
+            for (let p = tbody.parentElement; p; p = p.parentElement) if (p.scrollTop) _scr.push([p, p.scrollTop, p.scrollLeft]);
+            const _wx = window.scrollX, _wy = window.scrollY;
+            window._sbImgPool = new Map();
+            tbody.querySelectorAll('img.storyboard-img').forEach(im => {
+                const k = im.getAttribute('src');
+                if (!window._sbImgPool.has(k)) window._sbImgPool.set(k, []);
+                window._sbImgPool.get(k).push(im);
+            });
+            const frag = document.createDocumentFragment();
             buildTableHead();
 
+            SB_HID = sbHiddenMap();
+            let sbCurFolded = false;
             APP.dirRows.forEach((row, idx) => {
+                if (row.type === 'scene') sbCurFolded = !!row.folded;
+                else if (sbCurFolded) return;                              // кадры свёрнутой сцены не рисуем
+                if (APP.mode !== 'editor' && SB_HID[row.id]) return;       // скрытое не показываем в просмотре
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-rowid', row.id);
+                if (SB_HID[row.id]) tr.setAttribute('data-hid', String(SB_HID[row.id]));
+                if (row.type === 'scene' && row.folded) tr.setAttribute('data-folded', '1');
                 tr.setAttribute('draggable', 'false');
                 if (row.active) tr.classList.add('active-row');
                 if (row.multiSelected) tr.classList.add('selected-row');
@@ -4715,7 +5095,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     delBtn.style.color = 'var(--accent2)';
                     delBtn.onclick = () => deleteRow(row.id);
 
-                    rowActions.append(cbWrap, dragHandle, upBtn, dnBtn, dupBtn, delBtn);
+                    rowActions.append(cbWrap, sbEyeBtn(row), dragHandle, upBtn, dnBtn, dupBtn, delBtn);
                     tdAct.appendChild(rowActions);
 
                     tr.addEventListener('dragstart', e => {
@@ -4732,7 +5112,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         tr.classList.remove('drag-over-row'); if (dirDragRowIds.length && !dirDragRowIds.includes(row
                             .id)) moveRowTo(dirDragRowIds, row.id);
                         dirDragRowIds = []; });
-                    tr.addEventListener('dragend', () => { tr.style.opacity = '1';
+                    tr.addEventListener('dragend', () => { tr.style.opacity = '1'; dirDragRowIds = [];
                         tr.draggable = false;
                         document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove(
                         'drag-over-row')); });
@@ -5007,7 +5387,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     statsWrap.className = 'scene-stats';
                     const stats = calcSceneStatsForRow(row.id);
                     statsWrap.innerHTML =
-                        `Кадров: <span class="sc-frames">${stats.frames}</span>. Хронометраж: <span class="sc-time">${stats.duration}</span>`;
+                        `Кадров: <span class="sc-frames">${stats.frames}</span>. Хронометраж: <span class="sc-time">${stats.duration}</span>` +
+                        (row.folded ? '<span class="scene-folded-tag">свёрнуто</span>' : '');
 
                     const headRow = document.createElement('div');
                     headRow.className = 'scene-head-row';
@@ -5020,15 +5401,15 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                             : 'Задать новую автоматическую нумерацию с этой сцены';
                         sRenum.textContent = row.restartNumbering ? '⟲' : '№';
                         sRenum.addEventListener('click', (e) => { e.stopPropagation(); toggleRenumberScene(row); });
-                        headRow.append(editBtn, sRenum, textWrap);
+                        headRow.append(sbFoldBtn(row), editBtn, sRenum, textWrap);
                     } else {
-                        headRow.append(editBtn, textWrap);
+                        headRow.append(sbFoldBtn(row), editBtn, textWrap);
                     }
 
                     wrap.append(headRow, statsWrap);
                     tdContent.appendChild(wrap);
                     tr.append(tdAct, tdContent);
-                    tbody.appendChild(tr);
+                    frag.appendChild(tr);
 
                     tr.addEventListener('click', e => {
                         if (e.target.closest('button') || e.target.closest('.s-clickable') || e.target
@@ -5104,7 +5485,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     delBtnN.style.color = 'var(--accent2)';
                     delBtnN.onclick = () => deleteRow(row.id);
 
-                    rowActions.append(cbWrapN, dragHandleN, upBtnN, dnBtnN, dupBtnN, delBtnN);
+                    rowActions.append(cbWrapN, sbEyeBtn(row), dragHandleN, upBtnN, dnBtnN, dupBtnN, delBtnN);
                     tdAct.appendChild(rowActions);
 
                     tr.addEventListener('dragstart', e => {
@@ -5120,7 +5501,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         tr.classList.remove('drag-over-row'); if (dirDragRowIds.length && !dirDragRowIds.includes(row
                             .id)) moveRowTo(dirDragRowIds, row.id);
                         dirDragRowIds = []; });
-                    tr.addEventListener('dragend', () => { tr.style.opacity = '1';
+                    tr.addEventListener('dragend', () => { tr.style.opacity = '1'; dirDragRowIds = [];
                         tr.draggable = false;
                         document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove(
                         'drag-over-row')); });
@@ -5153,7 +5534,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
                     tdContent.appendChild(ta);
                     tr.append(tdAct, tdContent);
-                    tbody.appendChild(tr);
+                    frag.appendChild(tr);
 
                     tr.addEventListener('click', e => {
                         if (e.target.closest('button') || e.target.tagName === 'TEXTAREA') return;
@@ -5220,7 +5601,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 dragHandle2.onmouseleave = () => { tr.draggable = false;
                     tr.classList.remove('is-dragging-handle'); };
 
-                rowActions.append(cbWrap2, dragHandle2, upBtn2, dnBtn2, dupBtn2, delBtn2);
+                rowActions.append(cbWrap2, sbEyeBtn(row), dragHandle2, upBtn2, dnBtn2, dupBtn2, delBtn2);
                 tdAct.appendChild(rowActions);
                 tr.appendChild(tdAct);
 
@@ -5239,7 +5620,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     tr.classList.remove('drag-over-row'); if (dirDragRowIds.length && !dirDragRowIds.includes(row.id))
                         moveRowTo(dirDragRowIds, row.id);
                     dirDragRowIds = []; });
-                tr.addEventListener('dragend', () => { tr.style.opacity = '1';
+                tr.addEventListener('dragend', () => { tr.style.opacity = '1'; dirDragRowIds = [];
                     tr.draggable = false;
                     document.querySelectorAll('.drag-over-row').forEach(el => el.classList.remove('drag-over-row')); });
 
@@ -5312,8 +5693,14 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         'active-row'));
                     tr.classList.add('active-row');
                 });
-                tbody.appendChild(tr);
+                frag.appendChild(tr);
             });
+
+            tbody.replaceChildren(frag);
+            window._sbImgPool = null;
+            tbody.querySelectorAll('textarea').forEach(t => { if (!t.classList.contains('timecode-input')) autoResizeTA(t); });
+            _scr.forEach(([p, t, l]) => { p.scrollTop = t; p.scrollLeft = l; });
+            if (window.scrollX !== _wx || window.scrollY !== _wy) window.scrollTo(_wx, _wy);
 
             updateFrameCount();
             updateTotalTimecode();
@@ -5322,47 +5709,68 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         function tryParseSceneText(text) {
-            // Распознаёт: "1. ИНТ. ПОДЪЕЗД. У ДОМА РИТЫ. РАННЕЕ УТРО." / "Сцена 3 - ЭКСТ. КУХНЯ. ДЕНЬ. (инфо)"
+            // Распознаёт заголовки сцен в разных форматах (v3.3 — расширено):
+            //   "1. ИНТ. ПОДЪЕЗД. У ДОМА РИТЫ. РАННЕЕ УТРО."   "Сцена 3 - ЭКСТ. КУХНЯ. ДЕНЬ. (инфо)"
+            //   "Сц. 5 — ИНТ. КУХНЯ. ДЕНЬ"   "SCENE 7. INT. KITCHEN. DAY"   "(4) ИНТ. КУХНЯ. ДЕНЬ"   "#4 ИНТ. КУХНЯ. ДЕНЬ"
+            //   "ИНТ. КВАРТИРА — НОЧЬ" / "ИНТ. КВАРТИРА, НОЧЬ" / "ИНТ. КВАРТИРА / НОЧЬ"   "ИНТЕРЬЕР. КУХНЯ. ДЕНЬ"
+            //   "ИНТ.-ЭКСТ. ДВОР. ДЕНЬ"   "ИНТ. КУХНЯ. ДЕНЬ [флэшбэк]"   "EXT. FOREST - NIGHT"   "1.ИНТ.КУХНЯ.ДЕНЬ"
             let src = String(text || '').replace(/\s+/g, ' ').trim();
             if (!src) return null;
             const normV = v => String(v).trim().toUpperCase().replace(/\.+$/, '').replace(/\s+/g, ' ');
             const escRx = v => v.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
 
-            // 1) номер сцены (необязательный): "1." / "1)" / "Сцена 1 -" / "№1"
+            // 1) номер сцены (необязательный): "1." / "1)" / "1 -" / "Сцена 1" / "Сц. 1" / "SC 1" / "SCENE 1" / "№1" / "#1" / "(1)" / "[1]"
             let num = null;
-            let mNum = src.match(/^(?:СЦЕНА\s*)?(?:№\s*)?(\d+)\s*[.)\-–—:]?\s*(?:СЦЕНА\s*)?[-–—:.]?\s*/i);
+            const mNum = src.match(/^(?:(?:СЦЕНА|СЦ|SCENE|SC)\.?\s*)?(?:№|N°|#)?\s*(?:[(\[]\s*(\d+)\s*[)\]]|(\d+))\s*[.)\]:\-–—]?\s*(?:СЦЕНА\s*)?[-–—:.]?\s*/i);
             if (mNum) {
-                num = parseInt(mNum[1]) || null;
+                num = parseInt(mNum[1] || mNum[2]) || null;
                 src = src.slice(mNum[0].length);
             } else {
-                const mWord = src.match(/^СЦЕНА\s*[-–—:.]?\s*/i);
+                const mWord = src.match(/^(?:СЦЕНА|СЦ|SCENE|SC)\.?\s*[-–—:.]?\s*/i);
                 if (mWord) src = src.slice(mWord[0].length);
             }
 
             // 2) ИНТ/ЭКСТ: встроенные + все пункты из пользовательского списка
             const ieMap = new Map();
-            ['ИНТ', 'ЭКСТ', 'НАТ', 'ИНТ-ЭКСТ', 'ИНТ/ЭКСТ', 'ИНТ./ЭКСТ'].forEach(v => ieMap.set(v, v + '.'));
+            [['ИНТ', 'ИНТ.'], ['ЭКСТ', 'ЭКСТ.'], ['НАТ', 'НАТ.'],
+             ['ИНТ-ЭКСТ', 'ИНТ-ЭКСТ.'], ['ИНТ/ЭКСТ', 'ИНТ/ЭКСТ.'], ['ИНТ./ЭКСТ', 'ИНТ./ЭКСТ.'], ['ИНТ.-ЭКСТ', 'ИНТ.-ЭКСТ.'],
+             ['ИНТ/НАТ', 'ИНТ/НАТ.'], ['ИНТ./НАТ', 'ИНТ./НАТ.'],
+             ['ИНТЕРЬЕР', 'ИНТ.'], ['ЭКСТЕРЬЕР', 'ЭКСТ.'], ['НАТУРА', 'НАТ.'],
+             ['INT', 'ИНТ.'], ['EXT', 'ЭКСТ.'], ['INT/EXT', 'ИНТ/ЭКСТ.'], ['INT./EXT', 'ИНТ./ЭКСТ.'], ['I/E', 'ИНТ/ЭКСТ.']
+            ].forEach(([k, v]) => ieMap.set(k, v));
             (APP.intExts || []).forEach(v => { const k = normV(v); if (k) ieMap.set(k, v); });
             const ieKeys = Array.from(ieMap.keys()).sort((a, b) => b.length - a.length);
-            const ieRx = new RegExp('^(' + ieKeys.map(k => escRx(k).replace(/ /g, '\\s+')).join('|') + ')(?:\\.|(?=\\s))\\s*', 'i');
+            const ieRx = new RegExp('^(' + ieKeys.map(k => escRx(k).replace(/ /g, '\\s+')).join('|') + ')(?:\\.|(?=[\\s\\-–—:,]))\\s*', 'i');
             const mIe = src.match(ieRx);
             if (!mIe) return null;
             const intExt = ieMap.get(normV(mIe[1])) || (normV(mIe[1]) + '.');
 
             // 3) хвост: ЛОКАЦИЯ. ВРЕМЯ СУТОК. (инфо)
-            let rest = src.slice(mIe[0].length).trim();
+            let rest = src.slice(mIe[0].length).replace(/^[-–—:,.\s]+/, '').trim();
             let info = '';
-            const mInfo = rest.match(/\s*\(([^()]*)\)\s*\.?\s*$/);
+            const mInfo = rest.match(/\s*[(\[]([^()\[\]]*)[)\]]\s*\.?\s*$/);
             if (mInfo) { info = mInfo[1].trim(); rest = rest.slice(0, mInfo.index).trim(); }
             rest = rest.replace(/[.\s]+$/, '').trim();
             if (!rest) return null;
-            const segs = rest.split(/\.\s+/).map(x => x.trim()).filter(Boolean);
+
+            // основной способ — разделение по "точка + пробел"; запасной — тире / запятая / слэш / точки без пробелов
+            // (запасной способ срабатывает только если в тексте найдено известное время суток)
+            let segs = rest.split(/\.\s+/).map(x => x.trim()).filter(Boolean);
+            let altMode = false;
+            if (segs.length < 2) {
+                segs = rest.split(/\s+-\s+|\s*[–—]\s*|\s*[\/|]\s*|,\s+|\.(?=\S)/).map(x => x.trim()).filter(Boolean);
+                altMode = true;
+            }
             if (segs.length < 2) return null;
 
-            const timeSet = new Set(['РАССВЕТ', 'УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'СУМЕРКИ', 'НОЧЬ', 'ГЛУБОКАЯ НОЧЬ']);
+            const engTime = { DAY: 'ДЕНЬ', NIGHT: 'НОЧЬ', MORNING: 'УТРО', EVENING: 'ВЕЧЕР', DAWN: 'РАССВЕТ', DUSK: 'СУМЕРКИ', SUNSET: 'ЗАКАТ', NOON: 'ПОЛДЕНЬ', MIDNIGHT: 'ПОЛНОЧЬ' };
+            const timeSet = new Set(['РАССВЕТ', 'УТРО', 'РАННЕЕ УТРО', 'ПОЗДНЕЕ УТРО', 'ПОЛДЕНЬ', 'ДЕНЬ', 'ЗАКАТ', 'ВЕЧЕР', 'РАННИЙ ВЕЧЕР', 'ПОЗДНИЙ ВЕЧЕР',
+                'СУМЕРКИ', 'НОЧЬ', 'РАННЯЯ НОЧЬ', 'ПОЗДНЯЯ НОЧЬ', 'ГЛУБОКАЯ НОЧЬ', 'ПОЛНОЧЬ', 'СЕРЕДИНА ДНЯ']);
+            Object.keys(engTime).forEach(k => timeSet.add(k));
             (APP.times || []).forEach(t => { const k = normV(t); if (k) timeSet.add(k); });
             const timeKeys = Array.from(timeSet).sort((a, b) => b.length - a.length);
 
+            const joiner = altMode ? ', ' : '. ';
             let loc = '', time = '', tail = '';
             // а) сначала ищем известное время суток (поддерживает хвост без скобок)
             for (let j = 1; j < segs.length && !time; j++) {
@@ -5371,18 +5779,20 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     if (up === t || up.startsWith(t + ' ')) {
                         time = t;
                         tail = [segs[j].slice(t.length).trim()].concat(segs.slice(j + 1)).filter(Boolean).join('. ');
-                        loc = segs.slice(0, j).join('. ');
+                        loc = segs.slice(0, j).join(joiner);
                         break;
                     }
                 }
             }
-            // б) иначе — последний сегмент считаем временем суток (напр. "РАННЕЕ УТРО")
+            // б) иначе — последний сегмент считаем временем суток (напр. "РАННЕЕ УТРО"); только для основного способа разделения
             if (!time) {
+                if (altMode) return null;
                 const last = segs[segs.length - 1];
                 if (last.length > 40 || last.split(' ').length > 4) return null;
                 time = last.toUpperCase();
                 loc = segs.slice(0, -1).join('. ');
             }
+            time = engTime[time.toUpperCase()] || time;
             if (tail) info = info ? (tail + ' ' + info) : tail;
             return { num, intExt, loc: loc.toUpperCase(), time: time.toUpperCase(), info };
         }
@@ -5417,49 +5827,36 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (r.id === sceneId && r.type === 'scene') { found = true; continue; }
                 if (found) {
                     if (r.type === 'scene') break;
-                    if (r.type === 'note') continue;
+                    if (r.type === 'note' || r.hidden) continue;
                     frames++;
-                    if (r.timecode) {
-                        const p = r.timecode.split(':').map(Number);
-                        totalSec += ((p[0] || 0) * 60 + (p[1] || 0));
-                    }
+                    totalSec += tcToSec(r.timecode);
                 }
             }
-            const m = Math.floor(totalSec / 60),
-                s = totalSec % 60;
-            return { frames, duration: String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0') };
+            return { frames, duration: secToClock(totalSec) };
         }
 
         function recalcAllSceneStats() {
             let currScene = null;
             let fCount = 0,
                 tSec = 0;
+            const flush = () => {
+                if (currScene) { currScene._frames = fCount; currScene._duration = secToClock(tSec); }
+            };
             for (let i = 0; i < APP.dirRows.length; i++) {
                 const r = APP.dirRows[i];
                 if (r.type === 'scene') {
-                    if (currScene) {
-                        currScene._frames = fCount;
-                        currScene._duration = String(Math.floor(tSec / 60)).padStart(2, '0') + ':' + String(tSec % 60)
-                            .padStart(2, '0');
-                    }
+                    flush();
                     currScene = r;
                     fCount = 0;
                     tSec = 0;
-                } else if (r.type !== 'note') {
+                } else if (r.type !== 'note' && !r.hidden) {
                     if (currScene) {
                         fCount++;
-                        if (r.timecode) {
-                            const p = r.timecode.split(':').map(Number);
-                            tSec += ((p[0] || 0) * 60 + (p[1] || 0));
-                        }
+                        tSec += tcToSec(r.timecode);
                     }
                 }
             }
-            if (currScene) {
-                currScene._frames = fCount;
-                currScene._duration = String(Math.floor(tSec / 60)).padStart(2, '0') + ':' + String(tSec % 60).padStart(2,
-                    '0');
-            }
+            flush();
 
             document.querySelectorAll('.scene-row').forEach(tr => {
                 const id = parseInt(tr.getAttribute('data-rowid'));
@@ -5579,88 +5976,225 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         function buildTimeCell(row) {
+            sbEnsure(row);
             const mainWrap = document.createElement('div');
             mainWrap.className = 'timecode-col-wrap';
             const inner = document.createElement('div');
             inner.className = 'timecode-inner';
-            const inp = document.createElement('input');
-            inp.type = 'text';
-            inp.className = 'timecode-input';
-            inp.value = row.timecode || '00:00';
+            // поле хрона — textarea: «00:01 и 0,5 сек» переносится на две строки
+            const tcSet = (el, v) => {
+                const t = String(v == null ? '' : v).replace(' и ', '\nи ');
+                el.value = t;
+                const _n = t.indexOf('\n') >= 0 ? 2 : 1;
+                el.rows = _n;
+                el.style.height = (_n * 1.3) + 'em';
+            };
+            const tcField = (cls) => {
+                const el = document.createElement('textarea');
+                el.className = cls;
+                el.rows = 1;
+                el.spellcheck = false;
+                el.wrap = 'off';
+                el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
+                return el;
+            };
+            const inp = tcField('timecode-input');
+            tcSet(inp, row.timecode || '00:00');
             inp.readOnly = APP.mode !== 'editor';
-            inp.addEventListener('change', () => {
-                let val = inp.value.trim();
-                let m = 0,
-                    s = 0;
-                if (val.includes(':')) { let p = val.split(':');
-                    m = parseInt(p[0]) || 0;
-                    s = parseInt(p[1]) || 0; } else { s = parseInt(val) || 0; }
-                m += Math.floor(s / 60);
-                s = s % 60;
-                row.timecode = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-                inp.value = row.timecode;
+
+            const slotInputs = [];
+            let autoBtn = null;
+            const fitInput = (el) => el.classList.toggle('sub', /сек|frame/.test(el.value));
+            const ensureManual = () => {
+                if (!row.sbManual) {
+                    row.sbTimes = sbAutoSecs(row).map(t => secToTc(t));
+                    row.sbManual = true;
+                }
+            };
+            // суммарный хрон изображений больше хрона кадра — увеличиваем хрон кадра
+            const enforce = () => {
+                if (sbCount(row) > 1 && row.sbManual) {
+                    const sumFr = sbSumFrames(row);
+                    if (sumFr > Math.round(tcToSec(row.timecode) * SB_FPS)) row.timecode = secToTc(sumFr / SB_FPS);
+                }
+            };
+            const refresh = () => {
+                tcSet(inp, row.timecode || '00:00');
+                fitInput(inp);
+                const short = sbIsShort(row);
+                inp.classList.toggle('tc-short', short);
+                inp.title = short ? 'Хрон кадра больше суммы хронов изображений: при экспорте в XML будет добавлен чёрный кадр' : '';
+                const secs = sbSlotSecs(row);
+                slotInputs.forEach((si, i) => {
+                    if (document.activeElement !== si) tcSet(si, (row.sbManual && row.sbTimes[i] != null) ? row.sbTimes[i] : secToTc(secs[i]));
+                    fitInput(si);
+                });
+                if (autoBtn) autoBtn.style.display = row.sbManual ? '' : 'none';
                 updateTotalTimecode();
                 recalcAllSceneStats();
+            };
+
+            inp.addEventListener('change', () => {
+                const v = parseTcToSec(inp.value);
+                row.timecode = secToTc(isNaN(v) ? 0 : v);
+                tcSet(inp, row.timecode);
+                enforce();
+                refresh();
                 pushHistory('Правка хронометража');
             });
-            const arrows = document.createElement('div');
-            arrows.className = 'timecode-arrows';
-            let timecodeInt;
-            const up = document.createElement('button');
-            up.textContent = '▲';
-            const dn = document.createElement('button');
-            dn.textContent = '▼';
-            const startStep = (delta) => { const step = () => { row.timecode = incTimecode(row.timecode || '00:00',
-                        delta);
-                    inp.value = row.timecode;
-                    updateTotalTimecode();
-                    recalcAllSceneStats(); };
-                step();
-                timecodeInt = setInterval(step, 150); };
-            up.onmousedown = () => startStep(1);
-            up.onmouseup = up.onmouseleave = () => { clearInterval(timecodeInt); pushHistory('Правка хронометража'); };
-            dn.onmousedown = () => startStep(-1);
-            dn.onmouseup = dn.onmouseleave = () => { clearInterval(timecodeInt); pushHistory('Правка хронометража'); };
-            arrows.appendChild(up);
-            arrows.appendChild(dn);
+            const makeArrows = (onStep) => {
+                const arrows = document.createElement('div');
+                arrows.className = 'timecode-arrows';
+                let timer;
+                const up = document.createElement('button');
+                up.textContent = '▲';
+                const dn = document.createElement('button');
+                dn.textContent = '▼';
+                const start = (delta) => { onStep(delta); timer = setInterval(() => onStep(delta), 150); };
+                const stop = () => { clearInterval(timer); pushHistory('Правка хронометража'); };
+                up.onmousedown = () => start(1);
+                up.onmouseup = up.onmouseleave = stop;
+                dn.onmousedown = () => start(-1);
+                dn.onmouseup = dn.onmouseleave = stop;
+                arrows.appendChild(up);
+                arrows.appendChild(dn);
+                return arrows;
+            };
+            const frameArrows = makeArrows((delta) => {
+                row.timecode = stepTc(row.timecode || '00:00', delta);
+                enforce();
+                refresh();
+            });
             inner.appendChild(inp);
-            if (APP.mode === 'editor') inner.appendChild(arrows);
-            const extra = buildExtraTextarea(row, 'timeExtra', 'Хрон...');
+            if (APP.mode === 'editor') inner.appendChild(frameArrows);
+            fitInput(inp);
+            inp.classList.toggle('tc-short', sbIsShort(row));
             mainWrap.appendChild(inner);
+
+            // ---- «Хрон внутрикадра» — если в кадре больше одного изображения ----
+            const n = sbCount(row);
+            if (n > 1) {
+                const block = document.createElement('div');
+                block.className = 'sb-time-block';
+                const title = document.createElement('div');
+                title.className = 'sb-time-title';
+                title.appendChild(document.createTextNode('Хрон внутрикадра:'));
+                if (APP.mode === 'editor') {
+                    autoBtn = document.createElement('button');
+                    autoBtn.className = 'sb-time-auto';
+                    autoBtn.textContent = '↺ авто';
+                    autoBtn.title = 'Вернуть автоматическое деление хрона кадра между изображениями';
+                    autoBtn.style.display = row.sbManual ? '' : 'none';
+                    autoBtn.onclick = () => {
+                        row.sbManual = false;
+                        row.sbTimes = [];
+                        updateTableBody();
+                        pushHistory('Хрон внутрикадра: авто');
+                    };
+                    title.appendChild(autoBtn);
+                }
+                block.appendChild(title);
+                const secs = sbSlotSecs(row);
+                for (let i = 0; i < n; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'sb-time-row';
+                    const lab = document.createElement('span');
+                    lab.className = 'sb-time-label';
+                    lab.textContent = (i + 1) + '-ое изобр';
+                    const box = document.createElement('div');
+                    box.className = 'timecode-inner';
+                    const si = tcField('timecode-input sb-time-input');
+                    tcSet(si, (row.sbManual && row.sbTimes[i] != null) ? row.sbTimes[i] : secToTc(secs[i]));
+                    si.readOnly = APP.mode !== 'editor';
+                    fitInput(si);
+                    si.addEventListener('change', () => {
+                        ensureManual();
+                        const v = parseTcToSec(si.value);
+                        row.sbTimes[i] = secToTc(isNaN(v) ? 0 : v);
+                        tcSet(si, row.sbTimes[i]);
+                        enforce();
+                        refresh();
+                        pushHistory('Хрон внутрикадра');
+                    });
+                    slotInputs.push(si);
+                    box.appendChild(si);
+                    if (APP.mode === 'editor') {
+                        box.appendChild(makeArrows((delta) => {
+                            ensureManual();
+                            row.sbTimes[i] = stepTc(row.sbTimes[i] || '00:00', delta);
+                            enforce();
+                            refresh();
+                        }));
+                    }
+                    line.append(lab, box);
+                    block.appendChild(line);
+                }
+                mainWrap.appendChild(block);
+            }
+
+            const extra = buildExtraTextarea(row, 'timeExtra', 'Хрон...');
             mainWrap.appendChild(extra);
             return mainWrap;
-        }
-
-        function incTimecode(tc, delta) {
-            const parts = tc.split(':').map(Number);
-            let min = parts[0] || 0,
-                sec = parts[1] || 0;
-            let total = min * 60 + sec + delta;
-            if (total < 0) total = 0;
-            min = Math.floor(total / 60);
-            sec = total % 60;
-            return String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
         }
 
         window._sbDragSrc = null;
         window._sbDragSrcRow = null;
 
+        function sbOpenVariantMenu(btn, row, slotIdx) {
+            document.querySelectorAll('.sb-var-dropdown').forEach(el => el.remove());
+            const vars = row.sbVars[slotIdx] || [];
+            const sel = row.sbSel[slotIdx] || 0;
+            const list = document.createElement('div');
+            list.className = 'sb-var-dropdown';
+            const rect = btn.getBoundingClientRect();
+            list.style.top = Math.min(rect.bottom + 4, window.innerHeight - 230) + 'px';
+            list.style.left = Math.min(rect.left, window.innerWidth - 140) + 'px';
+            vars.forEach((_, v) => {
+                const o = document.createElement('div');
+                o.className = v === sel ? 'sel' : '';
+                o.textContent = (v === sel ? '✓ ' : '') + 'Вариант ' + (v + 1);
+                o.onclick = (ev) => {
+                    ev.stopPropagation();
+                    list.remove();
+                    row.sbSel[slotIdx] = v;
+                    updateTableBody();
+                    pushHistory('Выбор варианта раскадровки');
+                };
+                list.appendChild(o);
+            });
+            document.body.appendChild(list);
+            setTimeout(() => document.addEventListener('click', function h() {
+                list.remove();
+                document.removeEventListener('click', h);
+            }), 0);
+        }
+
         function buildBoardCell(row) {
+            sbEnsure(row);
+            const isEd = APP.mode === 'editor';
             const wrap = document.createElement('div');
             wrap.className = 'storyboard-cell';
             const imgs = document.createElement('div');
             imgs.className = 'storyboard-images';
-            (row.storyboard || []).forEach((imgSrc, i) => {
+            row.sbVars.forEach((vars, i) => {
+                const sel = Math.max(0, Math.min(row.sbSel[i] || 0, vars.length - 1));
+                const imgSrc = vars[sel];
                 const imgWrap = document.createElement('div');
                 imgWrap.className = 'storyboard-img-wrap';
                 imgWrap.setAttribute('data-sb-idx', i);
 
-                const img = document.createElement('img');
-                img.className = 'storyboard-img';
-                img.src = imgSrc;
-                img.draggable = APP.mode === 'editor';
-                img.addEventListener('click', () => openLightbox(imgSrc));
-                img.addEventListener('dragstart', (e) => {
+                let img = null;
+                const _pool = window._sbImgPool && window._sbImgPool.get(imgSrc);
+                if (_pool && _pool.length) img = _pool.shift();
+                if (!img) {
+                    img = document.createElement('img');
+                    img.className = 'storyboard-img';
+                    img.decoding = 'sync';
+                    img.src = imgSrc;
+                }
+                img.draggable = isEd;
+                img.onclick = () => openLightbox(imgSrc);
+                img.ondragstart = (e) => {
                     e.stopPropagation();
                     if (APP.mode !== 'editor') return;
                     window._sbDragSrc = { rowId: row.id, idx: i };
@@ -5668,16 +6202,22 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     e.dataTransfer.effectAllowed = 'copyMove';
                     try { e.dataTransfer.setData('text/plain', imgSrc); } catch (err) {}
                     imgWrap.classList.add('dragging-img');
-                });
-                img.addEventListener('dragend', () => {
+                };
+                img.ondragend = () => {
                     imgWrap.classList.remove('dragging-img');
                     window._sbDragSrc = null;
                     window._sbDragSrcRow = null;
                     document.querySelectorAll('.storyboard-img-wrap').forEach(w => w.classList.remove('drag-over-img'));
-                });
+                };
 
+                const hasFiles = (e) => !!(e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files'));
                 imgWrap.addEventListener('dragover', (e) => {
                     if (window._sbDragSrc && window._sbDragSrcRow === row) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        imgWrap.classList.add('drag-over-img');
+                    } else if (isEd && !window._sbDragSrc && hasFiles(e)) {
+                        // файл с устройства поверх готовой картинки — новый вариант
                         e.preventDefault();
                         e.stopPropagation();
                         imgWrap.classList.add('drag-over-img');
@@ -5694,12 +6234,19 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         window._sbDragSrc = null;
                         window._sbDragSrcRow = null;
                         if (from === to || from == null) return;
-                        const arr = row.storyboard;
-                        const [moved] = arr.splice(from, 1);
-                        arr.splice(to, 0, moved);
+                        const mv = (arr) => { const [m] = arr.splice(from, 1); arr.splice(to, 0, m); };
+                        mv(row.sbVars);
+                        mv(row.sbSel);
+                        if (row.sbManual && Array.isArray(row.sbTimes) && row.sbTimes.length === row.sbVars.length) mv(row.sbTimes);
                         updateTableBody();
                         syncNoeticZones();
                         pushHistory('Порядок раскадровки');
+                    } else if (isEd && !window._sbDragSrc && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        imgWrap.classList.remove('drag-over-img');
+                        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                        if (files.length) sbAddVariants(row, i, files);
                     }
                 });
 
@@ -5710,21 +6257,64 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const delBtn = document.createElement('button');
                 delBtn.className = 'storyboard-del-btn';
                 delBtn.textContent = '✕';
-                delBtn.style.display = APP.mode === 'editor' ? 'flex' : 'none';
+                delBtn.title = vars.length > 1 ? 'Удалить выбранный вариант' : 'Удалить изображение';
+                delBtn.style.display = isEd ? 'flex' : 'none';
                 delBtn.onclick = (e) => { e.stopPropagation();
-                    customConfirm('Удалить изображение?', 'УДАЛИТЬ', () => { row.storyboard.splice(i, 1);
+                    customConfirm(vars.length > 1 ? 'Удалить выбранный вариант изображения?' : 'Удалить изображение?', 'УДАЛИТЬ', () => {
+                        sbRemoveSelected(row, i);
                         updateTableBody();
                         syncNoeticZones();
                         pushHistory('Удаление раскадровки'); }); };
                 imgWrap.appendChild(img);
                 imgWrap.appendChild(reorderBadge);
+
+                // ---- квадратики вариантов (только в режиме редактирования) ----
+                if (isEd) {
+                    const bar = document.createElement('div');
+                    bar.className = 'sb-var-bar';
+                    const V = vars.length;
+                    const shown = V >= 4 ? 3 : V;
+                    for (let v = 0; v < shown; v++) {
+                        const sq = document.createElement('button');
+                        sq.className = 'sb-var-sq' + (v === sel ? ' sel' : '');
+                        sq.textContent = String(v + 1);
+                        sq.title = 'Вариант ' + (v + 1);
+                        sq.onclick = (e) => {
+                            e.stopPropagation();
+                            if (v === sel) return;
+                            row.sbSel[i] = v;
+                            updateTableBody();
+                            pushHistory('Выбор варианта раскадровки');
+                        };
+                        bar.appendChild(sq);
+                    }
+                    if (V >= 4) {
+                        const more = document.createElement('button');
+                        more.className = 'sb-var-sq' + (sel >= 3 ? ' sel' : '');
+                        more.textContent = (sel >= 3 ? String(sel + 1) : '') + '▾';
+                        more.title = 'Другие варианты (всего ' + V + ')';
+                        more.onclick = (e) => { e.stopPropagation(); sbOpenVariantMenu(more, row, i); };
+                        bar.appendChild(more);
+                    }
+                    const plus = document.createElement('button');
+                    plus.className = 'sb-var-sq plus';
+                    plus.textContent = '+';
+                    plus.title = 'Добавить вариант раскадровки';
+                    plus.onclick = (e) => {
+                        e.stopPropagation();
+                        window._sbPendingVariant = { rowId: row.id, idx: i };
+                        document.getElementById('sbVariantInput').click();
+                    };
+                    bar.appendChild(plus);
+                    imgWrap.appendChild(bar);
+                }
                 imgWrap.appendChild(delBtn);
                 imgs.appendChild(imgWrap);
             });
             const addBtn = document.createElement('div');
             addBtn.className = 'storyboard-add';
             addBtn.textContent = '+';
-            addBtn.style.display = APP.mode === 'editor' ? 'flex' : 'none';
+            addBtn.style.display = isEd ? 'flex' : 'none';
             addBtn.addEventListener('click', () => { pendingStoryboardRow = row.id;
                 document.getElementById('storyboardImgInput').click(); });
             addBtn.addEventListener('dragenter', e => { e.preventDefault();
@@ -5738,12 +6328,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                 if (!files.length) return;
                 (async () => {
-                    row.storyboard = row.storyboard || [];
                     for (const f of files) {
                         try {
                             const raw = await fileToDataURL(f);
                             const compressed = await compressImage(raw, 2000, 0.85);
-                            row.storyboard.push(compressed);
+                            sbAddSlot(row, compressed);
                         } catch (err) { /* skip */ }
                     }
                     updateTableBody();
@@ -5774,6 +6363,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const updateVisuals = () => {
                 if (obj[field] === '—') obj[field] = '';
                 display.textContent = obj[field] || (APP.mode === 'viewer' ? '' : '— выбрать —');
+                display.classList.toggle('ph', !obj[field] && APP.mode !== 'viewer');
                 display.classList.toggle('empty-val', !obj[field] && APP.mode === 'viewer');
 
                 list.innerHTML = '';
@@ -5935,6 +6525,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (!display || !list) return;
 
                 display.textContent = target[field] || (APP.mode === 'viewer' ? '' : '— выбрать —');
+                display.classList.toggle('ph', !target[field] && APP.mode !== 'viewer');
                 list.innerHTML = '';
 
                 const emptyOpt = document.createElement('div');
@@ -5943,7 +6534,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 emptyOpt.onclick = (e) => {
                     e.stopPropagation();
                     target[field] = '';
-                    display.textContent = APP.mode === 'viewer' ? '' : '— выбрать —';
+                    display.textContent = APP.mode === 'viewer' ? '' : '— выбрать —'; display.classList.toggle('ph', APP.mode !== 'viewer');
                     list.classList.remove('show');
                 };
                 list.appendChild(emptyOpt);
@@ -6039,6 +6630,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (!display || !list) return;
 
                 display.textContent = target[field] || (APP.mode === 'viewer' ? '' : '— выбрать —');
+                display.classList.toggle('ph', !target[field] && APP.mode !== 'viewer');
                 list.innerHTML = '';
 
                 const emptyOpt = document.createElement('div');
@@ -6047,7 +6639,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 emptyOpt.onclick = (e) => {
                     e.stopPropagation();
                     target[field] = '';
-                    display.textContent = APP.mode === 'viewer' ? '' : '— выбрать —';
+                    display.textContent = APP.mode === 'viewer' ? '' : '— выбрать —'; display.classList.toggle('ph', APP.mode !== 'viewer');
                     list.classList.remove('show');
                 };
                 list.appendChild(emptyOpt);
@@ -6148,22 +6740,21 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         function updateFrameCount() {
-            const frames = APP.dirRows.filter(r => r.type !== 'scene' && r.type !== 'note').length;
-            const scenes = APP.dirRows.filter(r => r.type === 'scene').length;
+            const hid = sbHiddenMap();
+            const frames = APP.dirRows.filter(r => r.type !== 'scene' && r.type !== 'note' && !hid[r.id]).length;
+            const scenes = APP.dirRows.filter(r => r.type === 'scene' && !hid[r.id]).length;
             document.getElementById('frameCount').textContent = frames;
             const sceneCountEl = document.getElementById('sceneCount');
             if (sceneCountEl) sceneCountEl.textContent = scenes;
         }
 
         function updateTotalTimecode() {
+            const hid = sbHiddenMap();
             let total = 0;
-            APP.dirRows.forEach(r => { if (r.type !== 'scene' && r.type !== 'note' && r.timecode) { const p = r
-                        .timecode.split(':').map(Number);
-                    total += ((p[0] || 0) * 60 + (p[1] || 0)); } });
-            const m = Math.floor(total / 60),
-                s = total % 60;
-            document.getElementById('totalTimecode').textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2,
-                '0');
+            APP.dirRows.forEach(r => {
+                if (r.type !== 'scene' && r.type !== 'note' && !hid[r.id]) total += tcToSec(r.timecode);
+            });
+            document.getElementById('totalTimecode').textContent = secToClock(total);
         }
 
         function toggleColManager() {
@@ -7187,8 +7778,32 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
 
+            // v3.3: учёт временных blob-ссылок и корректное освобождение ресурсов (нет утечки памяти;
+            // если окно закрыли до окончания загрузки — результат загрузки отбрасывается)
+            let disposed = false;
+            const blobUrls = [];
+            const mkBlobUrl = dataUrl => { const u = neDataUrlToBlobUrl(dataUrl); if (u && String(u).indexOf('blob:') === 0) blobUrls.push(u); return u; };
+            const dead = () => disposed || !wrap.isConnected || !stage.isConnected;
+            function disposeViewer() {
+                if (disposed) return;
+                disposed = true;
+                try { controls.dispose(); } catch (e) {}
+                try {
+                    scene.traverse(ch => {
+                        if (!ch.isMesh) return;
+                        if (ch.geometry && ch.geometry.dispose) ch.geometry.dispose();
+                        (Array.isArray(ch.material) ? ch.material : [ch.material]).forEach(m => {
+                            if (m && m.dispose) { if (m.map && m.map.dispose) m.map.dispose(); m.dispose(); }
+                        });
+                    });
+                } catch (e) {}
+                try { renderer.dispose(); if (renderer.forceContextLoss) renderer.forceContextLoss(); } catch (e) {}
+                blobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
+                blobUrls.length = 0;
+            }
+
             const textureMap = {};
-            Object.keys(d.textures || {}).forEach(n => { try { textureMap[n] = neDataUrlToBlobUrl(d.textures[n]); } catch (e) {} });
+            Object.keys(d.textures || {}).forEach(n => { try { textureMap[n] = mkBlobUrl(d.textures[n]); } catch (e) {} });
             const manager = new THREE.LoadingManager();
             manager.setURLModifier(url => {
                 if (url.indexOf('blob:') === 0 || url.indexOf('data:') === 0) {
@@ -7241,6 +7856,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
 
             function place(obj) {
+                if (dead()) { disposeViewer(); return; } // окно закрыли до окончания загрузки
                 const box = new THREE.Box3().setFromObject(obj);
                 const c = box.getCenter(new THREE.Vector3());
                 const sz = box.getSize(new THREE.Vector3());
@@ -7268,18 +7884,20 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
             const ext = String(d.format || (d.fileName ? d.fileName.split('.').pop() : 'glb')).toLowerCase();
             let url;
-            try { url = neDataUrlToBlobUrl(d.src); } catch (e) { fail(e); return; }
+            try { url = mkBlobUrl(d.src); } catch (e) { fail(e); disposeViewer(); return; }
 
             if (ext === 'fbx') {
                 if (!THREE.FBXLoader) fail('FBXLoader'); else new THREE.FBXLoader(manager).load(url, place, undefined, fail);
             } else if (ext === 'obj') {
                 const loadObj = mats => {
+                    if (dead()) { disposeViewer(); return; }
                     const l = new THREE.OBJLoader(manager);
                     if (mats) l.setMaterials(mats);
                     l.load(url, place, undefined, fail);
                 };
                 if (d.mtl && THREE.MTLLoader) {
                     const mtlUrl = URL.createObjectURL(new Blob([d.mtl], { type: 'text/plain' }));
+                    blobUrls.push(mtlUrl);
                     const ml = new THREE.MTLLoader(manager);
                     if (ml.setMaterialOptions) ml.setMaterialOptions({ side: THREE.DoubleSide });
                     ml.load(mtlUrl, m => { m.preload(); loadObj(m); }, undefined, () => loadObj(null));
@@ -7293,10 +7911,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
 
             function animate() {
-                if (!wrap.isConnected || !stage.isConnected) {
-                    controls.dispose();
-                    renderer.dispose();
-                    if (renderer.forceContextLoss) renderer.forceContextLoss();
+                if (dead()) {
+                    disposeViewer();
                     return;
                 }
                 requestAnimationFrame(animate);
@@ -7463,7 +8079,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const v = document.getElementById('neVideoFullscreen');
             if (v) { v.pause();
                 v.style.display = 'none';
-                v.removeAttribute('src'); }
+                v.removeAttribute('src');
+                try { v.load(); } catch (e) {} }
             const b = document.getElementById('ne3DFullscreen');
             if (b) { b.innerHTML = ''; b.style.display = 'none'; }
         }
@@ -7625,12 +8242,19 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function checkPassword() { const inp = document.getElementById('passwordModalInput'); if (inp.value === APP
                 .pendingOpenData.password) { document.getElementById('passwordModal').classList.remove('show');
+                APP.pendingFromAutosave = false;
                 loadProjectData(APP.pendingOpenData);
                 APP.pendingOpenData = null; } else { document.getElementById('pmError').style.display = 'block';
                 inp.value = ''; } }
 
         function cancelPasswordModal() { pendingOpenHandle = null; document.getElementById('passwordModal').classList.remove('show');
-            APP.pendingOpenData = null; }
+            APP.pendingOpenData = null;
+            // v3.3: если отменили пароль при восстановлении из автосохранения — включаем автосохранение,
+            // но не перезаписываем защищённую копию пустым состоянием, пока пользователь ничего не изменил.
+            if (APP.pendingFromAutosave) {
+                APP.pendingFromAutosave = false;
+                AUTOSAVE.ready = true; AUTOSAVE.hold = true; AUTOSAVE.dirty = false;
+            } }
 
         function initSettingsDrag() { const handle = document.getElementById('spDragHandle'); const popup = document
                 .getElementById('settingsPopup');
@@ -8224,7 +8848,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function newProject() {
             customConfirm('Создать новый проект? Несохранённые данные будут потеряны.', 'СОЗДАТЬ', () => {
-                AUTOSAVE.ready = true;
+                AUTOSAVE.ready = true; AUTOSAVE.hold = false;
                 setSaveHandle(null);
                 APP.scriptBlocks = [];
                 APP.dirRows = [];
@@ -8285,7 +8909,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         });
 
         function loadProjectData(data) {
-            AUTOSAVE.ready = true;
+            AUTOSAVE.ready = true; AUTOSAVE.hold = false;
             if (!window.__restoringAutosave) { setSaveHandle(pendingOpenHandle); pendingOpenHandle = null; }
             APP.scriptBlocks = data.scriptBlocks || [];
             APP.dirRows = data.dirRows || [];
@@ -9098,7 +9722,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         let __taResyncTimer = null;
         function resyncTextareas() {
             __taResyncTimer = null;
-            const list = Array.from(document.querySelectorAll('#dirTableBody textarea')).filter(t => t.offsetParent !== null);
+            const list = Array.from(document.querySelectorAll('#dirTableBody textarea:not(.timecode-input)')).filter(t => t.offsetParent !== null);
             if (!list.length) return;
             const inner = document.getElementById('dirScriptInner');
             const sl = inner ? inner.scrollLeft : 0, st = inner ? inner.scrollTop : 0;
@@ -9199,8 +9823,18 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 if (b && !b.isContentEditable) e.preventDefault();
             });
 
+            // v3.3: если во время перетаскивания абзаца появился второй палец (масштабирование) — перетаскивание отменяется,
+            // а preventDefault не вызывается, чтобы не ломать жест pinch
+            const cancelScriptDrag = () => {
+                if (!window.__scriptTouchDragActive) return;
+                draggingScriptBlock = null;
+                cleanup();
+            };
+            window.addEventListener('noem-cancel-script-drag', cancelScriptDrag);
+
             document.addEventListener('touchmove', e => {
                 if (!window.__scriptTouchDragActive) return;
+                if (window.__pinchActive || e.touches.length > 1) { cancelScriptDrag(); return; }
                 const t = findTouch(e.touches) || e.touches[0];
                 if (!t) return;
                 if (e.cancelable) e.preventDefault();
@@ -9249,6 +9883,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     if (l.length === 2 && !(h.blocked && h.blocked())) {
                         active = true; suppress = false;
                         window.__pinchActive = true;
+                        if (window.__scriptTouchDragActive) { try { window.dispatchEvent(new Event('noem-cancel-script-drag')); } catch (_) {} }
                         h.start(l[0], l[1]);
                         e.stopPropagation();
                         if (e.cancelable) e.preventDefault();
