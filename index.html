@@ -6,6 +6,11 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#f5f5f7" />
     <title>Noem.ocean</title>
+    <!-- Noem.ocean v3.9.2 (исправлено: рисование не сохранялось, «+» не нажимался) -->
+    <!-- Noem.ocean v3.9.1 (внутрикадровые кадры «+», переключатель показа кадров из таблицы, выделение/перемещение/трансформирование) -->
+    <!-- Noem.ocean v3.9 (перетаскиваемое окно слоёв; drag&drop картинок в слой кадра; курсор кисти следует за линией; нажатие пера для размера/непрозрачности; заливка только по выбранному слою) -->
+    <!-- Noem.ocean v3.8 (Раскадровочный блок: рисование кадров со слоями, кистями, цветами и фоном; рисунок добавляется в таблицу вариантом «Р») -->
+    <!-- Noem.ocean v3.9.3 (select frame by clicking its translucent frame, no tint on noetic photos, 16:9 noetic frame zones, default draw colour #5b50c8, Move tool removed, new SVG tool icons, bg hex field, layers panel kept inside block) -->
     <!-- Noem.ocean v3.7 (timecode box no longer stretched by textarea resync, opaque hover on variant squares; v3.6: flicker-free table rebuild, opaque selected variant square in light theme, tidy placeholder, timecode box fix; v3.5: fold dashed line in light theme, light storyboard controls in light theme, sub-second format "00:01 и 0,5 сек", whole-second intra-frame split) -->
     <!-- Noem.ocean v3.4 (scene fold/unfold, eye hide for scenes/frames/notes, intra-frame durations, storyboard variants, sub-second durations) -->
     <!-- Noem.ocean v3.3 (fixes: autosave after password cancel, scene-title parser formats, exact media registry, 3D viewer memory/cleanup, touch pinch vs drag, dir-row drag reset) -->
@@ -715,7 +720,7 @@
             background: var(--paper); padding: 10px 10px 8px;
             box-shadow: 0 6px 20px rgba(0, 0, 0, .5); border-radius: 2px; user-select: none;
         }
-        .ne-photo img { display: block; width: 180px; filter: sepia(.3) contrast(1.05); pointer-events: none; }
+        .ne-photo img { display: block; width: 180px; filter: none; pointer-events: none; }
         .ne-photo.no-frame { background: transparent; padding: 0; box-shadow: none; }
         .ne-photo.no-frame img { filter: none; }
         .ne-caption {
@@ -1762,6 +1767,175 @@
         /* v3.0 — абзац лит. сценария, «взятый» долгим нажатием */
         .script-block.touch-grabbed { outline: 2px dashed var(--accent); background: rgba(200, 162, 74, .18); }
     </style>
+    <style id="v38-styles">
+        /* ===== v3.8 — Раскадровочный блок (рисование кадров) ===== */
+        .panel-header button.p3-switch {
+            position: relative; width: 34px; height: 18px; padding: 0; border-radius: 10px; flex-shrink: 0;
+            background: var(--panel-bg3); border: 1px solid var(--border);
+        }
+        .panel-header button.p3-switch:hover { background: var(--panel-bg3) !important; border-color: var(--accent); }
+        .p3-switch .p3-knob {
+            position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%;
+            background: var(--accent); transition: transform .2s;
+        }
+        .p3-switch.on .p3-knob { transform: translateX(16px); }
+        #p3Title { flex: 0 1 auto; }
+        .p3-spacer { flex: 1 1 0; min-width: 0; }
+        .sbd-only { display: none; }
+        #panel3.view-sbd .sbd-only { display: inline-block; }
+        body.viewer-mode #panel3 .sbd-edit-only { display: none !important; }
+        #panel3.view-sbd .noetic-viewport,
+        #panel3.view-sbd #noeticSizeBar,
+        #panel3.view-sbd #neAddBtn,
+        #panel3.view-sbd #neDragPersistBtn,
+        #panel3.view-sbd #neReturnBtn { display: none !important; }
+        #panel3:not(.view-sbd) .sbd-wrap,
+        #panel3:not(.view-sbd) #sbdSizeBar,
+        #panel3.collapsed .sbd-wrap,
+        #panel3.collapsed #sbdSizeBar { display: none !important; }
+        .sbd-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+        .sbd-toolbar {
+            flex: none; background: var(--panel-bg2); border-bottom: 1px solid var(--border);
+            padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; max-height: 46%; overflow-y: auto;
+            zoom: var(--ui-scale, 1); color: var(--text); font-family: 'Courier New', monospace; font-size: 11px;
+        }
+        .sbd-toolbar.closed { display: none; }
+        body.viewer-mode .sbd-toolbar, body.viewer-mode .sbd-layers { display: none; }
+        .sbd-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+        .sbd-lbl { color: var(--muted); font-size: 10px; letter-spacing: 1px; }
+        .sbd-tool {
+            width: 30px; height: 26px; padding: 0; font-size: 15px; line-height: 1; cursor: pointer;
+            background: var(--panel-bg3); border: 1px solid var(--border); border-radius: 4px; color: var(--text);
+        }
+        .sbd-tool { display: inline-flex; align-items: center; justify-content: center; }
+        .sbd-tool svg, .panel-header button svg.sbd-ico { display: block; pointer-events: none; }
+        .sbd-tool:hover { border-color: var(--accent); }
+        .sbd-tool.sel { background: var(--accent); border-color: var(--accent); color: #14110c; }
+        body.light-theme .sbd-tool.sel { color: #fff; }
+        .panel-header button.sbd-hbtn { display: none; padding: 3px 7px; }
+        #panel3.view-sbd .panel-header button.sbd-hbtn { display: inline-flex; align-items: center; justify-content: center; }
+        body.viewer-mode #panel3 .panel-header button.sbd-edit-only { display: none !important; }
+        .sbd-sl { display: flex; align-items: center; gap: 4px; color: var(--muted); }
+        .sbd-sl input[type=range] { width: 72px; accent-color: var(--accent); }
+        .sbd-sl b { min-width: 24px; color: var(--text); font-weight: 400; text-align: right; }
+        .sbd-sl.off { opacity: .35; pointer-events: none; }
+        .sbd-sw-row { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+        .sbd-sw {
+            width: 16px; height: 16px; padding: 0; border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
+        }
+        .sbd-sw.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .sbd-toolbar input[type=color] {
+            width: 30px; height: 24px; padding: 0; border: 1px solid var(--border); border-radius: 4px;
+            background: none; cursor: pointer;
+        }
+        .sbd-hex {
+            width: 64px; padding: 3px 4px; font: 11px 'Courier New', monospace; color: var(--text);
+            background: var(--panel-bg3); border: 1px solid var(--border); border-radius: 3px;
+        }
+        .sbd-btn {
+            padding: 3px 8px; font: 11px 'Courier New', monospace; cursor: pointer; color: var(--text);
+            background: var(--panel-bg3); border: 1px solid var(--border); border-radius: 3px; white-space: nowrap;
+        }
+        .sbd-btn:hover { border-color: var(--accent); }
+        .sbd-bg-cur { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--border); vertical-align: -2px; margin-right: 4px; }
+
+        .sbd-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+        .sbd-viewport {
+            position: absolute; inset: 0; overflow: hidden; cursor: crosshair; touch-action: none;
+            user-select: none; -webkit-user-select: none;
+            background:
+                repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0, rgba(0,0,0,.12) 1px, transparent 2px, transparent 40px),
+                repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0, rgba(0,0,0,.12) 1px, transparent 2px, transparent 40px);
+        }
+        body.light-theme .sbd-viewport {
+            background:
+                repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0, rgba(0,0,0,.05) 1px, transparent 2px, transparent 40px),
+                repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0, rgba(0,0,0,.05) 1px, transparent 2px, transparent 40px);
+        }
+        .sbd-viewport.tool-hand, body.viewer-mode .sbd-viewport { cursor: grab; }
+        .sbd-viewport.panning { cursor: grabbing !important; }
+        .sbd-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+        .sbd-zone {
+            position: absolute; left: 0; width: 660px; height: 396px; box-sizing: border-box;
+            border: 1px dashed var(--border); border-radius: 4px; background: rgba(200,162,74,.03);
+            padding: 26px 10px 10px;
+        }
+        body.light-theme .sbd-zone { background: rgba(0,0,0,.055); }
+        .sbd-zone.active { border: 1px solid var(--accent); }
+        .sbd-zone-label {
+            position: absolute; top: 6px; left: 10px; font: 10px 'Courier New', monospace; letter-spacing: 1px;
+            color: var(--muted); pointer-events: none;
+        }
+        .sbd-zone-info {
+            position: absolute; top: 6px; right: 10px; font: 10px 'Courier New', monospace;
+            color: var(--accent); pointer-events: none;
+        }
+        .sbd-board { position: relative; width: 640px; height: 360px; overflow: hidden; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.35); }
+        .sbd-board canvas { position: absolute; left: 0; top: 0; width: 640px; height: 360px; pointer-events: none; }
+        .sbd-cursor {
+            position: absolute; pointer-events: none; border: 1px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.65);
+            border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 4;
+        }
+
+        .sbd-layers {
+            position: absolute; top: 8px; right: 8px; width: 184px; max-height: calc(100% - 16px);
+            display: flex; flex-direction: column; background: var(--panel-bg); border: 1px solid var(--border);
+            border-radius: 5px; box-shadow: 0 4px 14px rgba(0,0,0,.3); zoom: var(--ui-scale, 1); z-index: 5;
+            font: 11px 'Courier New', monospace; color: var(--text);
+        }
+        .sbd-layers-head { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
+        .sbd-layers-head span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 1px; font-size: 10px; }
+        .sbd-layers.collapsed .sbd-layers-body { display: none; }
+        .sbd-layers.collapsed .sbd-layers-head { border-bottom: none; }
+        .sbd-layers-body { overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 3px; }
+        .sbd-layer-item {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 3px; cursor: pointer;
+            border: 1px solid transparent; border-radius: 4px;
+        }
+        .sbd-layer-item:hover { background: rgba(128,128,128,.12); }
+        .sbd-layer-item.sel { background: rgba(200,162,74,.16); border-color: var(--accent); }
+        body.light-theme .sbd-layer-item.sel { background: rgba(91,80,200,.12); }
+        .sbd-lname { flex: 1; min-width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .sbd-lname-inp { flex: 1; min-width: 40px; width: 60px; font: 11px 'Courier New', monospace; color: var(--text); background: var(--panel-bg3); border: 1px solid var(--accent); border-radius: 3px; }
+        .sbd-lbtn {
+            width: 20px; height: 20px; padding: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; cursor: pointer; color: var(--text); background: none; border: 1px solid transparent; border-radius: 3px;
+        }
+        .sbd-lbtn:hover { border-color: var(--accent); }
+        .sbd-ladd { font-size: 15px; line-height: 1; border-color: var(--border); }
+        .sbd-lbtn.off { opacity: .45; }
+        .sbd-lbtn:disabled { opacity: .25; cursor: default; }
+        .sbd-lopacity { flex-basis: 100%; display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; }
+        .sbd-lopacity input { flex: 1; min-width: 0; accent-color: var(--accent); }
+        .sbd-layers-actions { display: flex; gap: 4px; padding-top: 2px; }
+        .sbd-empty { color: var(--muted); padding: 6px; font-size: 10px; }
+        /* v3.9 */
+        .sbd-layers-head { cursor: move; touch-action: none; user-select: none; -webkit-user-select: none; }
+        .sbd-layers-head button { cursor: pointer; }
+        .sbd-press {
+            width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text); background: var(--panel-bg3); border: 1px solid var(--border); border-radius: 4px; margin-left: -2px;
+        }
+        .sbd-press:hover { border-color: var(--accent); }
+        .sbd-press.on { background: var(--accent); border-color: var(--accent); }
+        .sbd-press.off { opacity: .35; pointer-events: none; }
+        .sbd-ref { position: absolute; left: 0; top: 0; width: 640px; height: 360px; object-fit: contain; pointer-events: none; display: none; z-index: 0; }
+        .sbd-add { position: absolute; width: 70px; height: 396px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+            font-size: 40px; color: var(--muted); border: 1px dashed var(--border); border-radius: 4px; cursor: pointer; user-select: none; }
+        .sbd-add { transition: background .15s, border-color .15s, color .15s; }
+        .sbd-add:hover { border-color: var(--accent); color: var(--accent); background: rgba(200,162,74,.12); }
+        body.light-theme .sbd-add:hover { background: rgba(91,80,200,.10); }
+        body.viewer-mode .sbd-add { display: none; }
+        .sbd-sel { position: absolute; display: none; pointer-events: none; box-sizing: border-box; z-index: 6; border: 1px dashed #fff; outline: 1px dashed #000; }
+        .sbd-tf { position: absolute; left: 10px; top: 26px; width: 640px; height: 360px; pointer-events: none; z-index: 7; }
+        .sbd-tfbox { position: absolute; box-sizing: border-box; pointer-events: none; border: calc(1px * var(--inv, 1)) dashed var(--accent); }
+        .sbd-tfh { position: absolute; width: calc(10px * var(--inv, 1)); height: calc(10px * var(--inv, 1)); margin: calc(-5px * var(--inv, 1)); box-sizing: border-box;
+            background: var(--accent); border: calc(1px * var(--inv, 1)) solid #000; pointer-events: auto; touch-action: none; }
+        .sbd-tfh[data-h="rot"] { border-radius: 50%; }
+        #sbdRefBtn.on svg line { display: none; }
+        #sbdRefBtn.on { color: var(--accent); }
+    </style>
 </head>
 <body class="light-theme">
     <div class="bg-layer bg-stagnation"></div>
@@ -1902,6 +2076,10 @@
             <span class="zr-label">Ноэтический блок</span><span class="zr-val" id="zv_noetic">100%</span>
             <input type="range" id="zs_noetic" min="15" max="400" step="5" value="100" oninput="setNoeticZoomPct(this.value)" />
         </div>
+        <div class="zoom-row">
+            <span class="zr-label">Раскадровочный блок</span><span class="zr-val" id="zv_sbd">100%</span>
+            <input type="range" id="zs_sbd" min="15" max="400" step="5" value="100" oninput="setSbdZoomPct(this.value)" />
+        </div>
         <button class="sp-popup-btn" onclick="resetAllZoom()">Сбросить масштаб</button>
         <div class="sp-divider"></div>
         <div class="sp-row">
@@ -1931,7 +2109,7 @@
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
         <div id="appVersionLabel">
-            <span class="sp-version">Noem.ocean v3.7</span>
+            <span class="sp-version">Noem.ocean v3.9.2</span>
             <span class="sp-dev">Разработчик Noem.ocean - Александр Тумали</span>
         </div>
     </div>
@@ -2149,7 +2327,12 @@
 
         <div class="panel" id="panel3">
             <div class="panel-header">
-                <span class="panel-title-text">Ноэтический блок</span>
+                <span class="panel-title-text" id="p3Title">Ноэтический блок</span>
+                <button class="p3-switch" id="p3Switch" onclick="toggleP3View()" title="Переключить на «Раскадровочный блок»"><span class="p3-knob"></span></button>
+                <span class="panel-title-text p3-spacer"></span>
+                <button id="sbdRefBtn" class="sbd-only sbd-hbtn" onclick="sbdToggleRef()" title="Показывать вместо пустых кадров картинки из таблицы раскадровки"><svg class="sbd-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M6.5 12s2.2-3.4 5.5-3.4S17.5 12 17.5 12s-2.2 3.4-5.5 3.4S6.5 12 6.5 12z"/><circle cx="12" cy="12" r="1.3"/><line x1="4.5" y1="18" x2="19.5" y2="6"/></svg></button>
+                <button id="sbdToolsBtn" class="sbd-only sbd-hbtn sbd-edit-only" onclick="sbdToggleToolbar()" title="Показать / скрыть инструменты рисования"><svg class="sbd-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2a8.8 8.8 0 1 0 0 17.6c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7h2A3.9 3.9 0 0 0 20.5 11C20.5 6.6 16.7 3.2 12 3.2z"/><circle cx="7.6" cy="11.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="10.2" cy="7.4" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.8" cy="7.4" r="1.1" fill="currentColor" stroke="none"/></svg></button>
+                <button id="sbdFitBtn" class="sbd-only sbd-hbtn" onclick="sbdFitView()" title="Вписать кадры в окно"><svg class="sbd-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9"/><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9"/><path d="M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/><rect x="8.8" y="8.8" width="6.4" height="6.4" rx=".9"/></svg></button>
                 <button id="neAddBtn" onclick="openNoeticMenu(event)">+ Добавить</button>
                 <button id="neDragPersistBtn" onclick="toggleNeDragPersist()" style="display:none;" title="Закрепить перетаскивание">Перетаскивание</button>
                 <button id="neReturnBtn" onclick="returnAllNoeticEls()" title="Вернуть элементы">↩ Вернуть</button>
@@ -2158,7 +2341,63 @@
             <div class="noetic-viewport" id="noeticViewport">
                 <div class="noetic-canvas" id="noeticCanvas"></div>
             </div>
-            <div class="size-bar">
+            <div class="sbd-wrap" id="sbdWrap">
+                <div class="sbd-toolbar" id="sbdToolbar">
+                    <div class="sbd-row" id="sbdTools"></div>
+                     <div class="sbd-row" id="sbdTfBar" style="display:none;"><span class="sbd-lbl">ТРАНСФОРМИРОВАНИЕ</span><button class="sbd-btn" onclick="sbdTfCommit()">✓ Применить (Enter)</button><button class="sbd-btn" onclick="sbdTfCancel()">✕ Отмена (Esc)</button></div>
+                    <div class="sbd-row">
+                        <label class="sbd-sl" id="sbdSlSize">Размер <input type="range" id="sbdSize" min="0" max="100" step="1" /><b id="sbdSizeV"></b></label>
+                         <button type="button" class="sbd-press" id="sbdPressSize" title="Нажатие пера управляет размером"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.8c5.5-.4 10.5-3 17-9.6-.4 7.2-4.6 12.6-17 11.2z"/></svg></button>
+                        <label class="sbd-sl" id="sbdSlAlpha">Непрозр. <input type="range" id="sbdAlpha" min="5" max="100" step="1" /><b id="sbdAlphaV"></b></label>
+                         <button type="button" class="sbd-press" id="sbdPressAlpha" title="Нажатие пера управляет непрозрачностью"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+                        <label class="sbd-sl" id="sbdSlSoft">Мягкость <input type="range" id="sbdSoft" min="0" max="100" step="1" /><b id="sbdSoftV"></b></label>
+                    </div>
+                    <div class="sbd-row">
+                        <span class="sbd-lbl">ЦВЕТ</span>
+                        <input type="color" id="sbdColor" value="#5b50c8" title="Любой цвет" />
+                        <input type="text" id="sbdHex" class="sbd-hex" maxlength="7" value="#5b50c8" title="HEX-код цвета" spellcheck="false" />
+                        <div class="sbd-sw-row" id="sbdBase"></div>
+                    </div>
+                    <div class="sbd-row">
+                        <span class="sbd-lbl">НЕДАВНИЕ</span>
+                        <div class="sbd-sw-row" id="sbdRecent"></div>
+                    </div>
+                    <div class="sbd-row">
+                        <button class="sbd-btn" id="sbdBgBtn" onclick="sbdToggleBgRow()" title="Цвет фона текущего кадра"><span class="sbd-bg-cur" id="sbdBgCur"></span>Фон кадра ▾</button>
+                        <span class="sbd-lbl" id="sbdBgFor"></span>
+                    </div>
+                    <div class="sbd-row" id="sbdBgRow" style="display:none;">
+                        <div class="sbd-sw-row" id="sbdBgPresets"></div>
+                        <input type="color" id="sbdBgColor" value="#ffffff" title="Свой цвет фона" />
+                        <input type="text" id="sbdBgHex" class="sbd-hex" maxlength="7" value="#ffffff" title="HEX-код цвета фона" spellcheck="false" />
+                        <button class="sbd-btn" onclick="sbdApplyBgToAll()" title="Применить текущий фон ко всем кадрам">Ко всем кадрам</button>
+                    </div>
+                </div>
+                <div class="sbd-stage" id="sbdStage">
+                    <div class="sbd-viewport" id="sbdViewport">
+                        <div class="sbd-canvas" id="sbdCanvas"></div>
+                    </div>
+                    <div class="sbd-cursor" id="sbdCursor"></div>
+                    <div class="sbd-layers" id="sbdLayers">
+                        <div class="sbd-layers-head">
+                            <span id="sbdLayersTitle">СЛОИ</span>
+                            <button class="sbd-lbtn sbd-ladd" id="sbdLayerAdd" onclick="sbdAddLayer()" title="Добавить слой в текущий кадр">+</button>
+                            <button class="sbd-lbtn" id="sbdLayersToggle" onclick="sbdToggleLayers()" title="Свернуть / развернуть">▾</button>
+                        </div>
+                        <div class="sbd-layers-body">
+                            <div id="sbdLayersList"></div>
+                            <div class="sbd-layers-actions">
+                                <button class="sbd-btn" onclick="sbdClearLayer()" title="Стереть всё на выбранном слое">Очистить слой</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="size-bar" id="sbdSizeBar">
+                <span>Кадров:</span><span id="sbdFrameCount">0</span>
+                <span style="margin-left:10px;">Нарисовано:</span><span id="sbdInkCount">0</span>
+            </div>
+            <div class="size-bar" id="noeticSizeBar">
                 <span>Элементов:</span><span id="noeticElCount">0</span>
             </div>
         </div>
@@ -2574,6 +2813,12 @@
             noeticZoom: 1,
             noeticOffsetX: 0,
             noeticOffsetY: 0,
+            p3View: 'noetic',
+            sbdZoom: 1,
+            sbdOffsetX: 20,
+            sbdOffsetY: 20,
+            sbdUserView: false,
+            drawRecent: [],
             scriptBlocks: [],
             dirRows: [],
             noeticElements: [],
@@ -2677,6 +2922,7 @@
             syncNoeticZones(true);
             applyNoeticTransform();
             updateNoeticElCount();
+            if (typeof sbdSync === 'function') sbdSync();
         }
 
         function pushHistory(label) {
@@ -4139,6 +4385,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             initScriptCanvas();
             initNoeticViewport();
             initNoeticMultiSelect();
+            sbdInit();
             initResizers();
             initKeyboard();
             initSettingsDrag();
@@ -4391,6 +4638,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
                 if (e.key === 'Delete' || e.key === 'Del') {
                     if (inInput) return;
+                    if (window.__sbdHover) return;
 
                     if (isMouseOverNoetic) {
                         if (selectedNoeticEl || neSelectedEls.length > 0) neDeleteEl();
@@ -6152,7 +6400,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             vars.forEach((_, v) => {
                 const o = document.createElement('div');
                 o.className = v === sel ? 'sel' : '';
-                o.textContent = (v === sel ? '✓ ' : '') + 'Вариант ' + (v + 1);
+                o.textContent = (v === sel ? '✓ ' : '') + 'Вариант ' + sbVarLabel(row, vars, v);
                 o.onclick = (ev) => {
                     ev.stopPropagation();
                     list.remove();
@@ -6260,7 +6508,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 delBtn.title = vars.length > 1 ? 'Удалить выбранный вариант' : 'Удалить изображение';
                 delBtn.style.display = isEd ? 'flex' : 'none';
                 delBtn.onclick = (e) => { e.stopPropagation();
-                    customConfirm(vars.length > 1 ? 'Удалить выбранный вариант изображения?' : 'Удалить изображение?', 'УДАЛИТЬ', () => {
+                    const _drawn = sbdIsDrawnVariant(row, vars[sel]);
+                    customConfirm(_drawn ? 'Удалить вариант «Р»? Всё, что нарисовано в этом кадре (все слои и фон), будет удалено.' : (vars.length > 1 ? 'Удалить выбранный вариант изображения?' : 'Удалить изображение?'), 'УДАЛИТЬ', () => {
+                        if (_drawn) sbdDropDrawing(row, vars[sel]);
                         sbRemoveSelected(row, i);
                         updateTableBody();
                         syncNoeticZones();
@@ -6277,8 +6527,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     for (let v = 0; v < shown; v++) {
                         const sq = document.createElement('button');
                         sq.className = 'sb-var-sq' + (v === sel ? ' sel' : '');
-                        sq.textContent = String(v + 1);
-                        sq.title = 'Вариант ' + (v + 1);
+                        const _isDr = sbdIsDrawnVariant(row, vars[v]);
+                        sq.textContent = sbVarLabel(row, vars, v);
+                        sq.title = _isDr ? 'Рисунок из раскадровочного блока (двойной клик — открыть для рисования)' : 'Вариант ' + sbVarLabel(row, vars, v);
+                        if (_isDr) sq.ondblclick = (ev) => { ev.stopPropagation(); sbdOpenForRow(row, sbdDrawIndex(row, vars[v])); };
                         sq.onclick = (e) => {
                             e.stopPropagation();
                             if (v === sel) return;
@@ -6291,7 +6543,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     if (V >= 4) {
                         const more = document.createElement('button');
                         more.className = 'sb-var-sq' + (sel >= 3 ? ' sel' : '');
-                        more.textContent = (sel >= 3 ? String(sel + 1) : '') + '▾';
+                        more.textContent = (sel >= 3 ? sbVarLabel(row, vars, sel) : '') + '▾';
                         more.title = 'Другие варианты (всего ' + V + ')';
                         more.onclick = (e) => { e.stopPropagation(); sbOpenVariantMenu(more, row, i); };
                         bar.appendChild(more);
@@ -7927,7 +8179,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         function updateNoeticElCount() { document.getElementById('noeticElCount').textContent = APP.noeticElements.length; }
 
-        const NE_ZONE_W = 340, NE_ZONE_H = 280, NE_ZONE_GAP = 50;
+        const NE_ZONE_H = 280, NE_ZONE_W = NE_ZONE_H * 16 / 9, NE_ZONE_GAP = 50; // область кадра 16:9
         let neZoneLayout = {};
 
         function neComputeLayout() {
@@ -7993,9 +8245,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 zone.appendChild(label);
                 canvas.insertBefore(zone, canvas.firstChild);
             });
+            if (typeof sbdSync === 'function') sbdSync();
         }
 
         function focusNoeticZone(rowId) {
+            if (APP.p3View === 'storyboard') { sbdFocusZone(rowId); return; }
             const canvas = document.getElementById('noeticCanvas');
             const zone = canvas.querySelector('.noetic-frame-zone[data-zone-rowid="' + rowId + '"]');
             if (!zone) return;
@@ -8108,6 +8362,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             set('script', APP.scriptZoom);
             set('dir', dirZoom);
             set('noetic', APP.noeticZoom);
+            set('sbd', APP.sbdZoom);
         }
 
         function setUiScalePct(p) {
@@ -8117,6 +8372,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             try { localStorage.setItem('noemUiScale', String(v)); } catch (e) {}
             syncZoomUI();
             applyLayout();
+            if (typeof sbdClampLayers === 'function') requestAnimationFrame(() => { sbdClampLayers(); setTimeout(sbdClampLayers, 120); });
         }
 
         function setScriptZoomPct(p) {
@@ -8151,7 +8407,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             setScriptZoomPct(100);
             setDirZoom(1);
             setNoeticZoomPct(100);
-            ['script', 'dir', 'noetic'].forEach(id => { const s = document.getElementById('zs_' + id); if (s) s.value = 100; });
+            setSbdZoomPct(100);
+            ['script', 'dir', 'noetic', 'sbd'].forEach(id => { const s = document.getElementById('zs_' + id); if (s) s.value = 100; });
             syncZoomUI();
         }
 
@@ -8665,6 +8922,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 noeticZoom: APP.noeticZoom,
                 noeticOffsetX: APP.noeticOffsetX,
                 noeticOffsetY: APP.noeticOffsetY,
+                p3View: APP.p3View,
+                sbdZoom: APP.sbdZoom,
+                sbdOffsetX: APP.sbdOffsetX,
+                sbdOffsetY: APP.sbdOffsetY,
+                drawRecent: APP.drawRecent,
                 locations: APP.locations,
                 times: APP.times,
                 timeMode: APP.timeMode,
@@ -8885,6 +9147,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 applyScriptTransform();
                 applyNoeticTransform();
                 updateNoeticElCount();
+                APP.sbdZoom = 1; APP.sbdOffsetX = 20; APP.sbdOffsetY = 20; APP.sbdUserView = false; SBD.fitted = false;
+                sbdResetZones();
+                sbdSetColor(SBD_DEFAULT_COLOR);
+                setP3View(APP.p3View, true);
                 notify('Новый проект создан');
                 MEDIA.clear();
                 historyStack = [];
@@ -8976,6 +9242,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             syncNoeticZones(true);
             applyNoeticTransform();
             updateNoeticElCount();
+            APP.sbdZoom = data.sbdZoom || 1;
+            APP.sbdOffsetX = data.sbdOffsetX !== undefined ? data.sbdOffsetX : 20;
+            APP.sbdOffsetY = data.sbdOffsetY !== undefined ? data.sbdOffsetY : 20;
+            APP.sbdUserView = data.sbdZoom !== undefined;
+            SBD.fitted = false;
+            if (Array.isArray(data.drawRecent)) {
+                APP.drawRecent = data.drawRecent.concat(APP.drawRecent || []).filter((c, i, a) => /^#[0-9a-f]{6}$/i.test(c) && a.indexOf(c) === i).slice(0, 14);
+                sbdRenderRecent();
+            }
+            sbdResetZones();
+            setP3View(data.p3View || 'noetic', true);
             setMode(data.mode || 'editor');
             updateSizeBars();
             notify('Проект открыт');
@@ -9585,6 +9862,1364 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
             document.addEventListener('touchend', () => { dragging = false; }, { passive: true });
         }
+
+        // =====================================================================
+        // v3.8 — РАСКАДРОВОЧНЫЙ БЛОК: рисование кадров
+        // (слои у каждого кадра, кисти, цвета, фон; результат — вариант «Р» в таблице)
+        // =====================================================================
+        const SBD_LETTER = '\u0420'; // «Р» (кириллица)
+        const SBD_PX = 1280, SBD_PY = 720;
+        const SBD_ZONE_W = 660, SBD_ZONE_H = 396, SBD_ZONE_GAP = 50;
+        const SBD_MAX_LAYERS = 12;
+        const SBD_BG_PRESETS = [
+            ['Белый', '#ffffff'], ['Светло-серый', '#d4d4d8'], ['Серый', '#8a8a90'], ['Тёмно-серый', '#3b3b40'],
+            ['Чёрный', '#000000'], ['Бумага', '#f1e8d0'], ['Небо', '#b9d6ee'], ['Ночь', '#101a33']
+        ];
+        const SBD_DEFAULT_COLOR = '#5b50c8';
+        const SBD_BASE_COLORS = ['#5b50c8', '#000000', '#ffffff', '#7f7f7f', '#c0392b', '#e67e22', '#f1c40f', '#27ae60',
+            '#16a085', '#2980b9', '#8e44ad', '#e84393', '#8b5a2b', '#f2c9a0'];
+        const SBD_ICON = inner => '<svg class="sbd-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+        const SBD_ICONS = {
+            pencil: '<path d="M4 20l1.2-4.3L16 4.9a1.9 1.9 0 0 1 2.7 0l.4.4a1.9 1.9 0 0 1 0 2.7L8.3 18.8z"/><path d="M14.2 6.7l3.1 3.1"/><path d="M5.2 15.7l3.1 3.1"/>',
+            pen: '<path d="M12 21l-3.6-5.6L7.6 8.2 12 3l4.4 5.2-.8 7.2z"/><circle cx="12" cy="10.2" r="1.3"/><path d="M12 11.5V21"/>',
+            brush: '<path d="M18.6 3.6a2.1 2.1 0 0 1 3 3L12.2 16 9 12.8z"/><path d="M9 12.8c-2.6 0-4.1 1.8-4.1 3.7 0 1.1-.5 2.1-1.7 3.1 3.9.6 8.6-.4 8.6-3.7"/>',
+            air: '<rect x="3.5" y="10.5" width="8" height="10.5" rx="1.6"/><path d="M5.5 10.5V7.8h4v2.7"/><path d="M7.5 7.8V5.6"/><path d="M5 14.5h5" opacity=".6"/><g fill="currentColor" stroke="none"><circle cx="15" cy="5.5" r=".95"/><circle cx="18.2" cy="3.9" r=".95"/><circle cx="18.4" cy="7.6" r=".95"/><circle cx="21.2" cy="6" r=".95"/><circle cx="15.3" cy="9.4" r=".95"/><circle cx="19" cy="11" r=".95"/></g>',
+            marker: '<path d="M14.2 4.6l5.2 5.2-7.4 7.4-5.2-5.2z"/><path d="M6.8 12l-1.9 6 6-1.9"/><path d="M13 20.6h7.5" stroke-width="2.6" opacity=".45"/>',
+            eraser: '<path d="M8.4 20.4l-4.2-4.2a2 2 0 0 1 0-2.8l9-9a2 2 0 0 1 2.8 0l4.2 4.2a2 2 0 0 1 0 2.8l-7.6 7.6"/><path d="M8.4 20.4H20"/><path d="M7.2 9.4l7.4 7.4"/>',
+            fill: '<path d="M6 11.6l6-6 6.4 6.4-6 6a1.8 1.8 0 0 1-2.5 0L6 14.1a1.8 1.8 0 0 1 0-2.5z"/><path d="M6.7 12.4h11"/><path d="M12 5.6V4a1.6 1.6 0 0 1 3.2 0"/><path d="M20.3 16.6c0 1.2-.7 2-1.4 2s-1.4-.8-1.4-2c0-.9 1.4-2.5 1.4-2.5s1.4 1.6 1.4 2.5z"/>',
+            picker: '<path d="M15.6 4.6a2.1 2.1 0 0 1 3 0l.8.8a2.1 2.1 0 0 1 0 3l-2.7 2.7-3.8-3.8z"/><path d="M13.9 9.4l1.7 1.7"/><path d="M13 8.4L5.8 15.6 5 19l3.4-.8 7.2-7.2"/>',
+            select: '<rect x="4" y="5" width="16" height="14" rx="1" stroke-dasharray="3 2.4"/>',
+            transform: '<rect x="6.5" y="6.5" width="11" height="11"/><g fill="currentColor"><rect x="3.8" y="3.8" width="5" height="5" rx=".9"/><rect x="15.2" y="3.8" width="5" height="5" rx=".9"/><rect x="3.8" y="15.2" width="5" height="5" rx=".9"/><rect x="15.2" y="15.2" width="5" height="5" rx=".9"/></g>',
+            hand: '<path d="M9 11.5V6a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10.5V4.5a1.5 1.5 0 0 1 3 0v6"/><path d="M15 10.5V6a1.5 1.5 0 0 1 3 0v8.5c0 3.6-2.6 6.5-6 6.5-2.4 0-3.8-1-5-2.7l-2.2-3.9a1.5 1.5 0 0 1 2.4-1.8L9 14.5"/>'
+        };
+        const SBD_TOOLS = [
+            { id: 'pencil', ico: SBD_ICON(SBD_ICONS.pencil), name: 'Карандаш (P)', size: 4, alpha: 100, soft: 15, flow: 1, spacing: 0.1, k: 0.8 },
+            { id: 'pen', ico: SBD_ICON(SBD_ICONS.pen), name: 'Перо / линер (N)', size: 5, alpha: 100, soft: 0, flow: 1, spacing: 0.08, k: 0.4 },
+            { id: 'brush', ico: SBD_ICON(SBD_ICONS.brush), name: 'Кисть (B)', size: 40, alpha: 100, soft: 45, flow: 1, spacing: 0.08, k: 0.55 },
+            { id: 'air', ico: SBD_ICON(SBD_ICONS.air), name: 'Аэрограф (A)', size: 90, alpha: 100, soft: 100, flow: 0.07, spacing: 0.12, k: 0.7 },
+            { id: 'marker', ico: SBD_ICON(SBD_ICONS.marker), name: 'Маркер (M)', size: 50, alpha: 55, soft: 0, flow: 1, spacing: 0.06, k: 0.45 },
+            { id: 'eraser', ico: SBD_ICON(SBD_ICONS.eraser), name: 'Ластик (E)', size: 40, alpha: 100, soft: 30, flow: 1, spacing: 0.08, k: 0.8 },
+            { id: 'fill', ico: SBD_ICON(SBD_ICONS.fill), name: 'Заливка (G)' },
+            { id: 'picker', ico: SBD_ICON(SBD_ICONS.picker), name: 'Пипетка (I)' },
+            { id: 'select', ico: SBD_ICON(SBD_ICONS.select), name: 'Выделение области (S)' },
+            { id: 'transform', ico: SBD_ICON(SBD_ICONS.transform), name: 'Трансформирование: масштаб, поворот (T, Enter — применить)' },
+            { id: 'hand', ico: SBD_ICON(SBD_ICONS.hand), name: 'Рука — двигать поле (H)' }
+        ];
+        const SBD = {
+            tool: 'brush', activeK: 0, sel: null, tf: null, drag: null, adds: {}, cfg: {}, color: SBD_DEFAULT_COLOR, zones: {}, activeRow: null, stroke: null,
+            loading: 0, commitCount: 0, ptrs: new Map(), pan: null, pinch: null, fitted: false
+        };
+        SBD_TOOLS.forEach(t => { if (t.size) SBD.cfg[t.id] = { size: t.size, alpha: t.alpha, soft: t.soft }; });
+        let SBD_TABLE_T = null;
+
+        function sbdEl(id) { return document.getElementById(id); }
+        function sbdClamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+        function sbdToolDef(id) { return SBD_TOOLS.find(t => t.id === id); }
+        function sbdIsFrame(r) { return !!r && r.type !== 'scene' && r.type !== 'note'; }
+        function sbdFrames() { return APP.dirRows.filter(sbdIsFrame); }
+        function sbdRow(id) { return APP.dirRows.find(r => r.id === +id); }
+        function sbdRgb(hex) {
+            const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+            const n = m ? parseInt(m[1], 16) : 0;
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+        }
+        function sbdPad(n) { return String(n || 0).padStart(4, '0'); }
+
+        // ---------- модель рисунка кадра ----------
+        function sbdZK(rowId, k) { return k ? rowId + '_' + k : String(rowId); }
+        function sbdCurK(row, k) { return k !== undefined ? k : (SBD.activeRow === row.id ? (SBD.activeK || 0) : 0); }
+        function sbdZ(row, k) { return SBD.zones[sbdZK(row.id, sbdCurK(row, k))]; }
+        function sbdZoneCount(row) { return 1 + (Array.isArray(row.drawX) ? row.drawX.length : 0); }
+        function sbdHasDraw(row, k) { k = sbdCurK(row, k); return k ? !!(row.drawX && row.drawX[k - 1]) : !!row.draw; }
+        function sbdAllDraws(row) { const a = []; if (row.draw) a.push(row.draw); (row.drawX || []).forEach(d => { if (d) a.push(d); }); return a; }
+        function sbdDrawIndex(row, src) {
+            if (!row || !src) return -1;
+            if (row.draw && row.draw.flat === src) return 0;
+            const x = row.drawX || [];
+            for (let i = 0; i < x.length; i++) if (x[i] && x[i].flat === src) return i + 1;
+            return -1;
+        }
+        function sbdEnsure(row, k) {
+            k = sbdCurK(row, k);
+            let d;
+            if (k) {
+                if (!Array.isArray(row.drawX)) row.drawX = [];
+                while (row.drawX.length < k) row.drawX.push({});
+                if (!row.drawX[k - 1] || typeof row.drawX[k - 1] !== 'object') row.drawX[k - 1] = {};
+                d = row.drawX[k - 1];
+            } else {
+                if (!row.draw || typeof row.draw !== 'object') row.draw = {};
+                d = row.draw;
+            }
+            d.w = SBD_PX; d.h = SBD_PY;
+            if (!d.bg) d.bg = '#ffffff';
+            if (!Array.isArray(d.layers) || !d.layers.length) {
+                d.layers = [];
+                d.nextLayerId = 1;
+                const id = d.nextLayerId++;
+                d.layers.push({ id, name: 'Слой ' + id, visible: true, opacity: 1, data: null });
+            }
+            if (!d.nextLayerId) d.nextLayerId = Math.max(0, ...d.layers.map(l => l.id || 0)) + 1;
+            d.layers.forEach(l => {
+                if (l.id == null) l.id = d.nextLayerId++;
+                if (l.visible === undefined) l.visible = true;
+                if (l.opacity == null) l.opacity = 1;
+                if (l.data === undefined) l.data = null;
+                if (!l.name) l.name = 'Слой ' + l.id;
+            });
+            if (!d.layers.some(l => l.id === d.active)) d.active = d.layers[d.layers.length - 1].id;
+            if (d.ink === undefined) d.ink = !!d.flat;
+            return d;
+        }
+
+        // ---------- вариант «Р» в таблице раскадровки ----------
+        function sbdIsDrawnVariant(row, src) { return sbdDrawIndex(row, src) >= 0; }
+        function sbVarLabel(row, vars, v) {
+            if (sbdIsDrawnVariant(row, vars[v])) return SBD_LETTER;
+            let n = 0;
+            for (let i = 0; i <= v; i++) { if (!sbdIsDrawnVariant(row, vars[i])) n++; }
+            return String(n);
+        }
+        function sbdVariantLoc(row, d) {
+            if (!d || !d.flat) return null;
+            sbEnsure(row);
+            for (let i = 0; i < row.sbVars.length; i++) {
+                const v = row.sbVars[i].indexOf(d.flat);
+                if (v >= 0) return { slot: i, v };
+            }
+            return null;
+        }
+        // кладёт рисунок кадра k в таблицу; true — если вариант создан впервые
+        function sbdPutVariant(row, k, flat) {
+            sbEnsure(row);
+            const d = sbdEnsure(row, k);
+            const loc = sbdVariantLoc(row, d);
+            if (loc) { row.sbVars[loc.slot][loc.v] = flat; d.flat = flat; return false; }
+            if (k < row.sbVars.length) {
+                row.sbVars[k].push(flat);
+                row.sbSel[k] = row.sbVars[k].length - 1;
+            } else {
+                sbAddSlot(row, flat);
+            }
+            d.flat = flat;
+            return true;
+        }
+        function sbdDropDrawing(row, src) {
+            const k = sbdDrawIndex(row, src);
+            if (k < 0) return;
+            if (k === 0) row.draw = (row.drawX && row.drawX.length) ? row.drawX.shift() : null;
+            else row.drawX.splice(k - 1, 1);
+        }
+        function sbdFlatten(d, z) {
+            const c = document.createElement('canvas');
+            c.width = d.w; c.height = d.h;
+            const g = c.getContext('2d');
+            g.fillStyle = d.bg; g.fillRect(0, 0, c.width, c.height);
+            d.layers.forEach(l => {
+                if (!l.visible) return;
+                const lc = z && z.layers[l.id];
+                if (!lc) return;
+                g.globalAlpha = l.opacity;
+                g.drawImage(lc, 0, 0);
+            });
+            g.globalAlpha = 1;
+            return c;
+        }
+        function sbdBlankFlat(d) {
+            const c = document.createElement('canvas'); c.width = SBD_PX; c.height = SBD_PY;
+            const g = c.getContext('2d'); g.fillStyle = d.bg || '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+            return c.toDataURL('image/jpeg', 0.92);
+        }
+        function sbdUpdateVariant(row, k) {
+            k = sbdCurK(row, k);
+            const z = SBD.zones[sbdZK(row.id, k)];
+            if (!z) return false;
+            const flat = sbdFlatten(sbdEnsure(row, k), z).toDataURL('image/jpeg', 0.92);
+            return sbdPutVariant(row, k, flat);
+        }
+        function sbdScheduleTable() {
+            clearTimeout(SBD_TABLE_T);
+            SBD_TABLE_T = setTimeout(() => { updateTableBody(); }, 450);
+        }
+        // «+» справа от кадров: новый внутрикадровый кадр = новое изображение (вариант Р) в таблице
+        function sbdAddIntra(rowId) {
+            if (APP.mode !== 'editor') return;
+            const row = sbdRow(rowId);
+            if (!row) return;
+            sbdTfCommit();
+            sbEnsure(row);
+            const n = sbdZoneCount(row);
+            const mk = k => { const d = sbdEnsure(row, k); const f = sbdBlankFlat(d); d.ink = true; d.flat = f; sbAddSlot(row, f); };
+            for (let j = row.sbVars.length; j < n; j++) mk(j);
+            const prev = sbdEnsure(row, n - 1);
+            if (!Array.isArray(row.drawX)) row.drawX = [];
+            row.drawX.push({ bg: prev.bg });
+            mk(n);
+            updateTableBody();
+            sbdSync();
+            pushHistory('Внутрикадровый кадр');
+            notify('Добавлен внутрикадровый кадр — вариант «' + SBD_LETTER + '» в таблице');
+            sbdFocusZone(row.id, n);
+        }
+        function sbdRefSrc(row, k) {
+            if (!APP.sbdRef) return null;
+            const d = sbdEnsure(row, k);
+            if (d.ink || d.layers.some(l => l.data)) return null;
+            sbEnsure(row);
+            const v = row.sbVars[k];
+            return v && v.length ? v[Math.min(row.sbSel[k] || 0, v.length - 1)] : null;
+        }
+        function sbdToggleRef() {
+            APP.sbdRef = !APP.sbdRef;
+            const b = sbdEl('sbdRefBtn'); if (b) b.classList.toggle('on', !!APP.sbdRef);
+            sbdSync();
+        }
+        // первый штрих по пустому кадру с показанной картинкой: картинка становится нижним слоем
+        function sbdRefToLayer(row, k, z) {
+            const d = sbdEnsure(row, k), img = z.ref;
+            if (!sbdRefSrc(row, k) || !img.complete || !img.naturalWidth) return;
+            const id = d.nextLayerId++;
+            d.layers.unshift({ id, name: 'Картинка', visible: true, opacity: 1, data: null });
+            sbdSyncZone(row, k, z);
+            const lc = z.layers[id];
+            const s = Math.min(SBD_PX / img.naturalWidth, SBD_PY / img.naturalHeight), w = img.naturalWidth * s, h = img.naturalHeight * s;
+            lc.getContext('2d').drawImage(img, (SBD_PX - w) / 2, (SBD_PY - h) / 2, w, h);
+            d.layers.find(l => l.id === id).data = lc.toDataURL('image/png');
+            lc._src = d.layers.find(l => l.id === id).data;
+            sbdSyncZone(row, k, z);
+        }
+
+        // ---------- зоны (кадры на большом поле) ----------
+        function sbdLayoutMap() {
+            const map = {}; let i = 0;
+            APP.dirRows.forEach(r => { if (sbdIsFrame(r)) map[r.id] = (i++) * (SBD_ZONE_H + SBD_ZONE_GAP); });
+            return map;
+        }
+        function sbdBuildZone(row, k) {
+            const el = document.createElement('div');
+            el.className = 'sbd-zone';
+            el.dataset.rowid = row.id; el.dataset.k = k;
+            const label = document.createElement('div'); label.className = 'sbd-zone-label';
+            const info = document.createElement('div'); info.className = 'sbd-zone-info';
+            const board = document.createElement('div'); board.className = 'sbd-board';
+            const ref = document.createElement('img'); ref.className = 'sbd-ref'; ref.draggable = false;
+            const stroke = document.createElement('canvas'); stroke.className = 'sbd-stroke';
+            stroke.width = SBD_PX; stroke.height = SBD_PY;
+            board.appendChild(ref); board.appendChild(stroke);
+            const sel = document.createElement('div'); sel.className = 'sbd-sel';
+            const tfEl = document.createElement('div'); tfEl.className = 'sbd-tf';
+            el.appendChild(label); el.appendChild(info); el.appendChild(board); el.appendChild(sel); el.appendChild(tfEl);
+            return { el, label, info, board, stroke, ref, sel, tfEl, layers: {} };
+        }
+        function sbdLoadLayer(c, data) {
+            c._src = data;
+            const ctx = c.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+            ctx.clearRect(0, 0, c.width, c.height);
+            c._tok = (c._tok || 0) + 1;
+            if (!data) return;
+            const tok = c._tok;
+            SBD.loading++;
+            const img = new Image();
+            img.onload = () => { SBD.loading--; if (c._tok !== tok) return; ctx.clearRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0); };
+            img.onerror = () => { SBD.loading--; };
+            img.src = data;
+        }
+        function sbdPlaceStroke(rowId, k) {
+            const row = sbdRow(rowId), z = SBD.zones[sbdZK(rowId, k)];
+            if (!row || !z) return;
+            const d = sbdEnsure(row, k);
+            const idx = d.layers.findIndex(l => l.id === d.active);
+            z.stroke.style.zIndex = String(Math.max(0, idx) * 2 + 2);
+        }
+        function sbdSyncZone(row, k, z) {
+            const d = sbdEnsure(row, k);
+            z.board.style.background = d.bg;
+            z.el.classList.toggle('active', SBD.activeRow === row.id && SBD.activeK === k);
+            z.info.textContent = d.ink ? 'вариант «' + SBD_LETTER + '» в таблице' : '';
+            const rs = sbdRefSrc(row, k);
+            z.ref.style.display = rs ? 'block' : 'none';
+            if (rs && z.ref._s !== rs) { z.ref._s = rs; z.ref.src = rs; }
+            const ids = d.layers.map(l => String(l.id));
+            Object.keys(z.layers).forEach(kk => { if (!ids.includes(kk)) { z.layers[kk].remove(); delete z.layers[kk]; } });
+            d.layers.forEach((l, i) => {
+                let c = z.layers[l.id];
+                if (!c) {
+                    c = document.createElement('canvas');
+                    c.className = 'sbd-layer'; c.width = SBD_PX; c.height = SBD_PY; c._src = null;
+                    z.board.insertBefore(c, z.stroke);
+                    z.layers[l.id] = c;
+                }
+                c.style.zIndex = String(i * 2 + 1);
+                c.style.opacity = String(l.opacity);
+                c.style.display = l.visible ? '' : 'none';
+                if (c._src !== l.data) sbdLoadLayer(c, l.data);
+            });
+            sbdPlaceStroke(row.id, k);
+        }
+        function sbdSync() {
+            if (APP.p3View !== 'storyboard') return;
+            const canvas = sbdEl('sbdCanvas');
+            if (!canvas) return;
+            const layout = sbdLayoutMap();
+            const want = new Set();
+            let scene = null;
+            APP.dirRows.forEach(row => {
+                if (row.type === 'scene') { scene = row; return; }
+                if (!sbdIsFrame(row)) return;
+                sbEnsure(row); sbdEnsure(row, 0);
+                if (!Array.isArray(row.drawX)) row.drawX = [];
+                const need = Math.max(1, row.sbVars.length);
+                while (1 + row.drawX.length < need) row.drawX.push({});
+                const blank = d => !d || (!d.ink && !(d.layers && d.layers.some(l => l.data)));
+                while (row.drawX.length && 1 + row.drawX.length > need && blank(row.drawX[row.drawX.length - 1])) row.drawX.pop();
+                const n = sbdZoneCount(row);
+                for (let k = 0; k < n; k++) {
+                    const key = sbdZK(row.id, k);
+                    want.add(key);
+                    sbdEnsure(row, k);
+                    let z = SBD.zones[key];
+                    if (!z) { z = sbdBuildZone(row, k); SBD.zones[key] = z; canvas.appendChild(z.el); }
+                    z.el.style.top = layout[row.id] + 'px';
+                    z.el.style.left = k * (SBD_ZONE_W + SBD_ZONE_GAP) + 'px';
+                    z.label.textContent = (scene ? 'СЦЕНА ' + scene.sceneNum + ' · ' : '') + 'КАДР ' + sbdPad(row.num) + (n > 1 ? ' · ' + (k + 1) + '/' + n : '');
+                    sbdSyncZone(row, k, z);
+                }
+                let a = SBD.adds[row.id];
+                if (!a) {
+                    a = document.createElement('div'); a.className = 'sbd-add'; a.textContent = '+';
+                    a.title = 'Добавить внутрикадровый кадр (вариант «' + SBD_LETTER + '» в таблице)';
+                    const rid = row.id;
+                    a.onclick = () => sbdAddIntra(rid);
+                    canvas.appendChild(a); SBD.adds[row.id] = a;
+                }
+                a.style.top = layout[row.id] + 'px';
+                a.style.left = n * (SBD_ZONE_W + SBD_ZONE_GAP) + 'px';
+            });
+            Object.keys(SBD.zones).forEach(key => { if (!want.has(key)) { SBD.zones[key].el.remove(); delete SBD.zones[key]; } });
+            Object.keys(SBD.adds).forEach(id => { if (layout[id] === undefined) { SBD.adds[id].remove(); delete SBD.adds[id]; } });
+            if (SBD.activeRow == null || !sbdRow(SBD.activeRow) || !sbdIsFrame(sbdRow(SBD.activeRow))) {
+                const f = sbdFrames()[0];
+                SBD.activeRow = f ? f.id : null; SBD.activeK = 0;
+            }
+            const ar = sbdRow(SBD.activeRow);
+            if (ar && SBD.activeK >= sbdZoneCount(ar)) SBD.activeK = 0;
+            Object.keys(SBD.zones).forEach(key => SBD.zones[key].el.classList.toggle('active', key === sbdZK(SBD.activeRow, SBD.activeK)));
+            sbdRenderLayers();
+            sbdSyncBgUI();
+            sbdUpdateSizeBar();
+            sbdSelShow();
+        }
+        function sbdResetZones() {
+            const c = sbdEl('sbdCanvas');
+            if (c) c.innerHTML = '';
+            SBD.zones = {}; SBD.adds = {}; SBD.activeRow = null; SBD.activeK = 0; SBD.stroke = null; SBD.sel = null; SBD.tf = null; SBD.drag = null;
+        }
+        function sbdUpdateSizeBar() {
+            const fr = sbdFrames();
+            sbdEl('sbdFrameCount').textContent = fr.length;
+            sbdEl('sbdInkCount').textContent = fr.filter(r => sbdAllDraws(r).some(d => d.ink)).length;
+        }
+        function sbdSetActive(rowId, k) {
+            rowId = +rowId; k = k || 0;
+            if (SBD.activeRow === rowId && SBD.activeK === k) return;
+            sbdTfCommit();
+            SBD.activeRow = rowId; SBD.activeK = k;
+            Object.keys(SBD.zones).forEach(key => SBD.zones[key].el.classList.toggle('active', key === sbdZK(rowId, k)));
+            sbdRenderLayers();
+            sbdSyncBgUI();
+        }
+
+        // ---------- вид (масштаб / позиция) ----------
+        function sbdApplyTransform() {
+            const c = sbdEl('sbdCanvas');
+            if (c) { c.style.transform = 'translate(' + APP.sbdOffsetX + 'px,' + APP.sbdOffsetY + 'px) scale(' + APP.sbdZoom + ')'; c.style.setProperty('--inv', String(1 / APP.sbdZoom)); }
+            if (typeof syncZoomUI === 'function') syncZoomUI();
+        }
+        function sbdFitView() {
+            const vp = sbdEl('sbdViewport');
+            if (!vp || !vp.clientWidth) return;
+            const fw = SBD_ZONE_W + SBD_ZONE_GAP + 70;
+            const z = sbdClamp((vp.clientWidth - 24) / fw, 0.15, 1.2);
+            APP.sbdZoom = Math.round(z * 100) / 100;
+            APP.sbdOffsetX = Math.round((vp.clientWidth - fw * APP.sbdZoom) / 2);
+            APP.sbdOffsetY = 14;
+            const layout = sbdLayoutMap();
+            if (SBD.activeRow != null && layout[SBD.activeRow] !== undefined) APP.sbdOffsetY = 14 - layout[SBD.activeRow] * APP.sbdZoom;
+            APP.sbdUserView = true;
+            sbdApplyTransform();
+        }
+        function sbdFocusZone(rowId, k) {
+            k = k || 0;
+            sbdSetActive(rowId, k);
+            const zone = SBD.zones[sbdZK(rowId, k)];
+            const vp = sbdEl('sbdViewport');
+            if (!zone || !vp) return;
+            const zx = parseFloat(zone.el.style.left) || 0, zy = parseFloat(zone.el.style.top) || 0;
+            const tx = vp.clientWidth / 2 - (zx + SBD_ZONE_W / 2) * APP.sbdZoom;
+            const ty = vp.clientHeight / 2 - (zy + SBD_ZONE_H / 2) * APP.sbdZoom;
+            const sx = APP.sbdOffsetX, sy = APP.sbdOffsetY, t0 = performance.now();
+            const step = now => {
+                const t = Math.min(1, (now - t0) / 400), e = 1 - Math.pow(1 - t, 3);
+                APP.sbdOffsetX = sx + (tx - sx) * e;
+                APP.sbdOffsetY = sy + (ty - sy) * e;
+                sbdApplyTransform();
+                if (t < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+        function setSbdZoomPct(p) {
+            const vp = sbdEl('sbdViewport');
+            const old = APP.sbdZoom, nz = sbdClamp((+p) / 100, 0.15, 4);
+            if (vp && old > 0 && vp.clientWidth) {
+                const cx = vp.clientWidth / 2, cy = vp.clientHeight / 2;
+                APP.sbdOffsetX = cx - (cx - APP.sbdOffsetX) * (nz / old);
+                APP.sbdOffsetY = cy - (cy - APP.sbdOffsetY) * (nz / old);
+            }
+            APP.sbdZoom = nz; APP.sbdUserView = true;
+            sbdApplyTransform();
+        }
+
+        // ---------- переключатель Ноэтический / Раскадровочный ----------
+        function setP3View(v, silent) {
+            v = v === 'storyboard' ? 'storyboard' : 'noetic';
+            APP.p3View = v;
+            sbdEl('panel3').classList.toggle('view-sbd', v === 'storyboard');
+            sbdEl('p3Title').textContent = v === 'storyboard' ? 'Раскадровочный блок' : 'Ноэтический блок';
+            const sw = sbdEl('p3Switch');
+            sw.classList.toggle('on', v === 'storyboard');
+            sw.title = v === 'storyboard' ? 'Переключить на «Ноэтический блок»' : 'Переключить на «Раскадровочный блок»';
+            if (v === 'storyboard') {
+                deselectNoeticEl(); clearNeMultiSelect();
+                sbdSync();
+                sbdApplyTransform();
+                requestAnimationFrame(() => {
+                    if (!APP.sbdUserView && !SBD.fitted) sbdFitView();
+                    SBD.fitted = true;
+                });
+            }
+            if (!silent && typeof scheduleAutosave === 'function') scheduleAutosave();
+        }
+        function toggleP3View() { setP3View(APP.p3View === 'storyboard' ? 'noetic' : 'storyboard'); }
+        function sbdOpenForRow(row, k) {
+            if (typeof p3Collapsed !== 'undefined' && p3Collapsed) collapsePanel(3);
+            setP3View('storyboard');
+            requestAnimationFrame(() => sbdFocusZone(row.id, k || 0));
+        }
+        function sbdToggleToolbar() { sbdEl('sbdToolbar').classList.toggle('closed'); }
+        function sbdToggleLayers() {
+            const b = sbdEl('sbdLayers');
+            b.classList.toggle('collapsed');
+            sbdEl('sbdLayersToggle').textContent = b.classList.contains('collapsed') ? '▸' : '▾';
+            sbdClampLayers();
+        }
+        // панель «СЛОИ» всегда остаётся внутри раскадровочного блока (масштаб интерфейса, размер окна, перетаскивание)
+        function sbdClampLayers() {
+            const box = sbdEl('sbdLayers'), stage = sbdEl('sbdStage');
+            if (!box || !stage) return;
+            const sr = stage.getBoundingClientRect();
+            if (!sr.width || !sr.height) return;
+            const s = (box.getBoundingClientRect().width / 184) || 1;
+            box.style.maxHeight = Math.max(60, (sr.height - 16) / s) + 'px';
+            const r = box.getBoundingClientRect();
+            const maxL = Math.max(0, sr.width - r.width), maxT = Math.max(0, sr.height - r.height);
+            const l = sbdClamp(r.left - sr.left, 0, maxL), t = sbdClamp(r.top - sr.top, 0, maxT);
+            if (Math.abs(l - (r.left - sr.left)) > 0.5 || Math.abs(t - (r.top - sr.top)) > 0.5 || box.style.left) {
+                box.style.right = 'auto';
+                box.style.left = (l / s) + 'px';
+                box.style.top = (t / s) + 'px';
+            }
+        }
+
+        // ---------- кисти ----------
+        const SBD_SPRITES = new Map();
+        function sbdSprite(size, soft, color) {
+            const key = Math.round(size * 10) + '|' + soft + '|' + color;
+            let s = SBD_SPRITES.get(key);
+            if (s) return s;
+            const D = Math.max(1, size);
+            const S = Math.ceil(D) + 4;
+            const c = document.createElement('canvas');
+            c.width = c.height = S;
+            const g = c.getContext('2d');
+            const hard = 1 - soft / 100;
+            if (hard >= 0.985) {
+                g.fillStyle = color; g.beginPath(); g.arc(S / 2, S / 2, D / 2, 0, Math.PI * 2); g.fill();
+            } else {
+                const [r, gg, b] = sbdRgb(color);
+                const gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, D / 2);
+                gr.addColorStop(0, 'rgba(' + r + ',' + gg + ',' + b + ',1)');
+                gr.addColorStop(Math.max(0.01, hard), 'rgba(' + r + ',' + gg + ',' + b + ',1)');
+                gr.addColorStop(1, 'rgba(' + r + ',' + gg + ',' + b + ',0)');
+                g.fillStyle = gr; g.fillRect(0, 0, S, S);
+            }
+            s = { c, S, D };
+            if (SBD_SPRITES.size > 40) SBD_SPRITES.clear();
+            SBD_SPRITES.set(key, s);
+            return s;
+        }
+        function sbdPoint(e, rect) {
+            const x = (e.clientX - rect.left) / rect.width * SBD_PX;
+            const y = (e.clientY - rect.top) / rect.height * SBD_PY;
+            let pr = 1;
+            if (e.pointerType === 'pen') pr = e.pressure > 0 ? e.pressure : 0.5;
+            return { x, y, pr };
+        }
+        function sbdStamp(st, x, y, pr) {
+            const D = Math.max(0.6, st.cfg.size * (st.psz ? (0.12 + 0.88 * pr) : 1));
+            const k = D / st.sprite.D;
+            const S = st.sprite.S * k;
+            let a = st.flow;
+            if (st.tool === 'pencil') a *= 0.55 + Math.random() * 0.45;
+            if (st.pal) {
+                const T = sbdClamp(pr, 0.03, 1);
+                a *= st.flow >= 0.999 ? 1 - Math.pow(1 - T, st.spacing) : T;
+            }
+            st.g.globalAlpha = sbdClamp(a, 0.01, 1);
+            st.g.drawImage(st.sprite.c, x - S / 2, y - S / 2, S, S);
+            st.any = true;
+        }
+        function sbdSegment(st, x0, y0, x1, y1, p0, p1) {
+            const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+            if (len < 0.001) return;
+            const spacing = Math.max(0.8, st.cfg.size * st.spacing);
+            let d = spacing - st.carry, last = -st.carry;
+            while (d <= len) {
+                const f = d / len;
+                sbdStamp(st, x0 + dx * f, y0 + dy * f, p0 + (p1 - p0) * f);
+                last = d; d += spacing;
+            }
+            st.carry = len - last;
+        }
+        function sbdStartStroke(e, boardEl) {
+            const rowId = +boardEl.parentElement.dataset.rowid, k = +boardEl.parentElement.dataset.k || 0;
+            const row = sbdRow(rowId);
+            if (!row) return;
+            sbdSetActive(rowId, k);
+            if (SBD.loading) return;
+            const d = sbdEnsure(row, k);
+            const z = SBD.zones[sbdZK(rowId, k)];
+            if (z && SBD.tool !== 'picker' && SBD.tool !== 'fill') sbdRefToLayer(row, k, z);
+            const layer = d.layers.find(l => l.id === d.active);
+            if (!layer || !z) return;
+            if (!layer.visible) { notify('Слой скрыт — включите глазок слоя'); return; }
+            const tool = SBD.tool;
+            const rect = boardEl.getBoundingClientRect();
+            if (tool === 'picker') { sbdPick(row, e, rect, z); return; }
+            if (tool === 'fill') { sbdFill(row, layer, e, rect, z); return; }
+            const def = sbdToolDef(tool), cfg = Object.assign({}, SBD.cfg[tool]);
+            if (!def || !cfg.size) return;
+            const lc = z.layers[layer.id];
+            if (!lc) return;
+            const erase = tool === 'eraser';
+            const st = {
+                pid: e.pointerId, rowId, zi: k, layerId: layer.id, tool, cfg, color: SBD.color, board: boardEl, z, lc, erase,
+                flow: erase ? cfg.alpha / 100 : def.flow, spacing: def.spacing, k: def.k,
+                psz: e.pointerType === 'pen' && SBD.pressSize, pal: e.pointerType === 'pen' && SBD.pressAlpha, carry: 0, any: false
+            };
+            st.sprite = sbdSprite(cfg.size, cfg.soft, erase ? '#000000' : SBD.color);
+            if (erase) {
+                const sn = document.createElement('canvas'); sn.width = SBD_PX; sn.height = SBD_PY;
+                sn.getContext('2d').drawImage(lc, 0, 0);
+                st.snap = sn;
+                st.g = lc.getContext('2d');
+                st.g.globalCompositeOperation = 'destination-out';
+            } else {
+                st.g = z.stroke.getContext('2d');
+                st.g.clearRect(0, 0, SBD_PX, SBD_PY);
+                st.g.globalCompositeOperation = 'source-over';
+                z.stroke.style.opacity = String(cfg.alpha / 100 * layer.opacity);
+            }
+            const p = sbdPoint(e, rect);
+            st.sx = st.rx = p.x; st.sy = st.ry = p.y; st.pr = p.pr;
+            SBD.stroke = st;
+            sbdStamp(st, p.x, p.y, p.pr);
+            sbdUpdateCursor(e, boardEl);
+        }
+        function sbdMoveStroke(e) {
+            const st = SBD.stroke;
+            const rect = st.board.getBoundingClientRect();
+            let evs = [e];
+            if (e.getCoalescedEvents) { const c = e.getCoalescedEvents(); if (c && c.length) evs = c; }
+            for (const ev of evs) {
+                const p = sbdPoint(ev, rect);
+                const nx = st.sx + (p.x - st.sx) * st.k, ny = st.sy + (p.y - st.sy) * st.k;
+                const npr = st.pr + (p.pr - st.pr) * 0.5;
+                sbdSegment(st, st.sx, st.sy, nx, ny, st.pr, npr);
+                st.sx = nx; st.sy = ny; st.pr = npr; st.rx = p.x; st.ry = p.y;
+            }
+        }
+        function sbdCancelStroke() {
+            const st = SBD.stroke;
+            if (!st) return;
+            SBD.stroke = null;
+            if (st.erase && st.snap) {
+                const g = st.lc.getContext('2d');
+                g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+                g.clearRect(0, 0, SBD_PX, SBD_PY); g.drawImage(st.snap, 0, 0);
+            } else {
+                const g = st.z.stroke.getContext('2d');
+                g.globalAlpha = 1; g.clearRect(0, 0, SBD_PX, SBD_PY);
+            }
+        }
+        function sbdEndStroke() {
+            const st = SBD.stroke;
+            if (!st) return;
+            SBD.stroke = null;
+            sbdSegment(st, st.sx, st.sy, st.rx, st.ry, st.pr, st.pr);
+            const row = sbdRow(st.rowId);
+            if (!row || !sbdHasDraw(row, st.zi)) { const sg0 = st.z.stroke.getContext('2d'); sg0.globalAlpha = 1; sg0.clearRect(0, 0, SBD_PX, SBD_PY); st.g.globalCompositeOperation = 'source-over'; return; }
+            const g = st.lc.getContext('2d');
+            if (st.erase) {
+                g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+            } else {
+                g.globalCompositeOperation = 'source-over';
+                g.globalAlpha = st.cfg.alpha / 100;
+                g.drawImage(st.z.stroke, 0, 0);
+                g.globalAlpha = 1;
+                const sg = st.z.stroke.getContext('2d');
+                sg.globalAlpha = 1; sg.clearRect(0, 0, SBD_PX, SBD_PY);
+            }
+            if (!st.any) return;
+            sbdCommit(row, st.layerId, st.lc, { k: st.zi, ink: !st.erase, color: st.erase ? null : st.color, label: st.erase ? 'Ластик' : 'Рисование' });
+        }
+        function sbdIsBlank(c) {
+            const data = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+            const u = new Uint32Array(data.buffer);
+            for (let i = 0; i < u.length; i++) { if (u[i] !== 0) return false; }
+            return true;
+        }
+        // фиксирует изменение слоя: PNG слоя, вариант «Р», история
+        function sbdCommit(row, layerId, lc, o) {
+            o = o || {};
+            const k = o.k !== undefined ? o.k : sbdCurK(row);
+            const d = sbdEnsure(row, k);
+            const layer = d.layers.find(l => l.id === layerId);
+            if (!layer) return;
+            layer.data = (o.ink ? false : sbdIsBlank(lc)) ? null : lc.toDataURL('image/png');
+            lc._src = layer.data;
+            let created = false;
+            if (o.ink && !d.ink) d.ink = true;
+            if (d.ink) created = sbdUpdateVariant(row, k);
+            if (o.color) sbdRecentColor(o.color);
+            const z = SBD.zones[sbdZK(row.id, k)];
+            if (z) { z.info.textContent = d.ink ? 'вариант «' + SBD_LETTER + '» в таблице' : ''; z.ref.style.display = 'none'; }
+            if (created) {
+                updateTableBody();
+                notify('Рисунок добавлен в раскадровку — вариант «' + SBD_LETTER + '»');
+            } else if (d.ink) {
+                sbdScheduleTable();
+            }
+            pushHistory(o.label || 'Рисование');
+            sbdMaybePrune();
+            sbdUpdateSizeBar();
+        }
+        function sbdMaybePrune() {
+            SBD.commitCount++;
+            if (SBD.commitCount % 12) return;
+            try {
+                const used = new Set(), re = /__M__:([0-9a-z]+)/g;
+                historyStack.forEach(h => { let m; re.lastIndex = 0; while ((m = re.exec(h.str))) used.add(m[1]); });
+                Array.from(MEDIA.byId.keys()).forEach(id => {
+                    if (!used.has(id)) { const s = MEDIA.byId.get(id); MEDIA.byId.delete(id); MEDIA.byStr.delete(s); }
+                });
+            } catch (err) { /* не критично */ }
+        }
+
+        // ---------- заливка и пипетка ----------
+        function sbdFill(row, layer, e, rect, z) {
+            const d = sbdEnsure(row), W = d.w, H = d.h;
+            const p = sbdPoint(e, rect);
+            const sx = Math.floor(p.x), sy = Math.floor(p.y);
+            if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
+            const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H;
+            const tg = tmp.getContext('2d');
+            const alc = z.layers[layer.id]; if (alc) tg.drawImage(alc, 0, 0);
+            tg.globalAlpha = 1;
+            const src = tg.getImageData(0, 0, W, H).data;
+            const si = (sy * W + sx) * 4, tr = src[si], tgc = src[si + 1], tb = src[si + 2], ta = src[si + 3], tol = 48;
+            const match = i => { const j = i * 4; return Math.abs(src[j] - tr) <= tol && Math.abs(src[j + 1] - tgc) <= tol && Math.abs(src[j + 2] - tb) <= tol && Math.abs(src[j + 3] - ta) <= tol; };
+            const mask = new Uint8Array(W * H);
+            const stack = [sy * W + sx];
+            while (stack.length) {
+                const idx = stack.pop();
+                const x = idx % W, y = (idx / W) | 0;
+                if (mask[idx] || !match(idx)) continue;
+                let x1 = x, x2 = x;
+                while (x1 > 0 && !mask[y * W + x1 - 1] && match(y * W + x1 - 1)) x1--;
+                while (x2 < W - 1 && !mask[y * W + x2 + 1] && match(y * W + x2 + 1)) x2++;
+                for (let xx = x1; xx <= x2; xx++) mask[y * W + xx] = 1;
+                for (const dy of [-1, 1]) {
+                    const yy = y + dy;
+                    if (yy < 0 || yy >= H) continue;
+                    let inSpan = false;
+                    for (let xx = x1; xx <= x2; xx++) {
+                        const k = yy * W + xx, ok = !mask[k] && match(k);
+                        if (ok && !inSpan) { stack.push(k); inSpan = true; } else if (!ok) inSpan = false;
+                    }
+                }
+            }
+            const md = new ImageData(W, H);
+            for (let i = 0; i < mask.length; i++) if (mask[i]) { md.data[i * 4] = 255; md.data[i * 4 + 1] = 255; md.data[i * 4 + 2] = 255; md.data[i * 4 + 3] = 255; }
+            const mc = document.createElement('canvas'); mc.width = W; mc.height = H;
+            mc.getContext('2d').putImageData(md, 0, 0);
+            const lc = z.layers[layer.id], g = lc.getContext('2d');
+            g.globalCompositeOperation = 'destination-out'; g.globalAlpha = 1;
+            g.drawImage(mc, 0, 0);
+            const fc = document.createElement('canvas'); fc.width = W; fc.height = H;
+            const fg = fc.getContext('2d');
+            for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) fg.drawImage(mc, ox, oy);
+            fg.globalCompositeOperation = 'source-in'; fg.fillStyle = SBD.color; fg.fillRect(0, 0, W, H);
+            g.globalCompositeOperation = 'destination-over';
+            g.drawImage(fc, 0, 0);
+            g.globalCompositeOperation = 'source-over';
+            sbdCommit(row, layer.id, lc, { ink: true, color: SBD.color, label: 'Заливка' });
+        }
+        function sbdPick(row, e, rect, z) {
+            const d = sbdEnsure(row);
+            const c = sbdFlatten(d, z);
+            const p = sbdPoint(e, rect);
+            const px = c.getContext('2d').getImageData(sbdClamp(Math.floor(p.x), 0, c.width - 1), sbdClamp(Math.floor(p.y), 0, c.height - 1), 1, 1).data;
+            sbdSetColor('#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
+        }
+
+        // ---------- слои ----------
+        function sbdLayersChanged(row, label) {
+            const k = sbdCurK(row), z = sbdZ(row, k);
+            if (z) sbdSyncZone(row, k, z);
+            if (sbdEnsure(row, k).ink) { sbdUpdateVariant(row, k); sbdScheduleTable(); }
+            pushHistory(label);
+            sbdRenderLayers();
+        }
+        function sbdAddLayer() {
+            if (APP.mode !== 'editor') return;
+            const row = sbdRow(SBD.activeRow) || sbdFrames()[0];
+            if (!row) { notify('Сначала добавьте кадр в режиссёрском сценарии'); return; }
+            SBD.activeRow = row.id;
+            const d = sbdEnsure(row);
+            if (d.layers.length >= SBD_MAX_LAYERS) { notify('Максимум слоёв в кадре: ' + SBD_MAX_LAYERS); return; }
+            const id = d.nextLayerId++;
+            const idx = d.layers.findIndex(l => l.id === d.active);
+            d.layers.splice(idx + 1, 0, { id, name: 'Слой ' + id, visible: true, opacity: 1, data: null });
+            d.active = id;
+            sbdLayersChanged(row, 'Новый слой');
+        }
+        function sbdClearLayer() {
+            if (APP.mode !== 'editor') return;
+            const row = sbdRow(SBD.activeRow);
+            if (!row) return;
+            const d = sbdEnsure(row), l = d.layers.find(x => x.id === d.active), z = sbdZ(row);
+            if (!l || !z) return;
+            if (!l.data) { notify('Слой уже пуст'); return; }
+            customConfirm('Очистить слой «' + l.name + '»? Рисунок на нём будет стёрт.', 'ОЧИСТИТЬ', () => {
+                const lc = z.layers[l.id];
+                if (lc) lc.getContext('2d').clearRect(0, 0, SBD_PX, SBD_PY);
+                l.data = null; if (lc) lc._src = null;
+                sbdLayersChanged(row, 'Очистка слоя');
+            });
+        }
+        function sbdRenameLayer(row, l, nameEl) {
+            const inp = document.createElement('input');
+            inp.type = 'text'; inp.className = 'sbd-lname-inp'; inp.value = l.name; inp.maxLength = 32;
+            nameEl.replaceWith(inp);
+            inp.focus(); inp.select();
+            let done = false;
+            const finish = ok => {
+                if (done) return; done = true;
+                const v = inp.value.trim();
+                if (ok && v && v !== l.name) { l.name = v; pushHistory('Имя слоя'); }
+                sbdRenderLayers();
+            };
+            inp.onblur = () => finish(true);
+            inp.onkeydown = ev => { ev.stopPropagation(); if (ev.key === 'Enter') finish(true); else if (ev.key === 'Escape') finish(false); };
+        }
+        function sbdRenderLayers() {
+            const title = sbdEl('sbdLayersTitle'), list = sbdEl('sbdLayersList');
+            if (!list) return;
+            const row = SBD.activeRow != null ? sbdRow(SBD.activeRow) : null;
+            list.innerHTML = '';
+            if (!row) {
+                title.textContent = 'СЛОИ'; title.title = '';
+                const em = document.createElement('div'); em.className = 'sbd-empty';
+                em.textContent = 'Нет кадров. Добавьте кадр в режиссёрском сценарии.';
+                list.appendChild(em);
+                return;
+            }
+            const d = sbdEnsure(row);
+            title.textContent = 'СЛОИ';
+            title.title = 'Кадр ' + sbdPad(row.num) + (sbdZoneCount(row) > 1 ? ' · ' + (SBD.activeK + 1) : '');
+            for (let i = d.layers.length - 1; i >= 0; i--) {
+                const l = d.layers[i], idx = i;
+                const item = document.createElement('div');
+                item.className = 'sbd-layer-item' + (l.id === d.active ? ' sel' : '');
+                const eye = document.createElement('button');
+                eye.className = 'sbd-lbtn' + (l.visible ? '' : ' off');
+                eye.innerHTML = l.visible ? SB_EYE_SVG : SB_EYE_OFF_SVG;
+                eye.title = l.visible ? 'Скрыть слой' : 'Показать слой';
+                eye.onclick = ev => { ev.stopPropagation(); if (APP.mode !== 'editor') return; l.visible = !l.visible; sbdLayersChanged(row, 'Видимость слоя'); };
+                const nm = document.createElement('span');
+                nm.className = 'sbd-lname'; nm.textContent = l.name; nm.title = 'Двойной клик — переименовать';
+                nm.ondblclick = ev => { ev.stopPropagation(); if (APP.mode === 'editor') sbdRenameLayer(row, l, nm); };
+                const up = document.createElement('button');
+                up.className = 'sbd-lbtn'; up.textContent = '▲'; up.title = 'Выше'; up.disabled = idx === d.layers.length - 1;
+                up.onclick = ev => { ev.stopPropagation(); const t = d.layers[idx + 1]; if (!t) return; d.layers[idx + 1] = l; d.layers[idx] = t; sbdLayersChanged(row, 'Порядок слоёв'); };
+                const dn = document.createElement('button');
+                dn.className = 'sbd-lbtn'; dn.textContent = '▼'; dn.title = 'Ниже'; dn.disabled = idx === 0;
+                dn.onclick = ev => { ev.stopPropagation(); const t = d.layers[idx - 1]; if (!t) return; d.layers[idx - 1] = l; d.layers[idx] = t; sbdLayersChanged(row, 'Порядок слоёв'); };
+                const del = document.createElement('button');
+                del.className = 'sbd-lbtn'; del.textContent = '✕'; del.title = 'Удалить слой'; del.disabled = d.layers.length <= 1;
+                del.onclick = ev => {
+                    ev.stopPropagation();
+                    if (APP.mode !== 'editor' || d.layers.length <= 1) return;
+                    const doDel = () => {
+                        const at = d.layers.findIndex(x => x.id === l.id);
+                        if (at < 0) return;
+                        d.layers.splice(at, 1);
+                        if (d.active === l.id) d.active = d.layers[Math.max(0, at - 1)].id;
+                        sbdLayersChanged(row, 'Удаление слоя');
+                    };
+                    if (l.data) customConfirm('Удалить слой «' + l.name + '» вместе с рисунком?', 'УДАЛИТЬ', doDel); else doDel();
+                };
+                item.onclick = () => { sbdTfCommit(); d.active = l.id; sbdPlaceStroke(row.id, SBD.activeK); sbdRenderLayers(); };
+                item.appendChild(eye); item.appendChild(nm); item.appendChild(up); item.appendChild(dn); item.appendChild(del);
+                if (l.id === d.active) {
+                    const op = document.createElement('div'); op.className = 'sbd-lopacity';
+                    const lab = document.createElement('span'); lab.textContent = 'Непрозр.';
+                    const rg = document.createElement('input'); rg.type = 'range'; rg.min = 0; rg.max = 100; rg.value = Math.round(l.opacity * 100);
+                    rg.onclick = ev => ev.stopPropagation();
+                    rg.oninput = () => {
+                        l.opacity = rg.value / 100;
+                        const z = sbdZ(row), lc = z && z.layers[l.id];
+                        if (lc) lc.style.opacity = String(l.opacity);
+                    };
+                    rg.onchange = () => { if (APP.mode !== 'editor') return; sbdLayersChanged(row, 'Прозрачность слоя'); rg.blur(); };
+                    op.appendChild(lab); op.appendChild(rg);
+                    item.appendChild(op);
+                }
+                list.appendChild(item);
+            }
+        }
+
+        // ---------- фон кадра ----------
+        function sbdToggleBgRow() {
+            const r = sbdEl('sbdBgRow');
+            r.style.display = r.style.display === 'none' ? 'flex' : 'none';
+        }
+        function sbdSetBg(color, all) {
+            if (APP.mode !== 'editor') return;
+            const targets = [];
+            if (all) sbdFrames().forEach(r => { for (let k = 0; k < sbdZoneCount(r); k++) targets.push([r, k]); });
+            else { const r = sbdRow(SBD.activeRow); if (r) targets.push([r, SBD.activeK]); }
+            if (!targets.length) { notify('Нет кадров'); return; }
+            targets.forEach(([row, k]) => {
+                const d = sbdEnsure(row, k);
+                d.bg = color;
+                const z = SBD.zones[sbdZK(row.id, k)];
+                if (z) z.board.style.background = color;
+                if (d.ink && z) sbdUpdateVariant(row, k);
+            });
+            sbdScheduleTable();
+            sbdSyncBgUI();
+            pushHistory('Фон кадра');
+        }
+        function sbdApplyBgToAll() {
+            const row = sbdRow(SBD.activeRow);
+            if (!row) return;
+            sbdSetBg(sbdEnsure(row).bg, true);
+            notify('Фон применён ко всем кадрам');
+        }
+        function sbdSyncBgUI() {
+            const row = SBD.activeRow != null ? sbdRow(SBD.activeRow) : null;
+            const bg = row ? sbdEnsure(row).bg : '#ffffff';
+            const cur = sbdEl('sbdBgCur');
+            if (cur) cur.style.background = bg;
+            const f = sbdEl('sbdBgFor');
+            if (f) f.textContent = row ? 'КАДР ' + sbdPad(row.num) : '';
+            const inp = sbdEl('sbdBgColor');
+            if (inp && /^#[0-9a-f]{6}$/i.test(bg)) inp.value = bg;
+            const hx = sbdEl('sbdBgHex');
+            if (hx && document.activeElement !== hx) hx.value = String(bg).toLowerCase();
+            document.querySelectorAll('#sbdBgPresets .sbd-sw').forEach(b => b.classList.toggle('sel', b.dataset.c.toLowerCase() === String(bg).toLowerCase()));
+        }
+
+        // ---------- цвета ----------
+        function sbdSetColor(hex) {
+            if (!/^#[0-9a-f]{6}$/i.test(hex)) return;
+            SBD.color = hex.toLowerCase();
+            sbdEl('sbdColor').value = SBD.color;
+            sbdEl('sbdHex').value = SBD.color;
+            document.querySelectorAll('#sbdBase .sbd-sw, #sbdRecent .sbd-sw').forEach(b => b.classList.toggle('sel', b.dataset.c === SBD.color));
+            try { localStorage.setItem('noemDrawColor', SBD.color); } catch (e) { }
+        }
+        function sbdRecentColor(c) {
+            c = String(c).toLowerCase();
+            APP.drawRecent = [c].concat((APP.drawRecent || []).filter(x => x !== c)).slice(0, 14);
+            try { localStorage.setItem('noemDrawRecent', JSON.stringify(APP.drawRecent)); } catch (e) { }
+            sbdRenderRecent();
+        }
+        function sbdMakeSwatch(color, title, onClick) {
+            const b = document.createElement('button');
+            b.className = 'sbd-sw'; b.style.background = color; b.dataset.c = color; b.title = title || color;
+            b.onclick = onClick;
+            return b;
+        }
+        function sbdRenderRecent() {
+            const box = sbdEl('sbdRecent');
+            if (!box) return;
+            box.innerHTML = '';
+            const list = APP.drawRecent || [];
+            if (!list.length) {
+                const s = document.createElement('span'); s.className = 'sbd-lbl'; s.textContent = 'появятся после рисования';
+                box.appendChild(s);
+                return;
+            }
+            list.forEach(c => { const b = sbdMakeSwatch(c, c, () => sbdSetColor(c)); if (c === SBD.color) b.classList.add('sel'); box.appendChild(b); });
+        }
+
+        // ---------- инструменты и ползунки ----------
+        function sbdSliderToSize(v) { return Math.round(1 + 249 * Math.pow(v / 100, 2)); }
+        function sbdSizeToSlider(s) { return Math.round(Math.sqrt(Math.max(0, (s - 1) / 249)) * 100); }
+        function sbdSyncSliders() {
+            const c = SBD.cfg[SBD.tool];
+            ['sbdSlSize', 'sbdSlAlpha', 'sbdSlSoft', 'sbdPressSize', 'sbdPressAlpha'].forEach(id => sbdEl(id).classList.toggle('off', !c));
+            if (!c) return;
+            sbdEl('sbdSize').value = sbdSizeToSlider(c.size); sbdEl('sbdSizeV').textContent = c.size;
+            sbdEl('sbdAlpha').value = c.alpha; sbdEl('sbdAlphaV').textContent = c.alpha + '%';
+            sbdEl('sbdSoft').value = c.soft; sbdEl('sbdSoftV').textContent = c.soft + '%';
+        }
+        function sbdSetTool(id) {
+            if (!sbdToolDef(id)) return;
+            if (id !== 'transform') sbdTfCommit();
+            SBD.tool = id;
+            document.querySelectorAll('#sbdTools .sbd-tool').forEach(b => b.classList.toggle('sel', b.dataset.tool === id));
+            const vp = sbdEl('sbdViewport');
+            if (vp) vp.classList.toggle('tool-hand', id === 'hand');
+            sbdSyncSliders();
+            sbdEl('sbdCursor').style.display = 'none';
+        }
+
+        // ---------- ввод (указатель) ----------
+        function sbdPtrDown(e) {
+            if (e.target && e.target.closest && e.target.closest('.sbd-add')) return;
+            const vp = sbdEl('sbdViewport');
+            SBD.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            try { vp.setPointerCapture(e.pointerId); } catch (err) { }
+            const ae = document.activeElement;
+            if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
+            if (e.pointerType === 'mouse' && e.button === 1) { e.preventDefault(); sbdStartPan(e); return; }
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            if (e.pointerType === 'touch' && SBD.ptrs.size >= 2) { sbdCancelStroke(); SBD.pan = null; sbdStartPinch(); return; }
+            const board = e.target.closest ? e.target.closest('.sbd-board') : null;
+            const hh = e.target && e.target.dataset && e.target.dataset.h;
+            if (hh && SBD.tf && APP.mode === 'editor') { e.preventDefault(); sbdTfHandleDown(e, hh); return; }
+            if (board && APP.mode === 'editor' && /^(select|transform)$/.test(SBD.tool)) { e.preventDefault(); sbdToolDown(e, board); return; }
+            if (board && APP.mode === 'editor' && SBD.tool !== 'hand') { e.preventDefault(); sbdStartStroke(e, board); return; }
+            if (board) sbdSetActive(+board.parentElement.dataset.rowid, +board.parentElement.dataset.k || 0);
+            else {
+                const zoneEl = e.target && e.target.closest ? e.target.closest('.sbd-zone') : null;
+                if (zoneEl) sbdSetActive(+zoneEl.dataset.rowid, +zoneEl.dataset.k || 0);
+            }
+            sbdStartPan(e);
+        }
+        function sbdStartPan(e) {
+            SBD.pan = { pid: e.pointerId, sx: e.clientX, sy: e.clientY, ox: APP.sbdOffsetX, oy: APP.sbdOffsetY };
+            sbdEl('sbdViewport').classList.add('panning');
+        }
+        function sbdStartPinch() {
+            const pts = Array.from(SBD.ptrs.values());
+            if (pts.length < 2) return;
+            const a = pts[0], b = pts[1];
+            SBD.pinch = {
+                dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+                zoom: APP.sbdZoom, ox: APP.sbdOffsetX, oy: APP.sbdOffsetY
+            };
+        }
+        function sbdUpdateCursor(e, forced) {
+            const cur = sbdEl('sbdCursor'), stage = sbdEl('sbdStage');
+            const c = SBD.cfg[SBD.tool];
+            const board = forced || ((e.target && e.target.closest) ? e.target.closest('.sbd-board') : null);
+            if (!c || !board || e.pointerType === 'touch' || APP.mode !== 'editor') { cur.style.display = 'none'; return; }
+            const r = board.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+            const st = SBD.stroke;
+            const kk = st && st.psz ? (0.12 + 0.88 * st.pr) : 1;
+            const px = Math.max(4, c.size * kk * r.width / SBD_PX);
+            cur.style.width = px + 'px'; cur.style.height = px + 'px';
+            cur.style.left = (e.clientX - sr.left) + 'px'; cur.style.top = (e.clientY - sr.top) + 'px';
+            cur.style.display = 'block';
+        }
+        function sbdPtrMove(e) {
+            if (SBD.ptrs.has(e.pointerId)) SBD.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (SBD.pinch && SBD.ptrs.size >= 2) {
+                const pts = Array.from(SBD.ptrs.values()), a = pts[0], b = pts[1], p = SBD.pinch;
+                const dist = Math.hypot(a.x - b.x, a.y - b.y), m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+                const nz = sbdClamp(p.zoom * dist / p.dist, 0.15, 4);
+                const vp = sbdEl('sbdViewport'), r = vp.getBoundingClientRect();
+                const lx = p.mid.x - r.left, ly = p.mid.y - r.top, ratio = nz / p.zoom;
+                APP.sbdZoom = nz;
+                APP.sbdOffsetX = lx - (lx - p.ox) * ratio + (m.x - p.mid.x);
+                APP.sbdOffsetY = ly - (ly - p.oy) * ratio + (m.y - p.mid.y);
+                APP.sbdUserView = true;
+                sbdApplyTransform();
+                e.preventDefault();
+                return;
+            }
+            if (SBD.drag && e.pointerId === SBD.drag.pid) { SBD.drag.move(e); e.preventDefault(); return; }
+            if (SBD.stroke && e.pointerId === SBD.stroke.pid) { sbdMoveStroke(e); sbdUpdateCursor(e, SBD.stroke.board); e.preventDefault(); return; }
+            if (SBD.pan && e.pointerId === SBD.pan.pid) {
+                APP.sbdOffsetX = SBD.pan.ox + (e.clientX - SBD.pan.sx);
+                APP.sbdOffsetY = SBD.pan.oy + (e.clientY - SBD.pan.sy);
+                APP.sbdUserView = true;
+                sbdApplyTransform();
+                return;
+            }
+            sbdUpdateCursor(e);
+        }
+        function sbdPtrUp(e) {
+            SBD.ptrs.delete(e.pointerId);
+            if (SBD.drag && e.pointerId === SBD.drag.pid) { const dr = SBD.drag; SBD.drag = null; if (e.type !== 'pointercancel') dr.end(e); }
+            if (SBD.stroke && e.pointerId === SBD.stroke.pid) {
+                if (e.type === 'pointercancel') sbdCancelStroke(); else sbdEndStroke();
+            }
+            if (SBD.pan && e.pointerId === SBD.pan.pid) { SBD.pan = null; sbdEl('sbdViewport').classList.remove('panning'); if (typeof scheduleAutosave === 'function') scheduleAutosave(); }
+            if (SBD.ptrs.size < 2) SBD.pinch = null;
+        }
+        function sbdInitViewport() {
+            const vp = sbdEl('sbdViewport');
+            vp.addEventListener('mouseenter', () => { window.__sbdHover = true; });
+            vp.addEventListener('mouseleave', () => { window.__sbdHover = false; sbdEl('sbdCursor').style.display = 'none'; });
+            vp.addEventListener('contextmenu', e => e.preventDefault());
+            vp.addEventListener('wheel', e => {
+                e.preventDefault();
+                const r = vp.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+                const nz = sbdClamp(APP.sbdZoom + (e.deltaY > 0 ? -0.08 : 0.08), 0.15, 4);
+                APP.sbdOffsetX = mx - (mx - APP.sbdOffsetX) * (nz / APP.sbdZoom);
+                APP.sbdOffsetY = my - (my - APP.sbdOffsetY) * (nz / APP.sbdZoom);
+                APP.sbdZoom = nz; APP.sbdUserView = true;
+                sbdApplyTransform();
+            }, { passive: false });
+            vp.addEventListener('pointerdown', sbdPtrDown);
+            vp.addEventListener('pointermove', sbdPtrMove);
+            vp.addEventListener('pointerup', sbdPtrUp);
+            vp.addEventListener('pointercancel', sbdPtrUp);
+            vp.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') sbdEl('sbdCursor').style.display = 'none'; });
+        }
+
+        // ---------- v3.9.1: выделение, перемещение, трансформирование ----------
+        function sbdLP(e, board) { return sbdPoint(e, board.getBoundingClientRect()); }
+        function sbdSelShow() {
+            Object.keys(SBD.zones).forEach(key => { SBD.zones[key].sel.style.display = 'none'; });
+            const s = SBD.sel;
+            if (!s) return;
+            const z = SBD.zones[sbdZK(s.rowId, s.k)];
+            if (!z) return;
+            Object.assign(z.sel.style, { display: 'block', left: (10 + s.x / 2) + 'px', top: (26 + s.y / 2) + 'px', width: (s.w / 2) + 'px', height: (s.h / 2) + 'px' });
+        }
+        function sbdBBox(c) {
+            const W = c.width, H = c.height, u = new Uint32Array(c.getContext('2d').getImageData(0, 0, W, H).data.buffer);
+            let x0 = W, y0 = H, x1 = -1, y1 = -1;
+            for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (u[y * W + x] >>> 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            return x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+        }
+        // поднимает выделенную область (или всю область слоя / содержимое слоя) в «плавающий» холст
+        function sbdLift(row, k, z, layer, useBBox) {
+            const lc = z.layers[layer.id];
+            if (!lc) return null;
+            let r = (SBD.sel && SBD.sel.rowId === row.id && SBD.sel.k === k) ? SBD.sel : null;
+            if (!r) r = useBBox ? sbdBBox(lc) : { x: 0, y: 0, w: SBD_PX, h: SBD_PY };
+            if (!r) { notify('Слой пуст — нечего трансформировать'); return null; }
+            r = { x: Math.round(r.x), y: Math.round(r.y), w: Math.max(1, Math.round(r.w)), h: Math.max(1, Math.round(r.h)) };
+            const src = document.createElement('canvas'); src.width = r.w; src.height = r.h;
+            src.getContext('2d').drawImage(lc, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+            const base = document.createElement('canvas'); base.width = SBD_PX; base.height = SBD_PY;
+            const bg = base.getContext('2d'); bg.drawImage(lc, 0, 0); bg.clearRect(r.x, r.y, r.w, r.h);
+            return { row, k, z, layer, lc, r, src, base, dx: 0, dy: 0 };
+        }
+        function sbdToolDown(e, board) {
+            const zoneEl = board.parentElement, rowId = +zoneEl.dataset.rowid, k = +zoneEl.dataset.k || 0;
+            const row = sbdRow(rowId);
+            if (!row) return;
+            const tool = SBD.tool, p = sbdLP(e, board);
+            if (SBD.tf) {
+                if (SBD.tf.row === row && SBD.tf.k === k && sbdTfInside(p)) { sbdTfDragMove(e, board, p); return; }
+                sbdTfCommit();
+            }
+            sbdSetActive(rowId, k);
+            const z = SBD.zones[sbdZK(rowId, k)], d = sbdEnsure(row, k);
+            const layer = d.layers.find(l => l.id === d.active);
+            if (!layer || !z) return;
+            if (!layer.visible) { notify('Слой скрыт — включите глазок слоя'); return; }
+            if (tool === 'select') {
+                const x0 = sbdClamp(p.x, 0, SBD_PX), y0 = sbdClamp(p.y, 0, SBD_PY);
+                SBD.sel = null; sbdSelShow();
+                SBD.drag = {
+                    pid: e.pointerId,
+                    move: ev => {
+                        const q = sbdLP(ev, board), x1 = sbdClamp(q.x, 0, SBD_PX), y1 = sbdClamp(q.y, 0, SBD_PY);
+                        SBD.sel = { rowId, k, x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
+                        sbdSelShow();
+                    },
+                    end: () => { if (SBD.sel && (SBD.sel.w < 3 || SBD.sel.h < 3)) SBD.sel = null; sbdSelShow(); }
+                };
+            } else if (tool === 'transform') {
+                sbdTfStart(row, k, z, layer, board);
+                if (SBD.tf) sbdTfDragMove(e, board, p);
+            }
+        }
+        function sbdFloatDraw(f) {
+            const g = f.lc.getContext('2d');
+            g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+            g.clearRect(0, 0, SBD_PX, SBD_PY);
+            g.drawImage(f.base, 0, 0);
+            g.drawImage(f.src, f.r.x + f.dx, f.r.y + f.dy);
+        }
+        function sbdTfStart(row, k, z, layer, board) {
+            const f = sbdLift(row, k, z, layer, true);
+            if (!f) return;
+            SBD.tf = Object.assign(f, { board, cx: f.r.x + f.r.w / 2, cy: f.r.y + f.r.h / 2, sx: 1, sy: 1, th: 0, w: f.r.w, h: f.r.h, ox: f.r.x + f.r.w / 2, oy: f.r.y + f.r.h / 2 });
+            sbdEl('sbdTfBar').style.display = 'flex';
+            sbdTfDraw();
+        }
+        function sbdTfRender() {
+            const t = SBD.tf, g = t.lc.getContext('2d');
+            g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+            g.setTransform(1, 0, 0, 1, 0, 0);
+            g.clearRect(0, 0, SBD_PX, SBD_PY);
+            g.drawImage(t.base, 0, 0);
+            g.save(); g.translate(t.cx, t.cy); g.rotate(t.th); g.scale(t.sx, t.sy);
+            g.drawImage(t.src, -t.w / 2, -t.h / 2);
+            g.restore();
+        }
+        function sbdTfDraw() {
+            const t = SBD.tf;
+            if (!t) return;
+            const el = t.z.tfEl;
+            if (!el.firstChild) {
+                const box = document.createElement('div'); box.className = 'sbd-tfbox';
+                [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1], 'rot'].forEach(h => {
+                    const d = document.createElement('div'); d.className = 'sbd-tfh';
+                    if (h === 'rot') { d.dataset.h = 'rot'; d.style.left = '50%'; d.style.top = 'calc(-26px * var(--inv, 1))'; }
+                    else { d.dataset.h = h.join(','); d.style.left = (h[0] + 1) * 50 + '%'; d.style.top = (h[1] + 1) * 50 + '%'; }
+                    box.appendChild(d);
+                });
+                el.appendChild(box);
+            }
+            const b = el.firstChild;
+            Object.assign(b.style, { left: t.cx / 2 + 'px', top: t.cy / 2 + 'px', width: Math.abs(t.w * t.sx) / 2 + 'px', height: Math.abs(t.h * t.sy) / 2 + 'px',
+                transform: 'translate(-50%,-50%) rotate(' + t.th + 'rad)' });
+        }
+        function sbdTfInside(p) {
+            const t = SBD.tf, c = Math.cos(-t.th), s = Math.sin(-t.th), dx = p.x - t.cx, dy = p.y - t.cy;
+            return Math.abs(dx * c - dy * s) <= Math.abs(t.w * t.sx) / 2 && Math.abs(dx * s + dy * c) <= Math.abs(t.h * t.sy) / 2;
+        }
+        function sbdTfDragMove(e, board, p) {
+            const t = SBD.tf, cx0 = t.cx, cy0 = t.cy;
+            SBD.drag = { pid: e.pointerId, move: ev => { const q = sbdLP(ev, board); t.cx = cx0 + q.x - p.x; t.cy = cy0 + q.y - p.y; sbdTfRender(); sbdTfDraw(); }, end: () => { } };
+        }
+        function sbdTfHandleDown(e, h) {
+            const t = SBD.tf, board = t.board;
+            if (h === 'rot') {
+                SBD.drag = { pid: e.pointerId, end: () => { }, move: ev => {
+                    const q = sbdLP(ev, board);
+                    let th = Math.atan2(q.y - t.cy, q.x - t.cx) + Math.PI / 2;
+                    if (ev.shiftKey) th = Math.round(th / (Math.PI / 12)) * (Math.PI / 12);
+                    t.th = th; sbdTfRender(); sbdTfDraw();
+                } };
+                return;
+            }
+            const [hx, hy] = h.split(',').map(Number);
+            SBD.drag = { pid: e.pointerId, end: () => { }, move: ev => {
+                const q = sbdLP(ev, board), c = Math.cos(t.th), s = Math.sin(t.th);
+                const W = Math.abs(t.w * t.sx), H = Math.abs(t.h * t.sy);
+                const ax = -hx * W / 2, ay = -hy * H / 2;
+                const wax = t.cx + ax * c - ay * s, way = t.cy + ax * s + ay * c;
+                const vx = (q.x - wax) * c + (q.y - way) * s, vy = -(q.x - wax) * s + (q.y - way) * c;
+                let nW = hx ? Math.max(4, vx * hx) : W, nH = hy ? Math.max(4, vy * hy) : H;
+                if (ev.shiftKey && hx && hy) { const r = Math.max(nW / W, nH / H); nW = W * r; nH = H * r; }
+                const bx = -hx * nW / 2, by = -hy * nH / 2;
+                t.cx = wax - (bx * c - by * s); t.cy = way - (bx * s + by * c);
+                t.sx = (t.sx < 0 ? -1 : 1) * nW / t.w; t.sy = (t.sy < 0 ? -1 : 1) * nH / t.h;
+                sbdTfRender(); sbdTfDraw();
+            } };
+        }
+        function sbdTfEnd() {
+            const t = SBD.tf;
+            SBD.tf = null;
+            if (t) t.z.tfEl.innerHTML = '';
+            const bar = sbdEl('sbdTfBar'); if (bar) bar.style.display = 'none';
+            return t;
+        }
+        function sbdTfCancel() {
+            const t = SBD.tf;
+            if (!t) return;
+            t.cx = t.ox; t.cy = t.oy; t.sx = 1; t.sy = 1; t.th = 0;
+            sbdTfRender();
+            sbdTfEnd();
+        }
+        function sbdTfCommit() {
+            const t = SBD.tf;
+            if (!t) return;
+            const changed = t.cx !== t.ox || t.cy !== t.oy || t.sx !== 1 || t.sy !== 1 || t.th !== 0;
+            const row = t.row, d = sbdEnsure(row, t.k);
+            sbdTfEnd();
+            if (!changed || !d.layers.some(l => l.id === t.layer.id)) { SBD.sel = null; sbdSelShow(); return; }
+            const c = Math.cos(t.th), s = Math.sin(t.th), hw = Math.abs(t.w * t.sx) / 2, hh = Math.abs(t.h * t.sy) / 2;
+            const xs = [], ys = [];
+            [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b]) => { xs.push(t.cx + a * hw * c - b * hh * s); ys.push(t.cy + a * hw * s + b * hh * c); });
+            const x0 = sbdClamp(Math.min(...xs), 0, SBD_PX), y0 = sbdClamp(Math.min(...ys), 0, SBD_PY), x1 = sbdClamp(Math.max(...xs), 0, SBD_PX), y1 = sbdClamp(Math.max(...ys), 0, SBD_PY);
+            SBD.sel = null; sbdSelShow(); // выделение (S) сбрасывается после применения трансформирования
+            sbdCommit(row, t.layer.id, t.lc, { k: t.k, ink: true, label: 'Трансформирование' });
+        }
+
+        // ---------- v3.9: картинки перетаскиванием -> новый слой кадра ----------
+        async function sbdDropImages(files, urls, board) {
+            if (APP.mode !== 'editor') return;
+            const rowId = board ? +board.parentElement.dataset.rowid : SBD.activeRow;
+            const kk = board ? (+board.parentElement.dataset.k || 0) : SBD.activeK;
+            const row = sbdRow(rowId);
+            if (!row || !sbdIsFrame(row)) { notify('Нет кадра для картинки'); return; }
+            sbdSetActive(rowId, kk);
+            const list = [];
+            for (const f of files) { try { list.push({ url: await fileToDataURL(f), name: f.name }); } catch (err) { } }
+            urls.forEach(u => list.push(u));
+            for (const it of list) {
+                const d = sbdEnsure(row, kk), z = SBD.zones[sbdZK(row.id, kk)];
+                if (!z) return;
+                if (d.layers.length >= SBD_MAX_LAYERS) { notify('Максимум слоёв в кадре: ' + SBD_MAX_LAYERS); break; }
+                let img;
+                try { img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = it.url; }); } catch (err) { continue; }
+                const id = d.nextLayerId++;
+                const idx = d.layers.findIndex(l => l.id === d.active);
+                d.layers.splice(idx + 1, 0, { id, name: String(it.name || 'Картинка').replace(/\.[^.]+$/, '').slice(0, 32) || 'Картинка', visible: true, opacity: 1, data: null });
+                d.active = id;
+                sbdSyncZone(row, kk, z);
+                const lc = z.layers[id];
+                const s = Math.min(SBD_PX / img.width, SBD_PY / img.height), w = img.width * s, h = img.height * s;
+                lc.getContext('2d').drawImage(img, (SBD_PX - w) / 2, (SBD_PY - h) / 2, w, h);
+                sbdCommit(row, id, lc, { k: kk, ink: true, label: 'Картинка в слой' });
+                sbdRenderLayers();
+            }
+        }
+        function sbdInitDropAndLayersDrag() {
+            const vp = sbdEl('sbdViewport');
+            vp.addEventListener('dragover', e => { if (APP.mode === 'editor') { e.preventDefault(); try { e.dataTransfer.dropEffect = 'copy'; } catch (err) { } } });
+            vp.addEventListener('drop', e => {
+                if (APP.mode !== 'editor') return;
+                e.preventDefault(); e.stopPropagation();
+                const dt = e.dataTransfer;
+                const files = Array.from(dt.files || []).filter(f => f.type && f.type.startsWith('image/'));
+                const t = dt.getData('text/plain') || '';
+                const urls = (!files.length && /^data:image\//.test(t)) ? [{ url: t, name: 'Картинка' }] : [];
+                if (!files.length && !urls.length) return;
+                const el = document.elementFromPoint(e.clientX, e.clientY);
+                const zone = el && el.closest ? el.closest('.sbd-zone') : null;
+                sbdDropImages(files, urls, zone ? zone.querySelector('.sbd-board') : null);
+            });
+            // перетаскиваемое окно слоёв
+            const box = sbdEl('sbdLayers'), head = box.querySelector('.sbd-layers-head'), stage = sbdEl('sbdStage');
+            let drag = null;
+            head.addEventListener('pointerdown', e => {
+                if (e.target.closest('button')) return;
+                const r = box.getBoundingClientRect();
+                drag = { id: e.pointerId, x: e.clientX, y: e.clientY, l: r.left, t: r.top, s: (r.width / 184) || 1 };
+                try { head.setPointerCapture(e.pointerId); } catch (err) { }
+                e.preventDefault();
+            });
+            head.addEventListener('pointermove', e => {
+                if (!drag || e.pointerId !== drag.id) return;
+                const sr = stage.getBoundingClientRect(), r = box.getBoundingClientRect();
+                const nl = sbdClamp(drag.l + e.clientX - drag.x - sr.left, 0, Math.max(0, sr.width - r.width));
+                const nt = sbdClamp(drag.t + e.clientY - drag.y - sr.top, 0, Math.max(0, sr.height - r.height));
+                box.style.right = 'auto';
+                box.style.left = (nl / drag.s) + 'px';
+                box.style.top = (nt / drag.s) + 'px';
+            });
+            const end = () => { drag = null; sbdClampLayers(); };
+            head.addEventListener('pointerup', end);
+            head.addEventListener('pointercancel', end);
+        }
+
+        (function () { const _utb = updateTableBody; updateTableBody = function () { const r = _utb.apply(this, arguments); try { sbdSync(); } catch (err) { } return r; }; })();
+
+        // ---------- сборка интерфейса ----------
+        function sbdInit() {
+            if (!sbdEl('sbdWrap')) return;
+            const tools = sbdEl('sbdTools');
+            SBD_TOOLS.forEach(t => {
+                const b = document.createElement('button');
+                b.className = 'sbd-tool'; b.dataset.tool = t.id; b.innerHTML = t.ico; b.title = t.name;
+                b.onclick = () => sbdSetTool(t.id);
+                tools.appendChild(b);
+            });
+            const base = sbdEl('sbdBase');
+            SBD_BASE_COLORS.forEach(c => base.appendChild(sbdMakeSwatch(c, c, () => sbdSetColor(c))));
+            const bgp = sbdEl('sbdBgPresets');
+            SBD_BG_PRESETS.forEach(([n, c]) => bgp.appendChild(sbdMakeSwatch(c, n, () => sbdSetBg(c, false))));
+            sbdEl('sbdBgColor').addEventListener('input', e => sbdSetBg(e.target.value, false));
+            sbdEl('sbdBgHex').addEventListener('change', e => {
+                let v = e.target.value.trim();
+                if (v && v[0] !== '#') v = '#' + v;
+                if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+                if (/^#[0-9a-f]{6}$/i.test(v)) sbdSetBg(v.toLowerCase(), false); else sbdSyncBgUI();
+            });
+            sbdEl('sbdColor').addEventListener('input', e => sbdSetColor(e.target.value));
+            sbdEl('sbdHex').addEventListener('change', e => {
+                let v = e.target.value.trim();
+                if (v && v[0] !== '#') v = '#' + v;
+                if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+                if (/^#[0-9a-f]{6}$/i.test(v)) sbdSetColor(v); else e.target.value = SBD.color;
+            });
+            const bind = (id, key, fmt, conv) => {
+                const el = sbdEl(id);
+                el.addEventListener('input', () => {
+                    const c = SBD.cfg[SBD.tool]; if (!c) return;
+                    c[key] = conv ? conv(+el.value) : +el.value;
+                    sbdEl(id + 'V').textContent = fmt(c[key]);
+                });
+                ['change', 'pointerup'].forEach(ev => el.addEventListener(ev, () => el.blur()));
+            };
+            bind('sbdSize', 'size', v => v, sbdSliderToSize);
+            bind('sbdAlpha', 'alpha', v => v + '%');
+            bind('sbdSoft', 'soft', v => v + '%');
+            try {
+                const r = JSON.parse(localStorage.getItem('noemDrawRecent') || '[]');
+                if (Array.isArray(r)) APP.drawRecent = r.filter(c => /^#[0-9a-f]{6}$/i.test(c)).slice(0, 14);
+                const col = localStorage.getItem('noemDrawColor');
+                if (col && /^#[0-9a-f]{6}$/i.test(col)) SBD.color = col;
+            } catch (e) { }
+            try { const pp = JSON.parse(localStorage.getItem('noemDrawPress') || '{}'); SBD.pressSize = !!pp.s; SBD.pressAlpha = !!pp.a; } catch (e) { }
+            const syncPress = () => {
+                sbdEl('sbdPressSize').classList.toggle('on', !!SBD.pressSize);
+                sbdEl('sbdPressAlpha').classList.toggle('on', !!SBD.pressAlpha);
+                try { localStorage.setItem('noemDrawPress', JSON.stringify({ s: !!SBD.pressSize, a: !!SBD.pressAlpha })); } catch (e) { }
+            };
+            sbdEl('sbdPressSize').onclick = () => { SBD.pressSize = !SBD.pressSize; syncPress(); };
+            sbdEl('sbdPressAlpha').onclick = () => { SBD.pressAlpha = !SBD.pressAlpha; syncPress(); };
+            syncPress();
+            sbdInitDropAndLayersDrag();
+            sbdInitViewport();
+            try { new ResizeObserver(() => sbdClampLayers()).observe(sbdEl('sbdStage')); } catch (e) { }
+            window.addEventListener('resize', sbdClampLayers);
+            sbdSetColor(SBD.color);
+            sbdRenderRecent();
+            sbdSetTool('brush');
+            setP3View(APP.p3View, true);
+            window.addEventListener('keydown', e => {
+                if (APP.p3View !== 'storyboard' || !window.__sbdHover || e.ctrlKey || e.metaKey || e.altKey) return;
+                const ae = document.activeElement;
+                if (ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable)) return;
+                if (e.code === 'Enter' && SBD.tf) { sbdTfCommit(); e.preventDefault(); return; }
+                if (e.code === 'Escape') { if (SBD.tf) sbdTfCancel(); else { SBD.sel = null; sbdSelShow(); } return; }
+                const map = { KeyP: 'pencil', KeyN: 'pen', KeyB: 'brush', KeyA: 'air', KeyM: 'marker', KeyE: 'eraser', KeyG: 'fill', KeyI: 'picker', KeyH: 'hand', KeyS: 'select', KeyT: 'transform' };
+                if (map[e.code]) { sbdSetTool(map[e.code]); e.preventDefault(); return; }
+                if (e.code === 'BracketLeft' || e.code === 'BracketRight') {
+                    const c = SBD.cfg[SBD.tool]; if (!c) return;
+                    c.size = sbdClamp(Math.round(c.size * (e.code === 'BracketRight' ? 1.18 : 0.85)) + (e.code === 'BracketRight' ? 1 : -0), 1, 250);
+                    sbdSyncSliders(); e.preventDefault();
+                }
+            });
+        }
+
     </script>
 
     <script>
