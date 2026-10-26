@@ -10,6 +10,7 @@
     <!-- Noem.ocean v3.9.1 (внутрикадровые кадры «+», переключатель показа кадров из таблицы, выделение/перемещение/трансформирование) -->
     <!-- Noem.ocean v3.9 (перетаскиваемое окно слоёв; drag&drop картинок в слой кадра; курсор кисти следует за линией; нажатие пера для размера/непрозрачности; заливка только по выбранному слою) -->
     <!-- Noem.ocean v3.8 (Раскадровочный блок: рисование кадров со слоями, кистями, цветами и фоном; рисунок добавляется в таблицу вариантом «Р») -->
+    <!-- Noem.ocean v3.9.5 (Android: on/off switch for finger drawing in the storyboard toolbar — when off only the stylus draws) -->
     <!-- Noem.ocean v3.9.4 (Android: two-finger tap = undo, three-finger tap = redo, compact one-row header of the storyboard/noetic block; layer opacity slider fits its card; new import-script icon and label) -->
     <!-- Noem.ocean v3.9.3 (select frame by clicking its translucent frame, no tint on noetic photos, 16:9 noetic frame zones, default draw colour #5b50c8, Move tool removed, new SVG tool icons, bg hex field, layers panel kept inside block) -->
     <!-- Noem.ocean v3.7 (timecode box no longer stretched by textarea resync, opaque hover on variant squares; v3.6: flicker-free table rebuild, opaque selected variant square in light theme, tidy placeholder, timecode box fix; v3.5: fold dashed line in light theme, light storyboard controls in light theme, sub-second format "00:01 и 0,5 сек", whole-second intra-frame split) -->
@@ -1910,6 +1911,14 @@
         .sbd-lopacity { flex-basis: 100%; display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; }
         .sbd-lopacity input { flex: 1; min-width: 0; accent-color: var(--accent); }
         .sbd-layers-actions { display: flex; gap: 4px; padding-top: 2px; }
+        /* ===== v3.9.5 ===== */
+        .sbd-android-only { display: none; }
+        body.android-device .sbd-android-only { display: flex; }
+        .sbd-fsw { position: relative; width: 38px; height: 20px; padding: 0; flex: none; cursor: pointer; border-radius: 10px;
+            background: var(--panel-bg3); border: 1px solid var(--border); }
+        .sbd-fsw .sbd-fknob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; }
+        .sbd-fsw.on { border-color: var(--accent); }
+        .sbd-fsw.on .sbd-fknob { transform: translateX(18px); background: var(--accent); }
         /* ===== v3.9.4 ===== */
         .panel-header button.btn-ico { display: inline-flex; align-items: center; gap: 5px; }
         .panel-header button.btn-ico svg { display: block; flex: none; }
@@ -2131,7 +2140,7 @@
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
         <div id="appVersionLabel">
-            <span class="sp-version">Noem.ocean v3.9.4</span>
+            <span class="sp-version">Noem.ocean v3.9.5</span>
             <span class="sp-dev">Разработчик Noem.ocean - Александр Тумали</span>
         </div>
     </div>
@@ -2366,6 +2375,7 @@
             <div class="sbd-wrap" id="sbdWrap">
                 <div class="sbd-toolbar" id="sbdToolbar">
                     <div class="sbd-row" id="sbdTools"></div>
+                    <div class="sbd-row sbd-android-only"><span class="sbd-lbl">РИСОВАНИЕ ПАЛЬЦАМИ</span><button type="button" class="sbd-fsw on" id="sbdFingerSw" title="Выкл — рисовать можно только стилусом; пальцами только двигать и масштабировать поле"><span class="sbd-fknob"></span></button></div>
                      <div class="sbd-row" id="sbdTfBar" style="display:none;"><span class="sbd-lbl">ТРАНСФОРМИРОВАНИЕ</span><button class="sbd-btn" onclick="sbdTfCommit()">✓ Применить (Enter)</button><button class="sbd-btn" onclick="sbdTfCancel()">✕ Отмена (Esc)</button></div>
                     <div class="sbd-row">
                         <label class="sbd-sl" id="sbdSlSize">Размер <input type="range" id="sbdSize" min="0" max="100" step="1" /><b id="sbdSizeV"></b></label>
@@ -10855,6 +10865,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
 
         // ---------- ввод (указатель) ----------
         function sbdPtrDown(e) {
+            // Android: пальцы выключены — касания не рисуют; пока работает стилус, касания (ладонь) игнорируются совсем
+            if (e.pointerType === 'touch' && SBD.fingerOff) {
+                if (SBD.stroke || SBD.drag) return;
+            }
             if (e.target && e.target.closest && e.target.closest('.sbd-add')) return;
             const vp = sbdEl('sbdViewport');
             SBD.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -10866,6 +10880,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (e.pointerType === 'touch' && SBD.ptrs.size >= 2) { sbdCancelStroke(); SBD.pan = null; sbdStartPinch(); return; }
             const board = e.target.closest ? e.target.closest('.sbd-board') : null;
             const hh = e.target && e.target.dataset && e.target.dataset.h;
+            if (e.pointerType === 'touch' && SBD.fingerOff) {
+                if (board) sbdSetActive(+board.parentElement.dataset.rowid, +board.parentElement.dataset.k || 0);
+                sbdStartPan(e); return;
+            }
             if (hh && SBD.tf && APP.mode === 'editor') { e.preventDefault(); sbdTfHandleDown(e, hh); return; }
             if (board && APP.mode === 'editor' && /^(select|transform)$/.test(SBD.tool)) { e.preventDefault(); sbdToolDown(e, board); return; }
             if (board && APP.mode === 'editor' && SBD.tool !== 'hand') { e.preventDefault(); sbdStartStroke(e, board); return; }
@@ -11250,6 +11268,17 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             sbdEl('sbdPressSize').onclick = () => { SBD.pressSize = !SBD.pressSize; syncPress(); };
             sbdEl('sbdPressAlpha').onclick = () => { SBD.pressAlpha = !SBD.pressAlpha; syncPress(); };
             syncPress();
+            const fsw = sbdEl('sbdFingerSw');
+            if (fsw) {
+                try { SBD.fingerOff = TOUCH.isAndroid && localStorage.getItem('noemFingerDraw') === '0'; } catch (e) { }
+                const syncF = () => { fsw.classList.toggle('on', !SBD.fingerOff); };
+                fsw.onclick = () => {
+                    SBD.fingerOff = !SBD.fingerOff; syncF();
+                    try { localStorage.setItem('noemFingerDraw', SBD.fingerOff ? '0' : '1'); } catch (e) { }
+                    notify(SBD.fingerOff ? 'Рисование пальцами выключено — только стилус' : 'Рисование пальцами включено');
+                };
+                syncF();
+            }
             sbdInitDropAndLayersDrag();
             sbdInitViewport();
             try { new ResizeObserver(() => sbdClampLayers()).observe(sbdEl('sbdStage')); } catch (e) { }
