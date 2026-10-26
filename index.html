@@ -10,6 +10,7 @@
     <!-- Noem.ocean v3.9.1 (внутрикадровые кадры «+», переключатель показа кадров из таблицы, выделение/перемещение/трансформирование) -->
     <!-- Noem.ocean v3.9 (перетаскиваемое окно слоёв; drag&drop картинок в слой кадра; курсор кисти следует за линией; нажатие пера для размера/непрозрачности; заливка только по выбранному слою) -->
     <!-- Noem.ocean v3.8 (Раскадровочный блок: рисование кадров со слоями, кистями, цветами и фоном; рисунок добавляется в таблицу вариантом «Р») -->
+    <!-- Noem.ocean v3.9.8 (новые внутрикадровые кадры рисуются на своём месте, а не на первом; перестановка кадров в таблице переставляет кадры в раскадровочном блоке) -->
     <!-- Noem.ocean v3.9.7 (надпись «ЦВЕТ» буквами в столбик; убран просвет над шапкой таблицы при прокрутке) -->
     <!-- Noem.ocean v3.9.6 (Color-script: узкая колонка «ЦВЕТ» между «Хрон» и «Раскадровка», цвет кадра полоской, перетаскиваемое окно выбора цвета с пресетами проекта, переключатель наложения цвета на кадры раскадровки и в экспорт) -->
     <!-- Noem.ocean v3.9.5 (Android: on/off switch for finger drawing in the storyboard toolbar — when off only the stylus draws) -->
@@ -2195,7 +2196,7 @@
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
         <div id="appVersionLabel">
-            <span class="sp-version">Noem.ocean v3.9.7</span>
+            <span class="sp-version">Noem.ocean v3.9.8</span>
             <span class="sp-dev">Разработчик Noem.ocean - Александр Тумали</span>
         </div>
     </div>
@@ -6857,7 +6858,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             vars.forEach((_, v) => {
                 const o = document.createElement('div');
                 o.className = v === sel ? 'sel' : '';
-                o.textContent = (v === sel ? '✓ ' : '') + 'Вариант ' + sbVarLabel(row, vars, v);
+                o.textContent = (v === sel ? '✓ ' : '') + 'Вариант ' + sbVarLabel(row, vars, v, slotIdx);
                 o.onclick = (ev) => {
                     ev.stopPropagation();
                     list.remove();
@@ -6940,6 +6941,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         window._sbDragSrcRow = null;
                         if (from === to || from == null) return;
                         const mv = (arr) => { const [m] = arr.splice(from, 1); arr.splice(to, 0, m); };
+                        if (typeof sbdMoveZones === 'function') sbdMoveZones(row, from, to); // v3.9.8: кадры в раскадровочном блоке меняются местами вместе с таблицей
                         mv(row.sbVars);
                         mv(row.sbSel);
                         if (row.sbManual && Array.isArray(row.sbTimes) && row.sbTimes.length === row.sbVars.length) mv(row.sbTimes);
@@ -6965,9 +6967,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 delBtn.title = vars.length > 1 ? 'Удалить выбранный вариант' : 'Удалить изображение';
                 delBtn.style.display = isEd ? 'flex' : 'none';
                 delBtn.onclick = (e) => { e.stopPropagation();
-                    const _drawn = sbdIsDrawnVariant(row, vars[sel]);
+                    const _drawn = sbdIsDrawnVariant(row, vars[sel], i);
                     customConfirm(_drawn ? 'Удалить вариант «Р»? Всё, что нарисовано в этом кадре (все слои и фон), будет удалено.' : (vars.length > 1 ? 'Удалить выбранный вариант изображения?' : 'Удалить изображение?'), 'УДАЛИТЬ', () => {
-                        if (_drawn) sbdDropDrawing(row, vars[sel]);
+                        if (_drawn) sbdDropDrawing(row, vars[sel], i);
                         sbRemoveSelected(row, i);
                         updateTableBody();
                         syncNoeticZones();
@@ -6991,10 +6993,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     for (let v = 0; v < shown; v++) {
                         const sq = document.createElement('button');
                         sq.className = 'sb-var-sq' + (v === sel ? ' sel' : '');
-                        const _isDr = sbdIsDrawnVariant(row, vars[v]);
-                        sq.textContent = sbVarLabel(row, vars, v);
-                        sq.title = _isDr ? 'Рисунок из раскадровочного блока (двойной клик — открыть для рисования)' : 'Вариант ' + sbVarLabel(row, vars, v);
-                        if (_isDr) sq.ondblclick = (ev) => { ev.stopPropagation(); sbdOpenForRow(row, sbdDrawIndex(row, vars[v])); };
+                        const _isDr = sbdIsDrawnVariant(row, vars[v], i);
+                        sq.textContent = sbVarLabel(row, vars, v, i);
+                        sq.title = _isDr ? 'Рисунок из раскадровочного блока (двойной клик — открыть для рисования)' : 'Вариант ' + sbVarLabel(row, vars, v, i);
+                        if (_isDr) sq.ondblclick = (ev) => { ev.stopPropagation(); sbdOpenForRow(row, sbdDrawIndex(row, vars[v], i)); };
                         sq.onclick = (e) => {
                             e.stopPropagation();
                             if (v === sel) return;
@@ -7007,7 +7009,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     if (V >= 4) {
                         const more = document.createElement('button');
                         more.className = 'sb-var-sq' + (sel >= 3 ? ' sel' : '');
-                        more.textContent = (sel >= 3 ? sbVarLabel(row, vars, sel) : '') + '▾';
+                        more.textContent = (sel >= 3 ? sbVarLabel(row, vars, sel, i) : '') + '▾';
                         more.title = 'Другие варианты (всего ' + V + ')';
                         more.onclick = (e) => { e.stopPropagation(); sbOpenVariantMenu(more, row, i); };
                         bar.appendChild(more);
@@ -10435,8 +10437,12 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function sbdZoneCount(row) { return 1 + (Array.isArray(row.drawX) ? row.drawX.length : 0); }
         function sbdHasDraw(row, k) { k = sbdCurK(row, k); return k ? !!(row.drawX && row.drawX[k - 1]) : !!row.draw; }
         function sbdAllDraws(row) { const a = []; if (row.draw) a.push(row.draw); (row.drawX || []).forEach(d => { if (d) a.push(d); }); return a; }
-        function sbdDrawIndex(row, src) {
+        function sbdDrawIndex(row, src, hint) {
             if (!row || !src) return -1;
+            if (hint !== undefined && hint !== null && hint >= 0) { // v3.9.8: одинаковые картинки в разных слотах различаем по номеру слота
+                const hd = hint === 0 ? row.draw : (row.drawX || [])[hint - 1];
+                if (hd && hd.flat === src) return hint;
+            }
             if (row.draw && row.draw.flat === src) return 0;
             const x = row.drawX || [];
             for (let i = 0; i < x.length; i++) if (x[i] && x[i].flat === src) return i + 1;
@@ -10476,16 +10482,20 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
 
         // ---------- вариант «Р» в таблице раскадровки ----------
-        function sbdIsDrawnVariant(row, src) { return sbdDrawIndex(row, src) >= 0; }
-        function sbVarLabel(row, vars, v) {
-            if (sbdIsDrawnVariant(row, vars[v])) return SBD_LETTER;
+        function sbdIsDrawnVariant(row, src, slot) { return sbdDrawIndex(row, src, slot) >= 0; }
+        function sbVarLabel(row, vars, v, slot) {
+            if (sbdIsDrawnVariant(row, vars[v], slot)) return SBD_LETTER;
             let n = 0;
-            for (let i = 0; i <= v; i++) { if (!sbdIsDrawnVariant(row, vars[i])) n++; }
+            for (let i = 0; i <= v; i++) { if (!sbdIsDrawnVariant(row, vars[i], slot)) n++; }
             return String(n);
         }
-        function sbdVariantLoc(row, d) {
+        function sbdVariantLoc(row, d, k) {
             if (!d || !d.flat) return null;
             sbEnsure(row);
+            if (k !== undefined && row.sbVars[k]) { // v3.9.8: сначала ищем в слоте своего кадра (пустые кадры дают одинаковые картинки)
+                const v0 = row.sbVars[k].indexOf(d.flat);
+                if (v0 >= 0) return { slot: k, v: v0 };
+            }
             for (let i = 0; i < row.sbVars.length; i++) {
                 const v = row.sbVars[i].indexOf(d.flat);
                 if (v >= 0) return { slot: i, v };
@@ -10496,7 +10506,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function sbdPutVariant(row, k, flat) {
             sbEnsure(row);
             const d = sbdEnsure(row, k);
-            const loc = sbdVariantLoc(row, d);
+            const loc = sbdVariantLoc(row, d, k);
             if (loc) { row.sbVars[loc.slot][loc.v] = flat; d.flat = flat; return false; }
             if (k < row.sbVars.length) {
                 row.sbVars[k].push(flat);
@@ -10507,8 +10517,29 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             d.flat = flat;
             return true;
         }
-        function sbdDropDrawing(row, src) {
-            const k = sbdDrawIndex(row, src);
+        // v3.9.8: перестановка внутрикадровых кадров (рисунков) вслед за порядком изображений в таблице
+        function sbdMoveZones(row, from, to) {
+            sbdTfCommit();
+            sbEnsure(row);
+            const n = Math.max(row.sbVars.length, sbdZoneCount(row));
+            if (from < 0 || to < 0 || from >= n || to >= n || from === to) return;
+            const arr = [];
+            for (let k = 0; k < n; k++) arr.push((k === 0 ? row.draw : (row.drawX || [])[k - 1]) || {});
+            const [m] = arr.splice(from, 1);
+            arr.splice(to, 0, m);
+            row.draw = arr[0];
+            row.drawX = arr.slice(1);
+            if (SBD.activeRow === row.id) {
+                let a = SBD.activeK || 0;
+                if (a === from) a = to;
+                else if (from < to && a > from && a <= to) a--;
+                else if (from > to && a >= to && a < from) a++;
+                SBD.activeK = a;
+            }
+            SBD.sel = null;
+        }
+        function sbdDropDrawing(row, src, slot) {
+            const k = sbdDrawIndex(row, src, slot);
             if (k < 0) return;
             if (k === 0) row.draw = (row.drawX && row.drawX.length) ? row.drawX.shift() : null;
             else row.drawX.splice(k - 1, 1);
