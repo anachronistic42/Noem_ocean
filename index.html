@@ -10,7 +10,7 @@
     <!-- Noem.ocean v3.9.1 (внутрикадровые кадры «+», переключатель показа кадров из таблицы, выделение/перемещение/трансформирование) -->
     <!-- Noem.ocean v3.9 (перетаскиваемое окно слоёв; drag&drop картинок в слой кадра; курсор кисти следует за линией; нажатие пера для размера/непрозрачности; заливка только по выбранному слою) -->
     <!-- Noem.ocean v3.8 (Раскадровочный блок: рисование кадров со слоями, кистями, цветами и фоном; рисунок добавляется в таблицу вариантом «Р») -->
-    <!-- Noem.ocean v3.9.8 (новые внутрикадровые кадры рисуются на своём месте, а не на первом; перестановка кадров в таблице переставляет кадры в раскадровочном блоке) -->
+    <!-- Noem.ocean v4.0 (пресеты градиентов проекта в color-script) · v3.9.9 (пробел = «Рука» в раскадровочном блоке; дублирование слоёв; Ctrl+C / Ctrl+V для слоёв и картинок; градиенты в color-script) · v3.9.8 (новые внутрикадровые кадры рисуются на своём месте, а не на первом; перестановка кадров в таблице переставляет кадры в раскадровочном блоке) -->
     <!-- Noem.ocean v3.9.7 (надпись «ЦВЕТ» буквами в столбик; убран просвет над шапкой таблицы при прокрутке) -->
     <!-- Noem.ocean v3.9.6 (Color-script: узкая колонка «ЦВЕТ» между «Хрон» и «Раскадровка», цвет кадра полоской, перетаскиваемое окно выбора цвета с пресетами проекта, переключатель наложения цвета на кадры раскадровки и в экспорт) -->
     <!-- Noem.ocean v3.9.5 (Android: on/off switch for finger drawing in the storyboard toolbar — when off only the stylus draws) -->
@@ -439,6 +439,32 @@
         .cs-sw-x { position: absolute; top: -6px; right: -6px; width: 13px; height: 13px; border-radius: 50%; background: var(--accent2); color: #fff;
             font-size: 8px; line-height: 13px; text-align: center; display: none; }
         .cs-sw:hover .cs-sw-x, body.touch-device .cs-sw-x { display: block; }
+
+        /* v3.9.9: градиенты color-script */
+        .cs-chips { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; padding: 3px 4px 1px 2px; }
+        .cs-chip { position: relative; width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; flex: none; box-sizing: border-box; }
+        .cs-chip.empty { background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(128, 128, 128, .4) 4px 5px); cursor: default; }
+        .cs-chip.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .cs-chip .cs-sw-x { display: none; cursor: pointer; }
+        .cs-chip:hover .cs-sw-x, body.touch-device .cs-chip .cs-sw-x { display: block; }
+        .cs-add { width: 24px; height: 24px; flex: none; padding: 0; border-radius: 4px; border: 1px dashed var(--muted); background: none; color: var(--muted);
+            font: 16px/1 'Courier New', monospace; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .cs-add:hover { color: var(--accent); border-color: var(--accent); }
+        .cs-add:disabled { opacity: .35; cursor: default; }
+        .cs-gwrap { display: none; padding: 2px 8px 4px 8px; }
+        .cs-gwrap.on { display: block; }
+        .cs-gbar { position: relative; height: 18px; border-radius: 4px; border: 1px solid var(--border); cursor: copy; touch-action: none; }
+        .cs-gm { position: absolute; top: -5px; width: 12px; height: 26px; margin-left: -7px; border: 2px solid #fff; border-radius: 3px; box-sizing: border-box;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, .6); cursor: ew-resize; touch-action: none; }
+        .cs-gm.sel { border-color: var(--accent); box-shadow: 0 0 0 2px #000; z-index: 2; }
+        .cs-gm .cs-sw-x { top: -10px; right: -7px; cursor: pointer; }
+        .cs-gm:hover .cs-sw-x, .cs-gm.sel .cs-sw-x, body.touch-device .cs-gm .cs-sw-x { display: block; }
+        .cs-gpal { display: flex; flex-wrap: wrap; gap: 7px; max-height: 80px; overflow-y: auto; padding: 4px 6px 2px 2px; }
+        .cs-gsw { position: relative; width: 46px; height: 22px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; box-sizing: border-box; }
+        .cs-gsw.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .cs-gsw .cs-sw-x { cursor: pointer; }
+        .cs-gsw:hover .cs-sw-x, body.touch-device .cs-gsw .cs-sw-x { display: block; }
+        .cs-ghint { color: var(--muted); font-size: 9px; margin-top: 9px; line-height: 1.3; }
 
         /* v3.9.7: убран просвет над закреплённой шапкой таблицы при прокрутке */
         .dir-table th { top: -1px; box-shadow: 0 -3px 0 0 var(--panel-bg); }
@@ -1961,6 +1987,7 @@
             font-size: 11px; cursor: pointer; color: var(--text); background: none; border: 1px solid transparent; border-radius: 3px;
         }
         .sbd-lbtn:hover { border-color: var(--accent); }
+        .sbd-layer-item .sbd-lbtn { width: 17px; }
         .sbd-ladd { font-size: 15px; line-height: 1; border-color: var(--border); }
         .sbd-lbtn.off { opacity: .45; }
         .sbd-lbtn:disabled { opacity: .25; cursor: default; }
@@ -2196,7 +2223,7 @@
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
         <div id="appVersionLabel">
-            <span class="sp-version">Noem.ocean v3.9.8</span>
+            <span class="sp-version">Noem.ocean v4.0</span>
             <span class="sp-dev">Разработчик Noem.ocean - Александр Тумали</span>
         </div>
     </div>
@@ -2923,7 +2950,8 @@
             customScales: [],
             customMontages: [],
             csOn: false,
-            csPalette: []
+            csPalette: [],
+            csGradPalette: []
         };
 
         // ============================================================
@@ -2957,6 +2985,7 @@
                 noeticElIdCounter,
                 csOn: APP.csOn,
                 csPalette: APP.csPalette,
+                csGradPalette: APP.csGradPalette,
                 columns: COLUMNS
             }, mediaReplacer);
             return JSON.parse(raw);
@@ -2982,6 +3011,7 @@
             APP.montageSystem = resolved.montageSystem || 'en';
             APP.csOn = !!resolved.csOn;
             APP.csPalette = (resolved.csPalette || []).slice();
+            APP.csGradPalette = (resolved.csGradPalette || []).slice();
             dirRowIdCounter = resolved.dirRowIdCounter || 1;
             sceneNumCounter = resolved.sceneNumCounter || 1;
             noeticElIdCounter = resolved.noeticElIdCounter || 1;
@@ -4304,7 +4334,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         const CS_MIX = 0.4; // доля цвета, подмешиваемого поверх кадра раскадровки
         const CS_PALETTE_MAX = 40;
         const CS_FILL_PATH = '<path d="M6 11.6l6-6 6.4 6.4-6 6a1.8 1.8 0 0 1-2.5 0L6 14.1a1.8 1.8 0 0 1 0-2.5z"/><path d="M6.7 12.4h11"/><path d="M12 5.6V4a1.6 1.6 0 0 1 3.2 0"/><path d="M20.3 16.6c0 1.2-.7 2-1.4 2s-1.4-.8-1.4-2c0-.9 1.4-2.5 1.4-2.5s1.4 1.6 1.4 2.5z"/>';
-        const CS = { rowId: null, h: 250, s: 0.6, v: 0.78, el: null };
+        const CS = { rowId: null, h: 250, s: 0.6, v: 0.78, el: null, sel: 0 };
 
         let COLUMNS = [
             { id: 'num', label: '№ Кадр', visible: true, width: 80 },
@@ -5229,6 +5259,26 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             }
             return { h, s: mx ? d / mx : 0, v: mx };
         }
+        // v3.9.9: градиент — row.csStops = [{c:'#rrggbb', p:0..1}, ...] (2+ цвета); row.csColor всегда = первый цвет (признак «цвет задан»)
+        function csStops(row) {
+            if (!row) return [];
+            if (Array.isArray(row.csStops) && row.csStops.length >= 2) return row.csStops;
+            return row.csColor ? [{ c: row.csColor, p: 0 }] : [];
+        }
+        function csIsGrad(row) { return csStops(row).length >= 2; }
+        function csSorted(stops) { return stops.slice().sort((a, b) => a.p - b.p); }
+        function csGradCss(stops, dir) {
+            return 'linear-gradient(' + (dir || 'to bottom') + ', ' + csSorted(stops).map(s => s.c + ' ' + (Math.round(s.p * 1000) / 10) + '%').join(', ') + ')';
+        }
+        function csBg(row) {
+            const st = csStops(row);
+            if (!st.length) return '';
+            return st.length >= 2 ? csGradCss(st) : st[0].c;
+        }
+        function csSyncFirst(row) {
+            const st = csStops(row);
+            row.csColor = st.length ? csSorted(st)[0].c : '';
+        }
         function csActive(row) {
             return !!(APP.csOn && row && row.type !== 'scene' && row.type !== 'note' && row.csColor);
         }
@@ -5238,7 +5288,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function csTitleText(row) { return 'Кадр № ' + (row.numDisplay || row.num || ''); }
         function csStripTitle(row) {
             const ed = APP.mode === 'editor';
-            return row.csColor ? 'Цвет кадра ' + row.csColor + (ed ? ' — нажмите, чтобы изменить' : '') : (ed ? 'Выбрать цвет кадра' : '');
+            const n = csStops(row).length;
+            return row.csColor ? (n >= 2 ? 'Градиент кадра (' + n + ' цв.)' : 'Цвет кадра ' + row.csColor) + (ed ? ' — нажмите, чтобы изменить' : '') : (ed ? 'Выбрать цвет кадра' : '');
         }
 
         function csAddPalette(hex) {
@@ -5286,7 +5337,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function buildColorCell(row) {
             const st = document.createElement('div');
             st.className = 'cs-strip' + (row.csColor ? '' : ' empty') + (CS.rowId === row.id ? ' active' : '');
-            if (row.csColor) st.style.background = row.csColor;
+            if (row.csColor) st.style.background = csBg(row);
             st.title = csStripTitle(row);
             st.onclick = e => {
                 e.stopPropagation();
@@ -5306,11 +5357,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const on = csActive(row);
                 tr.querySelectorAll('.cs-tint').forEach(t => {
                     t.style.display = on ? 'block' : 'none';
-                    if (on) t.style.background = row.csColor;
+                    if (on) t.style.background = csBg(row);
                 });
                 const st = tr.querySelector('.cs-strip');
                 if (st) {
-                    st.style.background = row.csColor || '';
+                    st.style.background = csBg(row);
                     st.classList.toggle('empty', !row.csColor);
                     st.classList.toggle('active', CS.rowId === row.id);
                     st.title = csStripTitle(row);
@@ -5329,10 +5380,14 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 '<div class="cs-pop-body">' +
                 '<div class="cs-sv"><div class="cs-sv-mark"></div></div>' +
                 '<div class="cs-hue"><div class="cs-hue-mark"></div></div>' +
-                '<div class="cs-hex-row"><span class="cs-prev"></span>' +
+                '<div class="cs-chips"></div>' +
+                '<div class="cs-hex-row">' +
                 '<input class="cs-hex" type="text" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#5b50c8">' +
                 '<button class="cs-none" title="Убрать цвет у кадра">Без цвета</button></div>' +
+                '<div class="cs-gwrap"><div class="cs-gbar" title="Нажмите на шкалу, чтобы добавить цвет"></div>' +
+                '<div class="cs-ghint">Шкала градиента: слева — верх кадра, справа — низ. Двигайте маркеры, нажмите на шкалу — добавить цвет.</div></div>' +
                 '<div class="cs-pal-title">Цвета проекта</div><div class="cs-pal"></div>' +
+                '<div class="cs-pal-title">Градиенты проекта</div><div class="cs-gpal"></div>' +
                 '</div>';
             document.body.appendChild(el);
             CS.el = el;
@@ -5396,7 +5451,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const h = csNormHex(inp.value);
                 const row = csRow(CS.rowId);
                 if (h) csSetColor(h, true);
-                else if (row) inp.value = row.csColor || '';
+                else if (row) { const s0 = csSelStop(row); inp.value = s0 ? s0.c : ''; }
             });
             inp.addEventListener('keydown', e => {
                 e.stopPropagation();
@@ -5404,14 +5459,101 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 else if (e.key === 'Escape') csClose();
             });
             el.querySelector('.cs-none').onclick = () => csSetColor('', true);
+            const gbar = el.querySelector('.cs-gbar');
+            gbar.addEventListener('pointerdown', e => {
+                if (e.target !== gbar) return;
+                const row = csRow(CS.rowId);
+                if (!row || !csIsGrad(row) || csStops(row).length >= 12) return;
+                const r = gbar.getBoundingClientRect(), p = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+                csAddStop(p, csColorAt(csStops(row), p));
+                e.preventDefault();
+            });
             return el;
         }
 
+        // ---- v4.0: пресеты градиентов проекта ----
+        const CS_GRAD_MAX = 24;
+        function csCleanGrad(g) {
+            if (!Array.isArray(g)) return null;
+            const out = g.map(x => ({ c: csNormHex(x && x.c), p: Math.max(0, Math.min(1, +(x && x.p) || 0)) })).filter(x => x.c);
+            return out.length >= 2 ? csSorted(out) : null;
+        }
+        function csGradKey(stops) { return csSorted(stops).map(x => x.c + '@' + Math.round(x.p * 100)).join('|'); }
+        function csAddGradPalette(stops) {
+            const g = csCleanGrad(stops);
+            if (!g) return;
+            if (!Array.isArray(APP.csGradPalette)) APP.csGradPalette = [];
+            const k = csGradKey(g);
+            if (APP.csGradPalette.some(x => csGradKey(x) === k)) return;
+            APP.csGradPalette.push(g);
+            if (APP.csGradPalette.length > CS_GRAD_MAX) APP.csGradPalette.shift();
+        }
+        // подхватить градиенты, уже заданные у кадров (например, из проекта версии 3.9.9)
+        function csHarvestGrads() {
+            (APP.dirRows || []).forEach(r => { if (r && Array.isArray(r.csStops) && r.csStops.length >= 2) csAddGradPalette(r.csStops); });
+        }
+        function csApplyGrad(g) {
+            const row = csRow(CS.rowId);
+            if (!row) return;
+            row.csStops = g.map(x => ({ c: x.c, p: x.p }));
+            csSyncFirst(row);
+            CS.sel = 0;
+            const o = csHexToHsv(row.csStops[0].c); CS.h = o.h; CS.s = o.s; CS.v = o.v;
+            csApplyTintDom();
+            csCommit();
+        }
+        function csRefreshGradPalette() {
+            const box = CS.el && CS.el.querySelector('.cs-gpal');
+            if (!box) return;
+            box.innerHTML = '';
+            const pal = APP.csGradPalette || [];
+            if (!pal.length) {
+                const e = document.createElement('div');
+                e.className = 'cs-pal-empty';
+                e.textContent = 'Пока пусто — градиенты появятся здесь';
+                box.appendChild(e);
+                return;
+            }
+            const cur = csRow(CS.rowId), ck = cur && csIsGrad(cur) ? csGradKey(cur.csStops) : '';
+            pal.forEach((g, i) => {
+                const sw = document.createElement('div');
+                sw.className = 'cs-gsw' + (ck && ck === csGradKey(g) ? ' sel' : '');
+                sw.style.background = csGradCss(g, 'to right');
+                sw.title = g.map(x => x.c).join(' → ');
+                sw.onclick = () => csApplyGrad(g);
+                const x = document.createElement('span');
+                x.className = 'cs-sw-x';
+                x.textContent = '✕';
+                x.title = 'Удалить из пресетов';
+                x.onclick = e => {
+                    e.stopPropagation();
+                    APP.csGradPalette.splice(i, 1);
+                    csRefreshGradPalette();
+                    pushHistory('Color-script: пресет градиента удалён');
+                };
+                sw.appendChild(x);
+                box.appendChild(sw);
+            });
+        }
+
+        function csSelStop(row) {
+            const st = csStops(row);
+            if (!st.length) return null;
+            if (CS.sel >= st.length || CS.sel < 0) CS.sel = 0;
+            return st[CS.sel];
+        }
         function csSetColor(hex, commit, keepHsv) {
             const row = csRow(CS.rowId);
             if (!row) return;
             hex = hex ? csNormHex(hex) : '';
-            row.csColor = hex;
+            if (!hex) { // «Без цвета» — убирает и градиент
+                row.csColor = ''; delete row.csStops; CS.sel = 0;
+            } else if (csIsGrad(row)) {
+                csSelStop(row).c = hex;
+                csSyncFirst(row);
+            } else {
+                row.csColor = hex;
+            }
             if (hex && !keepHsv) { const o = csHexToHsv(hex); CS.h = o.h; CS.s = o.s; CS.v = o.v; }
             csApplyTintDom();
             csRefreshUI();
@@ -5421,29 +5563,174 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         function csCommit() {
             const row = csRow(CS.rowId);
             if (!row) return;
-            if (row.csColor) csAddPalette(row.csColor);
+            if (csIsGrad(row)) { const cur = csStops(row)[CS.sel]; row.csStops = csSorted(row.csStops); CS.sel = Math.max(0, row.csStops.indexOf(cur)); csSyncFirst(row); }
+            csStops(row).forEach(s => csAddPalette(s.c));
+            if (csIsGrad(row)) csAddGradPalette(row.csStops);
             csRefreshPalette();
-            pushHistory('Color-script: цвет кадра');
+            csRefreshUI();
+            pushHistory(csIsGrad(row) ? 'Color-script: градиент' : 'Color-script: цвет кадра');
+        }
+
+        function csSelectStop(i) {
+            const row = csRow(CS.rowId);
+            if (!row) return;
+            const st = csStops(row);
+            if (!st[i]) return;
+            CS.sel = i;
+            const o = csHexToHsv(st[i].c); CS.h = o.h; CS.s = o.s; CS.v = o.v;
+            csRefreshUI();
+            csRefreshPalette();
+        }
+        function csHueShift(hex) {
+            const o = csHexToHsv(hex);
+            return csHsvToHex((o.h + 40) % 360, Math.max(o.s, 0.35), Math.max(o.v, 0.5));
+        }
+        // плюсик: добавить цвет (со второго — образуется градиент)
+        function csAddStop(atP, color) {
+            const row = csRow(CS.rowId);
+            if (!row) return;
+            if (!row.csColor) { row.csColor = csHsvToHex(CS.h, CS.s, CS.v); }
+            let st = csStops(row);
+            if (st.length < 2) {
+                row.csStops = [{ c: st[0].c, p: 0 }];
+                st = row.csStops;
+            }
+            const sorted = csSorted(st);
+            if (atP == null) { // середина самого большого промежутка
+                const pts = [0].concat(sorted.map(s => s.p), [1]).sort((a, b) => a - b);
+                let bi = 0, bg = -1;
+                for (let i = 0; i < pts.length - 1; i++) if (pts[i + 1] - pts[i] > bg) { bg = pts[i + 1] - pts[i]; bi = i; }
+                atP = (pts[bi] + pts[bi + 1]) / 2;
+                if (st.length === 1) atP = 1;
+            }
+            const base = csSelStop(row) || st[0];
+            const ns = { c: color || csHueShift(base.c), p: Math.max(0, Math.min(1, atP)) };
+            row.csStops = csSorted(st.concat([ns]));
+            CS.sel = row.csStops.indexOf(ns);
+            csSyncFirst(row);
+            const o = csHexToHsv(ns.c); CS.h = o.h; CS.s = o.s; CS.v = o.v;
+            csApplyTintDom();
+            csRefreshUI();
+            csCommit();
+        }
+        function csRemoveStop(i) {
+            const row = csRow(CS.rowId);
+            if (!row || !csIsGrad(row)) return;
+            row.csStops.splice(i, 1);
+            if (row.csStops.length < 2) { row.csColor = row.csStops[0].c; delete row.csStops; CS.sel = 0; }
+            else { CS.sel = Math.min(CS.sel > i ? CS.sel - 1 : CS.sel, row.csStops.length - 1); csSyncFirst(row); }
+            const s = csSelStop(row);
+            if (s) { const o = csHexToHsv(s.c); CS.h = o.h; CS.s = o.s; CS.v = o.v; }
+            csApplyTintDom();
+            csCommit();
+        }
+        // цвет в точке p градиента (для добавления цвета кликом по шкале)
+        function csColorAt(stops, p) {
+            const s = csSorted(stops);
+            if (p <= s[0].p) return s[0].c;
+            if (p >= s[s.length - 1].p) return s[s.length - 1].c;
+            for (let i = 0; i < s.length - 1; i++) {
+                if (p >= s[i].p && p <= s[i + 1].p) {
+                    const t = (p - s[i].p) / ((s[i + 1].p - s[i].p) || 1);
+                    const a = parseInt(s[i].c.slice(1), 16), b = parseInt(s[i + 1].c.slice(1), 16);
+                    const ch = sh => Math.round((a >> sh & 255) * (1 - t) + (b >> sh & 255) * t).toString(16).padStart(2, '0');
+                    return '#' + ch(16) + ch(8) + ch(0);
+                }
+            }
+            return s[0].c;
+        }
+
+        function csRefreshChips(row) {
+            const box = CS.el.querySelector('.cs-chips');
+            box.innerHTML = '';
+            const st = row ? csStops(row) : [];
+            const grad = st.length >= 2;
+            if (!st.length) {
+                const c = document.createElement('div'); c.className = 'cs-chip empty'; c.title = 'Цвет не задан'; box.appendChild(c);
+            }
+            st.forEach((s, i) => {
+                const c = document.createElement('div');
+                c.className = 'cs-chip' + (i === CS.sel || !grad ? ' sel' : '');
+                c.style.background = s.c; c.title = s.c;
+                c.onclick = () => csSelectStop(i);
+                if (grad) {
+                    const x = document.createElement('span'); x.className = 'cs-sw-x'; x.textContent = '✕'; x.title = 'Убрать цвет из градиента';
+                    x.onclick = e => { e.stopPropagation(); csRemoveStop(i); };
+                    c.appendChild(x);
+                }
+                box.appendChild(c);
+            });
+            const add = document.createElement('button');
+            add.className = 'cs-add'; add.textContent = '+';
+            add.title = st.length >= 2 ? 'Добавить ещё цвет в градиент' : 'Добавить второй цвет — получится градиент';
+            add.disabled = st.length >= 12;
+            add.onclick = () => csAddStop();
+            box.appendChild(add);
+        }
+        function csRefreshGradBar(row) {
+            const wrap = CS.el.querySelector('.cs-gwrap'), bar = wrap.querySelector('.cs-gbar');
+            const st = row ? csStops(row) : [];
+            wrap.classList.toggle('on', st.length >= 3);
+            if (st.length < 3) { bar.innerHTML = ''; return; }
+            if (bar._dragging) { bar.style.background = csGradCss(st, 'to right'); return; }
+            bar.style.background = csGradCss(st, 'to right');
+            bar.innerHTML = '';
+            st.forEach((s, i) => {
+                const m = document.createElement('div');
+                m.className = 'cs-gm' + (i === CS.sel ? ' sel' : '');
+                m.style.left = (s.p * 100) + '%'; m.style.background = s.c; m.title = s.c + ' — перетащите, чтобы сдвинуть';
+                const x = document.createElement('span'); x.className = 'cs-sw-x'; x.textContent = '✕'; x.title = 'Убрать цвет из градиента';
+                x.onpointerdown = e => e.stopPropagation();
+                x.onclick = e => { e.stopPropagation(); csRemoveStop(i); };
+                m.appendChild(x);
+                m.addEventListener('pointerdown', e => {
+                    if (e.target === x) return;
+                    e.stopPropagation(); e.preventDefault();
+                    csSelectStop(i);
+                    const mm = bar.children[i] || m;
+                    bar._dragging = true;
+                    try { mm.setPointerCapture(e.pointerId); } catch (err) { }
+                    const mv = ev => {
+                        const r = bar.getBoundingClientRect();
+                        s.p = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+                        mm.style.left = (s.p * 100) + '%';
+                        bar.style.background = csGradCss(st, 'to right');
+                        csApplyTintDom();
+                    };
+                    const up = () => {
+                        mm.removeEventListener('pointermove', mv);
+                        mm.removeEventListener('pointerup', up);
+                        mm.removeEventListener('pointercancel', up);
+                        bar._dragging = false;
+                        csCommit(); // сортирует по положению: маркеры можно менять местами
+                    };
+                    mm.addEventListener('pointermove', mv);
+                    mm.addEventListener('pointerup', up);
+                    mm.addEventListener('pointercancel', up);
+                });
+                bar.appendChild(m);
+            });
         }
 
         function csRefreshUI() {
             const el = CS.el;
             if (!el) return;
             const row = csRow(CS.rowId);
-            const hex = row ? (row.csColor || '') : '';
+            const cur = row ? csSelStop(row) : null;
+            const hex = cur ? cur.c : '';
             el.querySelector('.cs-sv').style.backgroundColor = csHsvToHex(CS.h, 1, 1);
             const sm = el.querySelector('.cs-sv-mark');
             sm.style.left = (CS.s * 100) + '%';
             sm.style.top = ((1 - CS.v) * 100) + '%';
             el.querySelector('.cs-hue-mark').style.left = (CS.h / 360 * 100) + '%';
-            const prev = el.querySelector('.cs-prev');
-            prev.style.background = hex;
-            prev.classList.toggle('empty', !hex);
+            csRefreshChips(row);
+            csRefreshGradBar(row);
             const inp = el.querySelector('.cs-hex');
             if (document.activeElement !== inp) inp.value = hex;
         }
 
         function csRefreshPalette() {
+            csRefreshGradPalette();
             const box = CS.el && CS.el.querySelector('.cs-pal');
             if (!box) return;
             box.innerHTML = '';
@@ -5458,7 +5745,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const cur = csRow(CS.rowId);
             pal.forEach((hex, i) => {
                 const sw = document.createElement('div');
-                sw.className = 'cs-sw' + (cur && cur.csColor === hex ? ' sel' : '');
+                sw.className = 'cs-sw' + (cur && csSelStop(cur) && csSelStop(cur).c === hex ? ' sel' : '');
                 sw.style.background = hex;
                 sw.title = hex;
                 sw.onclick = () => csSetColor(hex, true);
@@ -5482,15 +5769,16 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             if (!row) return;
             const el = csBuildPopup();
             const wasOpen = el.style.display === 'block';
-            CS.rowId = rowId;
-            if (row.csColor) { const o = csHexToHsv(row.csColor); CS.h = o.h; CS.s = o.s; CS.v = o.v; }
+            csHarvestGrads();
+            CS.rowId = rowId; CS.sel = 0;
+            if (row.csColor) { const o = csHexToHsv(csSelStop(row).c); CS.h = o.h; CS.s = o.s; CS.v = o.v; }
             el.querySelector('.cs-pop-title').textContent = csTitleText(row);
             el.style.display = 'block';
             if (!wasOpen) {
                 const st = document.querySelector('#dirTableBody tr[data-rowid="' + rowId + '"] .cs-strip');
                 const r = st ? st.getBoundingClientRect() : { right: 80, top: 120 };
                 el.style.left = Math.max(8, Math.min(window.innerWidth - el.offsetWidth - 8, r.right + 10)) + 'px';
-                el.style.top = Math.max(8, Math.min(window.innerHeight - 340, r.top)) + 'px';
+                el.style.top = Math.max(8, Math.min(window.innerHeight - 520, r.top)) + 'px';
             }
             csRefreshUI();
             csRefreshPalette();
@@ -5510,8 +5798,9 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             const row = csRow(CS.rowId);
             if (!row || APP.mode !== 'editor') { csClose(); return; }
             CS.el.querySelector('.cs-pop-title').textContent = csTitleText(row);
-            if (row.csColor && csHsvToHex(CS.h, CS.s, CS.v) !== row.csColor) {
-                const o = csHexToHsv(row.csColor); CS.h = o.h; CS.s = o.s; CS.v = o.v;
+            const ss = csSelStop(row);
+            if (ss && csHsvToHex(CS.h, CS.s, CS.v) !== ss.c) {
+                const o = csHexToHsv(ss.c); CS.h = o.h; CS.s = o.s; CS.v = o.v;
             }
             csRefreshUI();
             csRefreshPalette();
@@ -5539,7 +5828,11 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                         x.fillRect(0, 0, w, h);
                         x.drawImage(img, 0, 0, w, h);
                         x.globalAlpha = CS_MIX;
-                        x.fillStyle = color;
+                        if (Array.isArray(color) && color.length >= 2) {
+                            const g = x.createLinearGradient(0, 0, 0, h);
+                            csSorted(color).forEach(s => g.addColorStop(Math.max(0, Math.min(1, s.p)), s.c));
+                            x.fillStyle = g;
+                        } else x.fillStyle = Array.isArray(color) ? color[0].c : color;
                         x.fillRect(0, 0, w, h);
                         resolve(c.toDataURL('image/jpeg', 0.92));
                     } catch (err) { resolve(src); }
@@ -5549,7 +5842,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             });
         }
         async function csExportSrc(row, src) {
-            return csActive(row) ? await csTintSrc(src, row.csColor) : src;
+            return csActive(row) ? await csTintSrc(src, csStops(row)) : src;
         }
 
         function buildTableHead() {
@@ -6979,7 +7272,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     const tint = document.createElement('div');
                     tint.className = 'cs-tint';
                     tint.style.opacity = CS_MIX;
-                    if (csActive(row)) tint.style.background = row.csColor; else tint.style.display = 'none';
+                    if (csActive(row)) tint.style.background = csBg(row); else tint.style.display = 'none';
                     imgWrap.appendChild(tint);
                 }
                 imgWrap.appendChild(reorderBadge);
@@ -9408,7 +9701,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 p2Collapsed: p2Collapsed,
                 p3Collapsed: p3Collapsed,
                 csOn: !!APP.csOn,
-                csPalette: APP.csPalette || []
+                csPalette: APP.csPalette || [],
+                csGradPalette: APP.csGradPalette || []
             };
         }
 
@@ -9605,6 +9899,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 APP.customMontages = [];
                 APP.csOn = false;
                 APP.csPalette = [];
+                APP.csGradPalette = [];
                 csClose();
                 document.getElementById('projectTitle').textContent = 'МОЙ ПРОЕКТ';
                 document.getElementById('scriptCanvas').innerHTML = '';
@@ -9676,6 +9971,8 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             APP.customMontages = Array.isArray(data.customMontages) ? data.customMontages.slice() : [];
             APP.csOn = !!data.csOn;
             APP.csPalette = Array.isArray(data.csPalette) ? data.csPalette.map(csNormHex).filter(Boolean) : [];
+            APP.csGradPalette = Array.isArray(data.csGradPalette) ? data.csGradPalette.map(csCleanGrad).filter(Boolean) : [];
+            if (typeof csHarvestGrads === 'function') csHarvestGrads();
 
             if (data.columns) data.columns.forEach(dc => { const c = COLUMNS.find(c => c.id === dc.id); if (c) { c
                         .visible = dc.visible;
@@ -11201,6 +11498,10 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 const dn = document.createElement('button');
                 dn.className = 'sbd-lbtn'; dn.textContent = '▼'; dn.title = 'Ниже'; dn.disabled = idx === 0;
                 dn.onclick = ev => { ev.stopPropagation(); const t = d.layers[idx - 1]; if (!t) return; d.layers[idx - 1] = l; d.layers[idx] = t; sbdLayersChanged(row, 'Порядок слоёв'); };
+                const dup = document.createElement('button');
+                dup.className = 'sbd-lbtn'; dup.innerHTML = SBD_DUP_SVG; dup.title = 'Дублировать слой';
+                dup.disabled = d.layers.length >= SBD_MAX_LAYERS;
+                dup.onclick = ev => { ev.stopPropagation(); sbdDuplicateLayer(row, l.id); };
                 const del = document.createElement('button');
                 del.className = 'sbd-lbtn'; del.textContent = '✕'; del.title = 'Удалить слой'; del.disabled = d.layers.length <= 1;
                 del.onclick = ev => {
@@ -11216,7 +11517,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                     if (l.data) customConfirm('Удалить слой «' + l.name + '» вместе с рисунком?', 'УДАЛИТЬ', doDel); else doDel();
                 };
                 item.onclick = () => { sbdTfCommit(); d.active = l.id; sbdPlaceStroke(row.id, SBD.activeK); sbdRenderLayers(); };
-                item.appendChild(eye); item.appendChild(nm); item.appendChild(up); item.appendChild(dn); item.appendChild(del);
+                item.appendChild(eye); item.appendChild(nm); item.appendChild(up); item.appendChild(dn); item.appendChild(dup); item.appendChild(del);
                 if (l.id === d.active) {
                     const op = document.createElement('div'); op.className = 'sbd-lopacity';
                     const lab = document.createElement('span'); lab.textContent = 'Непрозр.';
@@ -11324,7 +11625,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
         }
         function sbdSetTool(id) {
             if (!sbdToolDef(id)) return;
-            if (id !== 'transform') sbdTfCommit();
+            if (id !== 'transform' && !SBD.spaceHold) sbdTfCommit();
             SBD.tool = id;
             document.querySelectorAll('#sbdTools .sbd-tool').forEach(b => b.classList.toggle('sel', b.dataset.tool === id));
             const vp = sbdEl('sbdViewport');
@@ -11642,6 +11943,100 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 sbdRenderLayers();
             }
         }
+
+        // ---------- v3.9.9: дублирование слоёв, копирование / вставка (Ctrl+C / Ctrl+V) ----------
+        const SBD_DUP_SVG = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M10.5 3.2V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h.2"/></svg>';
+        function sbdDuplicateLayer(row, layerId) {
+            if (APP.mode !== 'editor') return;
+            sbdTfCommit();
+            const k = sbdCurK(row), d = sbdEnsure(row, k), z = SBD.zones[sbdZK(row.id, k)];
+            const at = d.layers.findIndex(x => x.id === layerId);
+            if (at < 0 || !z) return;
+            if (d.layers.length >= SBD_MAX_LAYERS) { notify('Максимум слоёв в кадре: ' + SBD_MAX_LAYERS); return; }
+            const src = d.layers[at], id = d.nextLayerId++;
+            const copy = { id, name: String(src.name + ' копия').slice(0, 32), visible: src.visible, opacity: src.opacity, data: src.data };
+            d.layers.splice(at + 1, 0, copy);
+            d.active = id;
+            sbdSyncZone(row, k, z); // создаёт холст и загружает в него data
+            sbdLayersChanged(row, 'Дублирование слоя');
+        }
+        // копирование выделенного: область (S) активного слоя, иначе весь слой
+        function sbdCopySelection() {
+            const row = sbdRow(SBD.activeRow);
+            if (!row) return false;
+            const k = SBD.activeK, d = sbdEnsure(row, k), z = SBD.zones[sbdZK(row.id, k)];
+            const layer = d.layers.find(l => l.id === d.active);
+            const lc = z && layer && z.layers[layer.id];
+            if (!lc) return false;
+            if (SBD.tf && SBD.tf.layer === layer) sbdTfCommit();
+            const s = (SBD.sel && SBD.sel.rowId === row.id && SBD.sel.k === k) ? SBD.sel : null;
+            const r = s ? { x: Math.round(s.x), y: Math.round(s.y), w: Math.max(1, Math.round(s.w)), h: Math.max(1, Math.round(s.h)) } : sbdBBox(lc);
+            if (!r) { notify('Слой пуст — нечего копировать'); return true; }
+            const c = document.createElement('canvas'); c.width = r.w; c.height = r.h;
+            c.getContext('2d').drawImage(lc, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+            if (sbdIsBlank(c)) { notify('В выделении пусто'); return true; }
+            SBD.clip = { url: c.toDataURL('image/png'), x: r.x, y: r.y, w: r.w, h: r.h };
+            c.toBlob(b => {
+                if (!b) return;
+                try { navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]).catch(() => { }); } catch (err) { }
+            }, 'image/png');
+            notify(s ? 'Выделенная область скопирована' : 'Слой скопирован');
+            return true;
+        }
+        // вставка картинки новым слоем в активный кадр; place — исходное положение, если это наш внутренний буфер
+        async function sbdPasteImage(url, name, place) {
+            if (APP.mode !== 'editor') return;
+            const row = sbdRow(SBD.activeRow) || sbdFrames()[0];
+            if (!row || !sbdIsFrame(row)) { notify('Нет кадра для вставки'); return; }
+            if (SBD.activeRow == null) sbdSetActive(row.id, 0);
+            sbdTfCommit();
+            const kk = SBD.activeK, d = sbdEnsure(row, kk), z = SBD.zones[sbdZK(row.id, kk)];
+            if (!z) return;
+            if (d.layers.length >= SBD_MAX_LAYERS) { notify('Максимум слоёв в кадре: ' + SBD_MAX_LAYERS); return; }
+            let img;
+            try { img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = url; }); } catch (err) { notify('Не удалось вставить картинку'); return; }
+            // картинка из системного буфера того же размера, что наш последний Ctrl+C, встаёт на прежнее место
+            if (!place && SBD.clip && img.width === SBD.clip.w && img.height === SBD.clip.h) place = { x: SBD.clip.x, y: SBD.clip.y, w: SBD.clip.w, h: SBD.clip.h };
+            const id = d.nextLayerId++;
+            const idx = d.layers.findIndex(l => l.id === d.active);
+            d.layers.splice(idx + 1, 0, { id, name: String(name || 'Вставка').slice(0, 32), visible: true, opacity: 1, data: null });
+            d.active = id;
+            sbdSyncZone(row, kk, z);
+            const lc = z.layers[id];
+            const g = lc.getContext('2d');
+            if (place) g.drawImage(img, place.x, place.y, place.w, place.h);
+            else {
+                const s = Math.min(SBD_PX / img.width, SBD_PY / img.height, 1), w = img.width * s, h = img.height * s;
+                g.drawImage(img, (SBD_PX - w) / 2, (SBD_PY - h) / 2, w, h);
+            }
+            sbdCommit(row, id, lc, { k: kk, ink: true, label: 'Вставка картинки' });
+            sbdRenderLayers();
+            notify('Картинка вставлена на новый слой');
+        }
+        function sbdInitClipboard() {
+            const okCtx = () => {
+                if (APP.p3View !== 'storyboard' || !window.__sbdHover || APP.mode !== 'editor') return false;
+                const ae = document.activeElement;
+                return !(ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable));
+            };
+            window.addEventListener('keydown', e => {
+                if (e.code !== 'KeyC' || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || !okCtx()) return;
+                e.preventDefault();
+                sbdCopySelection();
+            });
+            document.addEventListener('paste', e => {
+                if (!okCtx()) return;
+                const cd = e.clipboardData;
+                const items = cd ? Array.from(cd.items || []) : [];
+                const it = items.find(i => i.kind === 'file' && /^image\//.test(i.type));
+                if (it) {
+                    const f = it.getAsFile();
+                    if (f) { e.preventDefault(); fileToDataURL(f).then(u => sbdPasteImage(u, 'Вставка', null)); return; }
+                }
+                // нет картинки в системном буфере — берём внутренний (скопированный слой / область)
+                if (SBD.clip) { e.preventDefault(); sbdPasteImage(SBD.clip.url, 'Копия', { x: SBD.clip.x, y: SBD.clip.y, w: SBD.clip.w, h: SBD.clip.h }); }
+            });
+        }
         function sbdInitDropAndLayersDrag() {
             const vp = sbdEl('sbdViewport');
             vp.addEventListener('dragover', e => { if (APP.mode === 'editor') { e.preventDefault(); try { e.dataTransfer.dropEffect = 'copy'; } catch (err) { } } });
@@ -11750,6 +12145,7 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
                 syncF();
             }
             sbdInitDropAndLayersDrag();
+            sbdInitClipboard();
             sbdInitViewport();
             try { new ResizeObserver(() => sbdClampLayers()).observe(sbdEl('sbdStage')); } catch (e) { }
             window.addEventListener('resize', sbdClampLayers);
@@ -11757,6 +12153,26 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             sbdRenderRecent();
             sbdSetTool('brush');
             setP3View(APP.p3View, true);
+            // v3.9.9: зажатый пробел временно включает «Руку» (H), при отпускании возвращается прежний инструмент
+            const spaceRestore = () => {
+                if (SBD.spacePrev == null) return;
+                const t = SBD.spacePrev; SBD.spacePrev = null;
+                if (SBD.tool === 'hand') sbdSetTool(t);
+                SBD.spaceHold = false;
+            };
+            window.addEventListener('keydown', e => {
+                if (e.code !== 'Space' || APP.p3View !== 'storyboard' || !window.__sbdHover || e.ctrlKey || e.metaKey || e.altKey) return;
+                const ae = document.activeElement;
+                if (ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable)) return;
+                if (ae && ae.tagName === 'BUTTON') ae.blur();
+                e.preventDefault();
+                if (e.repeat || SBD.spacePrev != null || SBD.stroke || SBD.drag) return;
+                if (SBD.tool === 'hand') return;
+                SBD.spacePrev = SBD.tool; SBD.spaceHold = true;
+                sbdSetTool('hand');
+            });
+            window.addEventListener('keyup', e => { if (e.code === 'Space') spaceRestore(); });
+            window.addEventListener('blur', spaceRestore);
             window.addEventListener('keydown', e => {
                 if (APP.p3View !== 'storyboard' || !window.__sbdHover || e.ctrlKey || e.metaKey || e.altKey) return;
                 const ae = document.activeElement;
