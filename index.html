@@ -10,6 +10,7 @@
     <!-- Noem.ocean v3.9.1 (внутрикадровые кадры «+», переключатель показа кадров из таблицы, выделение/перемещение/трансформирование) -->
     <!-- Noem.ocean v3.9 (перетаскиваемое окно слоёв; drag&drop картинок в слой кадра; курсор кисти следует за линией; нажатие пера для размера/непрозрачности; заливка только по выбранному слою) -->
     <!-- Noem.ocean v3.8 (Раскадровочный блок: рисование кадров со слоями, кистями, цветами и фоном; рисунок добавляется в таблицу вариантом «Р») -->
+    <!-- Noem.ocean v3.9.4 (Android: two-finger tap = undo, three-finger tap = redo, compact one-row header of the storyboard/noetic block; layer opacity slider fits its card; new import-script icon and label) -->
     <!-- Noem.ocean v3.9.3 (select frame by clicking its translucent frame, no tint on noetic photos, 16:9 noetic frame zones, default draw colour #5b50c8, Move tool removed, new SVG tool icons, bg hex field, layers panel kept inside block) -->
     <!-- Noem.ocean v3.7 (timecode box no longer stretched by textarea resync, opaque hover on variant squares; v3.6: flicker-free table rebuild, opaque selected variant square in light theme, tidy placeholder, timecode box fix; v3.5: fold dashed line in light theme, light storyboard controls in light theme, sub-second format "00:01 и 0,5 сек", whole-second intra-frame split) -->
     <!-- Noem.ocean v3.4 (scene fold/unfold, eye hide for scenes/frames/notes, intra-frame durations, storyboard variants, sub-second durations) -->
@@ -1909,6 +1910,27 @@
         .sbd-lopacity { flex-basis: 100%; display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 10px; }
         .sbd-lopacity input { flex: 1; min-width: 0; accent-color: var(--accent); }
         .sbd-layers-actions { display: flex; gap: 4px; padding-top: 2px; }
+        /* ===== v3.9.4 ===== */
+        .panel-header button.btn-ico { display: inline-flex; align-items: center; gap: 5px; }
+        .panel-header button.btn-ico svg { display: block; flex: none; }
+        /* ползунок непрозрачности слоя не выходит за карточку слоя */
+        .sbd-layers-body, .sbd-layer-item { min-width: 0; box-sizing: border-box; }
+        .sbd-lopacity { box-sizing: border-box; min-width: 0; max-width: 100%; overflow: hidden; }
+        .sbd-lopacity span { flex: none; }
+        .sbd-lopacity input { flex: 1 1 0; width: 0; min-width: 0; margin: 0 2px; }
+        /* Android: шапка ноэтического / раскадровочного блока — одна компактная строка */
+        body.android-device #panel3 .panel-header {
+            flex-wrap: nowrap; align-items: center; overflow: hidden; min-height: 34px; padding: 2px 6px; gap: 4px;
+        }
+        body.android-device #panel3 .panel-header .panel-title-text { order: 0; flex: 1 1 0; min-width: 0; letter-spacing: 1px; font-size: 10px; }
+        body.android-device #panel3 .panel-header .p3-spacer { display: none; }
+        body.android-device #panel3 .panel-header button { min-height: 28px; padding: 3px 7px; font-size: 11px; }
+        body.android-device #panel3 .panel-header button.p3-switch { order: 1; width: 34px; height: 18px; min-height: 0; padding: 0; }
+        body.android-device #panel3 .panel-header button:not(.collapse-btn):not(.p3-switch) { order: 2; }
+        body.android-device #panel3 .panel-header button.sbd-hbtn { padding: 3px 6px; }
+        body.android-device #panel3 .panel-header .collapse-btn { order: 3; width: 28px; height: 28px; min-height: 28px; padding: 0; }
+        body.android-device #panel3.collapsed .panel-header { padding: 0; justify-content: center; }
+
         .sbd-empty { color: var(--muted); padding: 6px; font-size: 10px; }
         /* v3.9 */
         .sbd-layers-head { cursor: move; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -2109,7 +2131,7 @@
         <div class="sp-hint" id="passHint"></div>
         <div class="sp-divider"></div>
         <div id="appVersionLabel">
-            <span class="sp-version">Noem.ocean v3.9.2</span>
+            <span class="sp-version">Noem.ocean v3.9.4</span>
             <span class="sp-dev">Разработчик Noem.ocean - Александр Тумали</span>
         </div>
     </div>
@@ -2275,7 +2297,7 @@
             <div class="panel-header">
                 <span class="panel-title-text">Литературный сценарий</span>
                 <button id="scriptEditBtn" onclick="toggleScriptEdit()">Редактировать</button>
-                <button onclick="document.getElementById('scriptFileInput').click()" title="Загрузить сценарий">📂 Загрузить</button>
+                <button class="btn-ico" onclick="document.getElementById('scriptFileInput').click()" title="Импорт сценария"><svg class="sbd-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7.5A1.5 1.5 0 0 0 6 4.5v15A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V7z"/><path d="M14 3v4h4"/><path d="M12 10.5v6"/><path d="M9.5 14l2.5 2.5 2.5-2.5"/></svg><span>Импорт сценария</span></button>
                 <button id="collapseP1" class="collapse-btn" onclick="collapsePanel(1)" title="Свернуть">◀</button>
             </div>
             <div class="script-container" id="scriptContainer">
@@ -9372,9 +9394,41 @@ ${media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformat
             } catch (e) {}
         })();
 
+        // v3.9.4 — только Android: тап двумя пальцами = отмена, тремя = возврат
+        function initAndroidTapGestures() {
+            if (!TOUCH.isAndroid) return;
+            let g = null;
+            const opt = { passive: true, capture: true };
+            document.addEventListener('touchstart', e => {
+                if (e.touches.length === e.changedTouches.length) g = { t: Date.now(), max: 0, moved: false, bad: false, pts: {} };
+                if (!g) return;
+                const tg = e.target;
+                if (tg && tg.closest && tg.closest('input,textarea,select,[contenteditable="true"],#settingsPopup,#confirmModal')) g.bad = true;
+                for (const t of e.changedTouches) g.pts[t.identifier] = { x: t.clientX, y: t.clientY };
+                g.max = Math.max(g.max, e.touches.length);
+            }, opt);
+            document.addEventListener('touchmove', e => {
+                if (!g) return;
+                for (const t of e.changedTouches) {
+                    const p0 = g.pts[t.identifier];
+                    if (p0 && Math.hypot(t.clientX - p0.x, t.clientY - p0.y) > 18) g.moved = true;
+                }
+            }, opt);
+            const end = e => {
+                if (!g || e.touches.length) return;
+                const ok = e.type === 'touchend' && !g.bad && !g.moved && Date.now() - g.t < 420;
+                const n = g.max; g = null;
+                if (!ok) return;
+                if (n === 2) undo(); else if (n === 3) redo();
+            };
+            document.addEventListener('touchend', end, opt);
+            document.addEventListener('touchcancel', end, opt);
+        }
+
         function initTouchSupport() {
             if (!TOUCH.enabled) return;
             try {
+                initAndroidTapGestures();
                 attachTouchPanZoom(document.getElementById('scriptContainer'), {
                     getZoom:   () => APP.scriptZoom,
                     setZoom:   z => { APP.scriptZoom = z; },
