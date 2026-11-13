@@ -2151,6 +2151,15 @@
                         </svg>
                         Аниматик (.zip)
                     </button>
+                    <button onclick="exportNoemLine()" title="Архив для Noem_Line: .noemtoline (текст) + папка media (все кадры)">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7l9-4 9 4-9 4z"/>
+                            <path d="M3 12l9 4 9-4"/>
+                            <path d="M3 17l9 4 9-4"/>
+                        </svg>
+                        Noem_Line (.zip)
+                    </button>
                 </div>
             </div>
             <button class="tbtn" onclick="newProject()">НОВЫЙ</button>
@@ -3304,6 +3313,122 @@
             const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
             downloadBlob(blob, projectFileBase() + '_раскадровка.zip');
             notify('Раскадровка экспортирована: ' + order + ' изобр.');
+        }
+
+
+        // ============================================================
+        // ЭКСПОРТ В Noem_Line (ZIP):
+        //   <проект>.noemtoline — JSON со всей текстовой информацией (сцены и кадры по порядку)
+        //   media/              — все кадры раскадровки в одной папке: "00023_0011.ext"
+        //   media/thumbs/       — маленькие копии (480 px) для списков в приложении
+        // Папку media загружают в GitHub рядом с index.html Noem_Line,
+        // а файл .noemtoline импортируют в настройках Noem_Line.
+        // ============================================================
+        async function exportNoemLine() {
+            closeExportMenu();
+            if (typeof JSZip === 'undefined') { notify('Библиотека JSZip не загружена'); return; }
+            renumberRows();
+            sbEnsureAll();
+            const zip = new JSZip();
+            const media = zip.folder('media');
+            const thumbs = media.folder('thumbs');
+            const pad = (n, w) => String(n).padStart(w, '0');
+            const hid = sbHiddenMap();
+            const rows = [];
+            let order = 0, sceneIdx = 0, shotCount = 0, curScene = '';
+            notify('Готовлю архив для Noem_Line…');
+
+            for (const row of APP.dirRows) {
+                if (hid[row.id]) continue;
+                if (row.type === 'note') continue;
+                if (row.type === 'scene') {
+                    sceneIdx++;
+                    const n = (row.customSceneNum !== undefined && row.customSceneNum !== false) ? row.customSceneNum : row.sceneNum;
+                    curScene = String(row.id);
+                    rows.push({
+                        type: 'scene',
+                        id: curScene,
+                        index: sceneIdx,
+                        isCustomText: !!row.isCustomText,
+                        customText: row.customText || '',
+                        sceneNum: (n === undefined || n === null || n === false) ? '' : String(n),
+                        sceneIntExt: row.sceneIntExt || '',
+                        sceneLoc: row.sceneLoc || '',
+                        sceneTime: row.sceneTime || '',
+                        sceneInfo: row.sceneInfo || '',
+                        title: exportSceneText(row)
+                    });
+                    continue;
+                }
+
+                shotCount++;
+                const numPart = sbSafeName(row.numDisplay || String(row.num).padStart(4, '0')) || pad(row.num || 0, 4);
+                const files = [];
+                for (let i = 0; i < row.sbVars.length; i++) {
+                    const v = row.sbVars[i];
+                    const src0 = v && v[Math.min(row.sbSel[i] || 0, v.length - 1)];
+                    if (!src0) { files.push(null); continue; }
+                    const src = await ensureExportableImage(await csExportSrc(row, src0), 'jpg');
+                    let bytes = null, ext = 'jpg';
+                    if (typeof src === 'string' && src.startsWith('data:')) {
+                        const d = dataURLToBytes(src);
+                        if (d) { bytes = d.bytes; ext = mimeToExt(d.mime) || 'jpg'; }
+                    } else if (typeof src === 'string' && src) {
+                        try {
+                            const resp = await fetch(src);
+                            const blob = await resp.blob();
+                            bytes = new Uint8Array(await blob.arrayBuffer());
+                            ext = mimeToExt((blob.type || '').toLowerCase()) || 'jpg';
+                        } catch (err) { /* пропуск */ }
+                    }
+                    if (!bytes) { files.push(null); continue; }
+                    order++;
+                    const base = pad(order, 5) + '_' + numPart;
+                    media.file(base + '.' + ext, bytes);
+                    files.push(base + '.' + ext);
+                    // миниатюра для списков
+                    if (typeof src === 'string' && src.startsWith('data:')) {
+                        try {
+                            const tdu = await compressImage(src, 480, 0.8, 'jpg');
+                            const td = dataURLToBytes(tdu);
+                            if (td && td.mime === 'image/jpeg') thumbs.file(base + '.jpg', td.bytes);
+                        } catch (err) { /* без миниатюры */ }
+                    }
+                }
+                while (files.length && !files[files.length - 1]) files.pop();
+                rows.push({
+                    type: 'shot',
+                    id: String(row.id),
+                    scene: curScene,
+                    num: row.numDisplay || String(row.num).padStart(4, '0'),
+                    action: row.action || '',
+                    sound: row.sound || '',
+                    notes: row.notes || '',
+                    scale: row.scale || '',
+                    montage: row.montage || '',
+                    timecode: row.timecode || '',
+                    images: files
+                });
+            }
+            if (!shotCount) { notify('В проекте нет кадров'); return; }
+
+            const title = (document.getElementById('projectTitle').textContent || '').trim() || 'Проект';
+            const data = {
+                format: 'noemtoline',
+                version: 1,
+                app: 'Noem.ocean',
+                title,
+                exportedAt: new Date().toISOString(),
+                mediaDir: 'media',
+                scenes: sceneIdx,
+                shots: shotCount,
+                images: order,
+                rows
+            };
+            zip.file(projectFileBase() + '.noemtoline', JSON.stringify(data, null, 1));
+            const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+            downloadBlob(blob, projectFileBase() + '_Noem_line.zip');
+            notify('Noem_Line экспортирован: ' + shotCount + ' кадров, ' + order + ' изобр.');
         }
 
 
